@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="./s3connection16x16.png" type="Source" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Amazon S3 Connection</name>
+    
+    <shortDescription>
+        Configures the connection information used to
+        connect to Amazon S3.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>
+        	<p>
+        		This node configures the connection information that will be used to connect to Amazon S3. Using this 
+        		connection, the other KNIME remote file handling nodes can be used to create directory, list, delete, 
+        		download and upload files from and to Amazon S3. 
+        	</p>
+        	<p>
+        		The connection information is encoded in the format <i>s3://accessKeyId@region</i>. The protocol is 
+        		<i>s3</i> and the host is the region name. The first folder path is the bucket name and the rest is the 
+        		object key, e.g. <i>s3://AZHC7SNUZCTTSGGRGBXG@eu-west-1/knime-bucket/data/iris.data</i> defines the object 
+        		<i>data/iris.data</i> in the bucket <i>knime-bucket</i>, which is stored in the region <i>eu-west-1</i>. 
+        		The access key ID is <i>AZHC7SNUZCTTSGGRGBXG</i>.
+        	</p>        	
+        	<p>
+        		The region name, the bucket name and the object key are needed in order to delete, download, or upload objects 
+        		from a list. The access key ID is not needed. For instance, to delete the above mentioned object <i>iris.data</i>,
+        		it is needed to encode the path to <i>s3://eu-west-1/knime-bucket/data/iris.data</i> in the list.        		
+        	</p>
+        </intro>
+        
+        <option name="Workflow Credentials">
+        	Use workflow credentials to determine the access key ID and the secret access key. 
+        	The login is used as the access key ID and the password is used as the secret access key.
+        </option>
+        <option name="Access Key ID">
+        	The AWS access key ID used to authenticate.
+        </option>
+        <option name="Secret Access Key">
+        	The AWS secret access key used to authenticate.
+        </option>
+        <option name="Region">
+        	The Amazon S3 geographical region to store the buckets that the user creates.
+        </option>
+        <option name="Timeout">
+        	The timeout in milliseconds when initially establishing a connection.
+        </option>
+        <option name="Test connection">
+        	Open dialog that tests the current connection.
+        </option>
+               
+    </fullDescription>
+    
+    <ports>        
+        <outPort index="0" name="Connection information port">
+        	Port object containing the S3 connection information.
+        </outPort>        
+    </ports>        
+</knimeNode>
