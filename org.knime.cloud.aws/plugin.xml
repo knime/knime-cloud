@@ -2,7 +2,7 @@
 <?eclipse version="3.0"?><plugin>
    <extension point="org.knime.workbench.repository.nodes">
       <node category-path="/io/filehandling/remote/connections" factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory" id="org.knime.cloud.aws.s3.S3ConnectionNodeFactory"/>
-   <node category-path="/io/filehandling/remote" factory-class="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory" id="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory"/>
+   <node category-path="/io/filehandling/remote" factory-class="org.knime.cloud.aws.s3.node.filepicker.S3FilePickerNodeFactory" id="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory"/>
 </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
       <RemoteFileHandler RemoteFileHandler="org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler">

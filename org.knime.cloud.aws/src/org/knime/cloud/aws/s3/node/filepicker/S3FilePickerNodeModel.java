@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.s3.node.connectiontourl;
+package org.knime.cloud.aws.s3.node.filepicker;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,9 +41,9 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
  *
  * @author Budi Yanto, KNIME.com
  */
-public class S3ConnectionToUrlNodeModel extends NodeModel {
+public class S3FilePickerNodeModel extends NodeModel {
 
-	private static NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectionToUrlNodeModel.class);
+	private static NodeLogger LOGGER = NodeLogger.getLogger(S3FilePickerNodeModel.class);
 
 	static final String CFG_EXPIRATION_TIME = "expiration-time";
 	static final String CFG_FILE_SELECTION = "file-selection";
@@ -68,7 +68,7 @@ public class S3ConnectionToUrlNodeModel extends NodeModel {
 	/**
 	 * Constructor for the node model.
 	 */
-	protected S3ConnectionToUrlNodeModel() {
+	protected S3FilePickerNodeModel() {
 		super(new PortType[] { ConnectionInformationPortObject.TYPE }, new PortType[] { FlowVariablePortObject.TYPE });
 	}
 

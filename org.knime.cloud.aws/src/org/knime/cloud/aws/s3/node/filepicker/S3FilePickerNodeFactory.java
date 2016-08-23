@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.s3.node.connectiontourl;
+package org.knime.cloud.aws.s3.node.filepicker;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,14 +10,14 @@ import org.knime.core.node.NodeView;
  *
  * @author Budi Yanto, KNIME.com
  */
-public class S3ConnectionToUrlNodeFactory extends NodeFactory<S3ConnectionToUrlNodeModel> {
+public class S3FilePickerNodeFactory extends NodeFactory<S3FilePickerNodeModel> {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public S3ConnectionToUrlNodeModel createNodeModel() {
-		return new S3ConnectionToUrlNodeModel();
+	public S3FilePickerNodeModel createNodeModel() {
+		return new S3FilePickerNodeModel();
 	}
 
 	/**
@@ -32,8 +32,8 @@ public class S3ConnectionToUrlNodeFactory extends NodeFactory<S3ConnectionToUrlN
 	 * {@inheritDoc}
 	 */
 	@Override
-	public NodeView<S3ConnectionToUrlNodeModel> createNodeView(final int viewIndex,
-			final S3ConnectionToUrlNodeModel nodeModel) {
+	public NodeView<S3FilePickerNodeModel> createNodeView(final int viewIndex,
+			final S3FilePickerNodeModel nodeModel) {
 		return null;
 	}
 
@@ -50,7 +50,7 @@ public class S3ConnectionToUrlNodeFactory extends NodeFactory<S3ConnectionToUrlN
 	 */
 	@Override
 	public NodeDialogPane createNodeDialogPane() {
-		return new S3ConnectionToUrlNodeDialog();
+		return new S3FilePickerNodeDialog();
 	}
 
 }
