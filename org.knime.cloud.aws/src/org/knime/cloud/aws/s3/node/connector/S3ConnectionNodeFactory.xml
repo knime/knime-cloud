@@ -26,6 +26,9 @@
         		from a list. The access key ID is not needed. For instance, to delete the above mentioned object <i>iris.data</i>,
         		it is needed to encode the path to <i>s3://eu-west-1/knime-bucket/data/iris.data</i> in the list.        		
         	</p>
+        	<p>
+        		For further documentation please take a look at the <a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html">AWS Documentation</a>.
+        	</p>
         </intro>
         
         <option name="Workflow Credentials">
