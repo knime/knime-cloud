@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="./azurebsconnection16x16.png" type="Source" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Azure Blob Store Connection</name>
+    
+    <shortDescription>
+        Configures the connection information used to
+        connect to Azure Blob Store.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>
+        	<p>
+        		This node configures the connection information that will be used to connect to the Azure Blob Store (AzureBS). Using this 
+        		connection, the other KNIME remote file handling nodes can be used to create directory, list, delete, 
+        		download and upload files from and to AzureBS. 
+        	</p>
+        	<p>
+        		The connection information is encoded in the format <i>azurebs://storageAccount@blob.core.windows.net</i>. The protocol is 
+        		<i>azurebs</i>. The first folder path is the container name and the rest is the 
+        		blob name, e.g. <i>azurebs://knimeaccount@blob.core.windows.net/knimecontainer/data/iris.data</i> defines the object 
+        		<i>data/iris.data</i> in the container <i>knimecontainer</i>. 
+        		The storage account is <i>knimeaccount</i>.
+        	</p>        	
+        	<p>
+        		The container name and the blob name are needed in order to delete, download, or upload objects 
+        		from a list. The storage account is not needed. For instance, to delete the above mentioned object <i>iris.data</i>,
+        		it is necessary to encode the path to <i>azurebs://knime-bucket/data/iris.data</i> in the list.        		
+        	</p>
+        </intro>
+        
+        <option name="Workflow Credentials">
+        	Use workflow credentials to determine the storage account and the access key. 
+        	The login is used as the storage account and the password is used as the access key.
+        </option>
+        <option name="Storage Account">
+        	The AzureBS storage account used to authenticate.
+        </option>
+        <option name="Access Key">
+        	The AzureBS access key used to authenticate.
+        </option>
+        <option name="Timeout">
+        	The timeout in milliseconds when initially establishing a connection.
+        </option>
+        <option name="Test connection">
+        	Open dialog that tests the current connection.
+        </option>
+               
+    </fullDescription>
+    
+    <ports>        
+        <outPort index="0" name="Connection information port">
+        	Port object containing the AzureBS connection information.
+        </outPort>        
+    </ports>        
+</knimeNode>

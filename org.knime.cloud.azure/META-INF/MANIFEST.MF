@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: KNIME Azure Cloud Connectors
+Bundle-SymbolicName: org.knime.cloud.azure;singleton:=true
+Bundle-Version: 3.3.0.qualifier
+Bundle-Vendor: KNIME GmbH, Konstanz, Germany
+Require-Bundle: org.knime.workbench.repository;bundle-version="[3.2.0,4.0.0)",
+ org.knime.base;bundle-version="[3.2.0,4.0.0)",
+ org.knime.base.filehandling;bundle-version="[3.2.0,4.0.0)",
+ com.fasterxml.jackson.core.jackson-core;bundle-version="[2.7.1,3.0.0)",
+ org.apache.commons.lang3;bundle-version="[3.2.1,4.0.0)",
+ org.slf4j.api;bundle-version="[1.7.2,2.0.0)"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ClassPath: lib/azure-keyvault-core-0.8.0.jar,
+ lib/azure-storage-4.3.0.jar,
+ absconnection.jar
+Bundle-ActivationPolicy: lazy
