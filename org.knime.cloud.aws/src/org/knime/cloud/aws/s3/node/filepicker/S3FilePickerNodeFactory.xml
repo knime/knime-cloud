@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<knimeNode icon="./s3connectiontourl16x16.png" type="Manipulator" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
-    <name>Amazon S3 Connection To URL</name>
+<knimeNode icon="./s3filepicker16x16.png" type="Manipulator" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Amazon S3 File Picker</name>
     
     <shortDescription>
         Generates a pre-signed URL of an Amazon S3 object. 

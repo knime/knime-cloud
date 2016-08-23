@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.s3.node.connectiontourl;
+package org.knime.cloud.aws.s3.node.filepicker;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,7 +35,7 @@ import com.amazonaws.services.s3.AmazonS3;
  *
  * @author Budi Yanto, KNIME.com
  */
-public class S3ConnectionToUrlNodeDialog extends NodeDialogPane {
+public class S3FilePickerNodeDialog extends NodeDialogPane {
 
 	private final JLabel m_infoLabel;
 	private final RemoteFileChooserPanel m_remoteFileChooser;
@@ -45,14 +45,14 @@ public class S3ConnectionToUrlNodeDialog extends NodeDialogPane {
 	/**
 	 * New pane for configuring the S3ConnectionToUrl node.
 	 */
-	protected S3ConnectionToUrlNodeDialog() {
+	protected S3FilePickerNodeDialog() {
 		m_infoLabel = new JLabel();
-		final FlowVariableModel fvm = createFlowVariableModel(S3ConnectionToUrlNodeModel.CFG_FILE_SELECTION,
+		final FlowVariableModel fvm = createFlowVariableModel(S3FilePickerNodeModel.CFG_FILE_SELECTION,
 				FlowVariable.Type.STRING);
 		m_remoteFileChooser = new RemoteFileChooserPanel(getPanel(), "Remote File", true, "s3RemoteFile",
 				RemoteFileChooser.SELECT_FILE, fvm, m_connectionInformation);
 
-		m_dateComp = new DialogComponentDate(S3ConnectionToUrlNodeModel.createExpirationSettingsModel(),
+		m_dateComp = new DialogComponentDate(S3FilePickerNodeModel.createExpirationSettingsModel(),
 				"Expiration Time", false);
 		addTab("Options", initLayout());
 	}
@@ -76,7 +76,7 @@ public class S3ConnectionToUrlNodeDialog extends NodeDialogPane {
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
 		m_dateComp.saveSettingsTo(settings);
-		settings.addString(S3ConnectionToUrlNodeModel.CFG_FILE_SELECTION, m_remoteFileChooser.getSelection());
+		settings.addString(S3FilePickerNodeModel.CFG_FILE_SELECTION, m_remoteFileChooser.getSelection());
 	}
 
 	/**
@@ -99,7 +99,7 @@ public class S3ConnectionToUrlNodeDialog extends NodeDialogPane {
 		}
 
 		m_remoteFileChooser.setConnectionInformation(m_connectionInformation);
-		m_remoteFileChooser.setSelection(settings.getString(S3ConnectionToUrlNodeModel.CFG_FILE_SELECTION, ""));
+		m_remoteFileChooser.setSelection(settings.getString(S3FilePickerNodeModel.CFG_FILE_SELECTION, ""));
 		m_dateComp.loadSettingsFrom(settings, specs);
 	}
 }
