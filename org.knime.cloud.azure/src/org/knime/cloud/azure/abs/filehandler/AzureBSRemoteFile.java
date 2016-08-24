@@ -299,7 +299,8 @@ public class AzureBSRemoteFile extends RemoteFile<AzureBSConnection> {
 						m_size += file.getSize();
 					}
 				} else {
-					m_size = getBlobReference().getProperties().getLength();
+					// blob reference must be retrieved from the server otherwise properties will return null
+					m_size = getClient().getContainerReference(getContainerName()).getBlobReferenceFromServer(getBlobName()).getProperties().getLength();
 				}
 			} else {
 				m_size = 0l;
@@ -324,7 +325,8 @@ public class AzureBSRemoteFile extends RemoteFile<AzureBSConnection> {
 						}
 					}
 				} else {
-					m_lastModified = getBlobReference().getProperties().getLastModified().getTime();
+					// Blob reference must be recieved directly from server. Otherwise properties are null.
+					m_lastModified = getClient().getContainerReference(getContainerName()).getBlobReferenceFromServer(getBlobName()).getProperties().getLastModified().getTime();
 				}
 			} else {
 				m_lastModified = 0l;
@@ -436,7 +438,7 @@ public class AzureBSRemoteFile extends RemoteFile<AzureBSConnection> {
 			final String containerName = getContainerName();
 
 			if (isContainer()) {
-				result = getClient().getContainerReference(containerName).createIfNotExists();
+					result = getClient().getContainerReference(containerName).createIfNotExists();
 			} else {
 				String dirName = getBlobName();
 				dirName = (dirName.endsWith(DELIMITER)) ? dirName : dirName + DELIMITER;
@@ -456,6 +458,7 @@ public class AzureBSRemoteFile extends RemoteFile<AzureBSConnection> {
 
 		} catch (final Exception e) {
 			LOGGER.debug(e.getMessage());
+			throw e;
 		}
 
 		return result;
