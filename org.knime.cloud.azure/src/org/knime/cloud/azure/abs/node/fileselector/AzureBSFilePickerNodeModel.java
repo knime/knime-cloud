@@ -97,7 +97,7 @@ public class AzureBSFilePickerNodeModel extends NodeModel {
 
 	private static final long DEF_EXPIRATION_TIME = 60*60*1000;
 
-	private static final String FLOW_VARIABLE_NAME = "ABSPresignedURL";
+	private static final String FLOW_VARIABLE_NAME = "AzurePickedFile";
 
 	private final SettingsModelDate m_dateSettingsModel = createExpirationSettingsModel();
 	private String m_fileSelection;
