@@ -11,6 +11,8 @@ import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionI
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.base.filehandling.remote.dialog.RemoteFileChooser;
 import org.knime.base.filehandling.remote.dialog.RemoteFileChooserPanel;
+import org.knime.cloud.aws.ExpirationComponents;
+import org.knime.cloud.aws.ExpirationSettings;
 import org.knime.core.node.FlowVariableModel;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
@@ -18,7 +20,6 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
-import org.knime.core.node.defaultnodesettings.DialogComponentDate;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.FlowVariable;
 
@@ -40,7 +41,9 @@ public class S3FilePickerNodeDialog extends NodeDialogPane {
 	private final JLabel m_infoLabel;
 	private final RemoteFileChooserPanel m_remoteFileChooser;
 	private ConnectionInformation m_connectionInformation;
-	private final DialogComponentDate m_dateComp;
+	private final ExpirationComponents m_ExpirationComp;
+
+
 
 	/**
 	 * New pane for configuring the S3ConnectionToUrl node.
@@ -52,8 +55,10 @@ public class S3FilePickerNodeDialog extends NodeDialogPane {
 		m_remoteFileChooser = new RemoteFileChooserPanel(getPanel(), "Remote File", true, "s3RemoteFile",
 				RemoteFileChooser.SELECT_FILE, fvm, m_connectionInformation);
 
-		m_dateComp = new DialogComponentDate(S3FilePickerNodeModel.createExpirationSettingsModel(),
-				"Expiration Time", false);
+		m_ExpirationComp  = new ExpirationComponents(new ExpirationSettings());
+
+
+		// add Time to expiration
 		addTab("Options", initLayout());
 	}
 
@@ -66,7 +71,7 @@ public class S3FilePickerNodeDialog extends NodeDialogPane {
 		gbc.gridy++;
 		panel.add(m_remoteFileChooser.getPanel(), gbc);
 		gbc.gridy++;
-		panel.add(m_dateComp.getComponentPanel(), gbc);
+		panel.add(m_ExpirationComp.getDialogPanel(),gbc);
 		return panel;
 	}
 
@@ -75,8 +80,8 @@ public class S3FilePickerNodeDialog extends NodeDialogPane {
 	 */
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-		m_dateComp.saveSettingsTo(settings);
 		settings.addString(S3FilePickerNodeModel.CFG_FILE_SELECTION, m_remoteFileChooser.getSelection());
+		m_ExpirationComp.saveSettingsTo(settings);
 	}
 
 	/**
@@ -100,6 +105,6 @@ public class S3FilePickerNodeDialog extends NodeDialogPane {
 
 		m_remoteFileChooser.setConnectionInformation(m_connectionInformation);
 		m_remoteFileChooser.setSelection(settings.getString(S3FilePickerNodeModel.CFG_FILE_SELECTION, ""));
-		m_dateComp.loadSettingsFrom(settings, specs);
+		m_ExpirationComp.loadSettingsFrom(settings, specs);
 	}
 }
