@@ -13,15 +13,25 @@
 	        attempt to access the URL once it has expired will generate an error. It is not needed to set the permission
 	        to access the S3 object to public. Using the generated pre-signed URL, any KNIME reader can be utilized to 
 	        directly read the S3 object without having to fetch the object locally first.
+		    <br/><br/>
+		    URLs can be signed for a maximum of <b>7 days</b>.
         </intro>
         
         <option name="Remote File">
         	The Amazon S3 object, from which the pre-signed URL should be created.
         </option>
-        <option name="Expiration Time">
-        	The expiration time of the generated pre-signed URL. If the selected expiration time is before the current
-        	time, then the default one hour expiration time is used.	
-        </option>        
+        <option name="Expiration">
+        Method of expiration
+            <br/>
+            <b>After Duration</b>
+            <br/>
+            The URL will expire after a certain duration from when the node is executed.
+            <br />
+            <b>On Date</b>
+            <br />
+            The URL will expire on a set date.
+        </option>
+               
     </fullDescription>
     
     <ports>

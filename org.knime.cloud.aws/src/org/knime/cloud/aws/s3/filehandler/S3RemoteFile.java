@@ -295,7 +295,7 @@ public class S3RemoteFile extends RemoteFile<S3Connection> {
 		final S3RemoteFile[] files;
 		// final String path = getURI().getPath();
 		final String path = getFullPathCache();
-		if (StringUtils.isBlank(path)) {
+		if (StringUtils.isBlank(path) || path.equals(DELIMITER)) {
 			// Path is blank, assumed it is root directory, so fetch all buckets
 			final List<Bucket> buckets = getClient().listBuckets();
 			if (buckets == null || buckets.isEmpty()) {
@@ -498,8 +498,8 @@ public class S3RemoteFile extends RemoteFile<S3Connection> {
 
 	private class S3OutputStream extends OutputStream {
 
-		private S3RemoteFile m_file;
-		private OutputStream m_stream;
+		private final S3RemoteFile m_file;
+		private final OutputStream m_stream;
 
 		private S3OutputStream(final S3RemoteFile file) throws Exception {
 			m_file = file;

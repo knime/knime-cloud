@@ -15,6 +15,8 @@ import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionI
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.base.filehandling.remote.files.RemoteFileFactory;
+import org.knime.cloud.aws.ExpirationSettings;
+import org.knime.cloud.aws.ExpirationSettings.ExpirationMode;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFile;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -24,7 +26,6 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModelDate;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
@@ -45,25 +46,22 @@ public class S3FilePickerNodeModel extends NodeModel {
 
 	private static NodeLogger LOGGER = NodeLogger.getLogger(S3FilePickerNodeModel.class);
 
-	static final String CFG_EXPIRATION_TIME = "expiration-time";
 	static final String CFG_FILE_SELECTION = "file-selection";
 
-	/* adds 1 hour expiration time */
-	private static final long DEF_EXPIRATION_TIME = 60 * 60 * 1000;
-
 	/* The name of the output flow variable */
-	private static final String FLOW_VARIABLE_NAME = "S3PresignedUrl";
+	private static final String FLOW_VARIABLE_NAME = "S3PickedFile";
 
-	private final SettingsModelDate m_dateSettingsModel = createExpirationSettingsModel();
+	private final ExpirationSettings m_expirationModel = createExpirationSettingsModel();
 	private String m_fileSelection;
 	private ConnectionInformation m_connectionInformation;
 
 	/* Create a new SettingsModelDate and initialize it to the current time */
-	static SettingsModelDate createExpirationSettingsModel() {
-		final SettingsModelDate model = new SettingsModelDate(CFG_EXPIRATION_TIME);
-		model.setTimeInMillis(new Date().getTime());
+	static ExpirationSettings createExpirationSettingsModel() {
+		final ExpirationSettings model = new ExpirationSettings();
+		model.setDateInMillis(new Date().getTime());
 		return model;
 	}
+
 
 	/**
 	 * Constructor for the node model.
@@ -91,12 +89,9 @@ public class S3FilePickerNodeModel extends NodeModel {
 			final String bucketName = remoteFile.getBucketName();
 			final String key = remoteFile.getKey();
 
-			final Date expirationTime = m_dateSettingsModel.getDate();
-
-			if (expirationTime.before(new Date())) {
-				// Adds default expiration time if the selected time is before
-				// the current time
-				expirationTime.setTime(new Date().getTime() + DEF_EXPIRATION_TIME);
+			final Date expirationTime = m_expirationModel.getDate();
+			if (m_expirationModel.getExpirationMode().equals(ExpirationMode.DURATION.name())) {
+				expirationTime.setTime(new Date().getTime() + m_expirationModel.getTimeInMillis());
 			}
 
 			LOGGER.debug("Generate Presigned URL with expiration time: " + expirationTime);
@@ -163,9 +158,9 @@ public class S3FilePickerNodeModel extends NodeModel {
 			throw new InvalidSettingsException("The selected file is not valid");
 		}
 
-		if (m_dateSettingsModel.getDate().before(new Date())) {
-			setWarningMessage(
-					"The selected expiration time is before the current time, the default 1 hour expiration time will be used");
+
+		if (m_expirationModel.getExpirationMode().equals(ExpirationMode.DATE.name()) && m_expirationModel.getDate().before(new Date())) {
+			throw new InvalidSettingsException("Expiration time: " + m_expirationModel.getDate().toString() + " is in the past. (" + new Date().toString() +")");
 		}
 
 		LOGGER.debug("Current Time Configure: " + new Date());
@@ -179,7 +174,7 @@ public class S3FilePickerNodeModel extends NodeModel {
 	@Override
 	protected void saveSettingsTo(final NodeSettingsWO settings) {
 		settings.addString(CFG_FILE_SELECTION, m_fileSelection);
-		m_dateSettingsModel.saveSettingsTo(settings);
+		m_expirationModel.saveSettingsTo(settings);
 	}
 
 	/**
@@ -188,7 +183,7 @@ public class S3FilePickerNodeModel extends NodeModel {
 	@Override
 	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
 		m_fileSelection = settings.getString(CFG_FILE_SELECTION);
-		m_dateSettingsModel.loadSettingsFrom(settings);
+		m_expirationModel.loadValidatedSettings(settings);
 	}
 
 	/**
@@ -197,7 +192,7 @@ public class S3FilePickerNodeModel extends NodeModel {
 	@Override
 	protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 		settings.getString(CFG_FILE_SELECTION);
-		m_dateSettingsModel.validateSettings(settings);
+		m_expirationModel.validateSettings(settings);
 	}
 
 	/**
@@ -217,5 +212,6 @@ public class S3FilePickerNodeModel extends NodeModel {
 			throws IOException, CanceledExecutionException {
 		// TODO: generated method stub
 	}
+
 
 }
