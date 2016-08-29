@@ -11,7 +11,7 @@
         <intro>
         	<p>
         		This node configures the connection information that will be used to connect to Amazon S3. Using this 
-        		connection, the other KNIME remote file handling nodes can be used to create directory, list, delete, 
+        		connection the other KNIME remote file handling nodes can be used to create directory, list, delete, 
         		download and upload files from and to Amazon S3. 
         	</p>
         	<p>
@@ -31,16 +31,24 @@
         	</p>
         </intro>
         
-        <option name="Workflow Credentials">
+        <option name="Authentication">
+        Method for authentication
+        	<br/>
+        	<b>Workflow Credentials</b>
+        	<br/>
         	Use workflow credentials to determine the access key ID and the secret access key. 
         	The login is used as the access key ID and the password is used as the secret access key.
-        </option>
-        <option name="Access Key ID">
+        	<br/>
+        	<b>Access Key ID and Secret Access Key</b>
+        	<br/>
         	The AWS access key ID used to authenticate.
-        </option>
-        <option name="Secret Access Key">
+        	<br/>
         	The AWS secret access key used to authenticate.
-        </option>
+        	<br/>
+        	<b>Default Credential Provider Chain</b>
+        	<br/>
+        	When selected the default credential provider chain is used for authentication. Default location is "~/.aws/credentials" on most platforms. 
+       	</option>
         <option name="Region">
         	The Amazon S3 geographical region to store the buckets that the user creates.
         </option>

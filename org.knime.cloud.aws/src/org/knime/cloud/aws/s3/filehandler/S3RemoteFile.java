@@ -83,7 +83,7 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
 /**
- *
+ * RemoteFile implementation for S3Connections
  *
  * @author Budi Yanto, KNIME.com
  */
@@ -389,6 +389,7 @@ public class S3RemoteFile extends RemoteFile<S3Connection> {
 		} catch (final Exception ex) {
 			// result stays false
 			LOGGER.debug(ex.getMessage());
+			throw ex;
 		}
 
 		return result;
@@ -420,6 +421,11 @@ public class S3RemoteFile extends RemoteFile<S3Connection> {
 		return fullname;
 	}
 
+	/**
+	 * Get this RemoteFile's bucket name
+	 * @return this RemoteFile's bucket name
+	 * @throws Exception
+	 */
 	public String getBucketName() throws Exception {
 		if (StringUtils.isBlank(m_bucketNameCache)) {
 			final String path = getFullPathCache();
@@ -444,6 +450,11 @@ public class S3RemoteFile extends RemoteFile<S3Connection> {
 		return DELIMITER + bucketName + DELIMITER;
 	}
 
+	/**
+	 * Get this RemoteFile's key
+	 * @return this RemoteFile's key
+	 * @throws Exception
+	 */
 	public String getKey() throws Exception {
 		if (StringUtils.isBlank(m_keyCache)) {
 			final String bucketName = getBucketName();

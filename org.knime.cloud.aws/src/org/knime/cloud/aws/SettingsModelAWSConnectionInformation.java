@@ -58,6 +58,7 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.config.Config;
 import org.knime.core.node.defaultnodesettings.SettingsModel;
 import org.knime.core.node.port.PortObjectSpec;
+import org.knime.core.node.util.ButtonGroupEnumInterface;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.core.node.workflow.ICredentials;
@@ -72,24 +73,106 @@ import com.amazonaws.regions.Regions;
  */
 public class SettingsModelAWSConnectionInformation extends SettingsModel {
 
+	/** Default timeout */
 	public static final int DEF_TIMEOUT = 30000;
+
 	private static final String ENCRYPTION_KEY = "5QCYUcXN8jVvAM15";
 
+	private static final String CFG_AUTH_TYPE = "authentication-type";
+
 	private static final String CFG_USE_WORKFLOW_CREDENTIAL = "use-workflow-credential";
+
 	private static final String CFG_WORKFLOW_CREDENTIAL = "workflow-credential";
+
 	private static final String CFG_ACCESS_KEY_ID = "access-key-id";
+
 	private static final String CFG_SECRET_ACCESS_KEY = "secret-access-key";
+
 	private static final String CFG_REGION = "region";
+
 	private static final String CFG_TIMEOUT = "timeout";
 
 	private final String m_configName;
+
 	private final String m_endpointPrefix;
+
+	private AuthenticationType m_authType;
+
 	private boolean m_useWorkflowCredential;
+
 	private String m_workflowCredential;
+
 	private String m_accessKeyId;
+
 	private String m_secretAccessKey;
+
 	private String m_region;
+
 	private int m_timeout;
+
+	/**
+	 *
+	 * Authentication type for Amazon S3
+	 * @see <a href="https://docs.aws.amazon.com/java-sdk/latest/developer-guide/credentials.html">
+	 * Working with AWS Credentials</a>
+	 */
+	public enum AuthenticationType implements ButtonGroupEnumInterface {
+		/** Explicitly input access key ID and secret access key */
+	    ACCESS_KEY_SECRET("Access Key ID & Secret Key", "Access key ID and secret access key"),
+
+	    /** Use default credential provider chain */
+	    DEF_CRED_PROVIDER_CHAIN("Default Credential Provider Chain", "Default credential provider chain");
+
+		private String m_toolTip;
+
+		private String m_text;
+
+		private AuthenticationType(final String text, final String toolTip) {
+			m_text = text;
+			m_toolTip = toolTip;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String getText() {
+			return m_text;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String getActionCommand() {
+			return name();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String getToolTip() {
+			return m_toolTip;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public boolean isDefault() {
+			return this.equals(ACCESS_KEY_SECRET);
+		}
+
+		/**
+		 * @param actionCommand the action command
+		 * @return the {@link AuthenticationType} for the action command
+		 */
+		public static AuthenticationType get(final String actionCommand) {
+			return valueOf(actionCommand);
+		}
+
+	}
 
 	/**
 	 *
@@ -97,27 +180,31 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	 * @param endpointPrefix
 	 */
 	public SettingsModelAWSConnectionInformation(final String configName, final String endpointPrefix) {
-		this(configName, endpointPrefix, false, null, null, null, null, DEF_TIMEOUT);
+		this(configName, endpointPrefix, AuthenticationType.DEF_CRED_PROVIDER_CHAIN, false, null, null, null, null,
+			DEF_TIMEOUT);
 	}
 
 	/**
 	 *
 	 * @param configName
 	 * @param endpointPrefix
+	 * @param authType
 	 * @param useWorkflowCredential
 	 * @param workflowCredential
 	 * @param accessKeyId
 	 * @param secretAccessKey
 	 * @param region
+	 * @param timeout
 	 */
 	public SettingsModelAWSConnectionInformation(final String configName, final String endpointPrefix,
-			final boolean useWorkflowCredential, final String workflowCredential, final String accessKeyId,
-			final String secretAccessKey, final String region, final int timeout) {
+		final AuthenticationType authType, final boolean useWorkflowCredential, final String workflowCredential,
+		final String accessKeyId, final String secretAccessKey, final String region, final int timeout) {
 		CheckUtils.checkArgument(StringUtils.isNotBlank(configName), "The config name must be a non-empty string");
 		CheckUtils.checkArgument(StringUtils.isNotBlank(endpointPrefix),
-				"The endpoint prefix must be a non-empty string");
+			"The endpoint prefix must be a non-empty string");
 		m_configName = configName;
 		m_endpointPrefix = endpointPrefix;
+		m_authType = authType;
 		m_useWorkflowCredential = useWorkflowCredential;
 		m_workflowCredential = workflowCredential;
 		m_accessKeyId = accessKeyId;
@@ -132,8 +219,8 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected SettingsModelAWSConnectionInformation createClone() {
-		return new SettingsModelAWSConnectionInformation(m_configName, m_endpointPrefix, m_useWorkflowCredential,
-				m_workflowCredential, m_accessKeyId, m_secretAccessKey, m_region, m_timeout);
+		return new SettingsModelAWSConnectionInformation(m_configName, m_endpointPrefix, m_authType,
+			m_useWorkflowCredential, m_workflowCredential, m_accessKeyId, m_secretAccessKey, m_region, m_timeout);
 	}
 
 	/**
@@ -157,16 +244,17 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	 */
 	@Override
 	protected void loadSettingsForDialog(final NodeSettingsRO settings, final PortObjectSpec[] specs)
-			throws NotConfigurableException {
+		throws NotConfigurableException {
 		// use the current value, if no value is stored in the settings
 		final Config config;
 		try {
 			config = settings.getConfig(m_configName);
-			setValues(config.getBoolean(CFG_USE_WORKFLOW_CREDENTIAL, m_useWorkflowCredential),
-					config.getString(CFG_WORKFLOW_CREDENTIAL, m_workflowCredential),
-					config.getString(CFG_ACCESS_KEY_ID, m_accessKeyId),
-					config.getPassword(CFG_SECRET_ACCESS_KEY, ENCRYPTION_KEY, m_secretAccessKey),
-					config.getString(CFG_REGION, m_region), config.getInt(CFG_TIMEOUT, m_timeout));
+			setValues(AuthenticationType.get(config.getString(CFG_AUTH_TYPE, m_authType.name())),
+				config.getBoolean(CFG_USE_WORKFLOW_CREDENTIAL, m_useWorkflowCredential),
+				config.getString(CFG_WORKFLOW_CREDENTIAL, m_workflowCredential),
+				config.getString(CFG_ACCESS_KEY_ID, m_accessKeyId),
+				config.getPassword(CFG_SECRET_ACCESS_KEY, ENCRYPTION_KEY, m_secretAccessKey),
+				config.getString(CFG_REGION, m_region), config.getInt(CFG_TIMEOUT, m_timeout));
 		} catch (final InvalidSettingsException ex) {
 			throw new NotConfigurableException(ex.getMessage());
 		}
@@ -187,6 +275,8 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	@Override
 	protected void validateSettingsForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
 		final Config config = settings.getConfig(m_configName);
+		final String type = config.getString(CFG_AUTH_TYPE);
+		final AuthenticationType authType = AuthenticationType.get(type);
 		final boolean useWorkflowCredential = config.getBoolean(CFG_USE_WORKFLOW_CREDENTIAL);
 		final String workflowCredential = config.getString(CFG_WORKFLOW_CREDENTIAL);
 		final String accessKeyId = config.getString(CFG_ACCESS_KEY_ID);
@@ -194,8 +284,8 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		final String region = config.getString(CFG_REGION);
 		final int timeout = config.getInt(CFG_TIMEOUT);
 
-		validateValues(useWorkflowCredential, workflowCredential, accessKeyId, secretAccessKey, region,
-				m_endpointPrefix, timeout);
+		validateValues(authType, useWorkflowCredential, workflowCredential, accessKeyId, secretAccessKey, region,
+			m_endpointPrefix, timeout);
 	}
 
 	/**
@@ -205,9 +295,10 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	protected void loadSettingsForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
 		// no default value, throw an exception instead
 		final Config config = settings.getConfig(m_configName);
-		setValues(config.getBoolean(CFG_USE_WORKFLOW_CREDENTIAL), config.getString(CFG_WORKFLOW_CREDENTIAL),
-				config.getString(CFG_ACCESS_KEY_ID), config.getPassword(CFG_SECRET_ACCESS_KEY, ENCRYPTION_KEY),
-				config.getString(CFG_REGION), config.getInt(CFG_TIMEOUT));
+		setValues(AuthenticationType.get(config.getString(CFG_AUTH_TYPE)),
+			config.getBoolean(CFG_USE_WORKFLOW_CREDENTIAL), config.getString(CFG_WORKFLOW_CREDENTIAL),
+			config.getString(CFG_ACCESS_KEY_ID), config.getPassword(CFG_SECRET_ACCESS_KEY, ENCRYPTION_KEY),
+			config.getString(CFG_REGION), config.getInt(CFG_TIMEOUT));
 	}
 
 	/**
@@ -216,6 +307,7 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	@Override
 	protected void saveSettingsForModel(final NodeSettingsWO settings) {
 		final Config config = settings.addConfig(m_configName);
+		config.addString(CFG_AUTH_TYPE, m_authType.name());
 		config.addBoolean(CFG_USE_WORKFLOW_CREDENTIAL, m_useWorkflowCredential);
 		config.addString(CFG_WORKFLOW_CREDENTIAL, m_workflowCredential);
 		config.addString(CFG_ACCESS_KEY_ID, m_accessKeyId);
@@ -232,9 +324,11 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		return getClass().getSimpleName() + " ('" + m_configName + "')";
 	}
 
-	public void setValues(final boolean useWorkflowCredential, final String workflowCredential,
-			final String accessKeyId, final String secretAccessKey, final String region, final int timeout) {
+	public void setValues(final AuthenticationType authType, final boolean useWorkflowCredential,
+		final String workflowCredential, final String accessKeyId, final String secretAccessKey, final String region,
+		final int timeout) {
 		boolean changed = false;
+		changed = setAuthenticationType(authType) || changed;
 		changed = setUseWorkflowCredential(useWorkflowCredential) || changed;
 		changed = setWorkflowCredential(workflowCredential) || changed;
 		changed = setAccessKeyId(accessKeyId) || changed;
@@ -244,6 +338,12 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		if (changed) {
 			notifyChangeListeners();
 		}
+	}
+
+	private boolean setAuthenticationType(final AuthenticationType authType) {
+		final boolean changed = !authType.name().equals(m_authType.name());
+		m_authType = authType;
+		return changed;
 	}
 
 	private boolean setUseWorkflowCredential(final boolean useWorkflowCredential) {
@@ -303,6 +403,13 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	}
 
 	/**
+	 * @return the authentication type
+	 */
+	public AuthenticationType getAuthenticationType() {
+		return m_authType;
+	}
+
+	/**
 	 * @return the endpoint prefix
 	 */
 	public String getEndpointPrefix() {
@@ -351,21 +458,43 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		return m_timeout;
 	}
 
-	public static void validateValues(final boolean useWorkflowCredential, final String workflowCredential,
-			final String accessKeyId, final String secretAccessKey, final String region, final String endpointPrefix,
-			final int timeout) throws InvalidSettingsException {
-		if (useWorkflowCredential) {
-			if (StringUtils.isBlank(workflowCredential)) {
-				throw new InvalidSettingsException("Please enter a valid workflow credential");
-			}
-		} else {
-			if (StringUtils.isBlank(accessKeyId)) {
-				throw new InvalidSettingsException("Please enter a valid access key id");
-			}
+	/**
+	 *
+	 * @param authType
+	 * @param useWorkflowCredential
+	 * @param workflowCredential
+	 * @param accessKeyId
+	 * @param secretAccessKey
+	 * @param region
+	 * @param endpointPrefix
+	 * @param timeout
+	 * @throws InvalidSettingsException
+	 */
+	public static void validateValues(final AuthenticationType authType, final boolean useWorkflowCredential,
+		    final String workflowCredential, final String accessKeyId, final String secretAccessKey, final String region,
+		    final String endpointPrefix, final int timeout) throws InvalidSettingsException {
+		switch (authType) {
+			case ACCESS_KEY_SECRET:
+				if (useWorkflowCredential) {
+					if (StringUtils.isBlank(workflowCredential)) {
+						throw new InvalidSettingsException("Please enter a valid workflow credential");
+					}
+				} else {
+					if (StringUtils.isBlank(accessKeyId)) {
+						throw new InvalidSettingsException("Please enter a valid access key id");
+					}
 
-			if (StringUtils.isBlank(secretAccessKey)) {
-				throw new InvalidSettingsException("Please enter a valid secret access key");
-			}
+					if (StringUtils.isBlank(secretAccessKey)) {
+						throw new InvalidSettingsException("Please enter a valid secret access key");
+					}
+				}
+				break;
+
+			case DEF_CRED_PROVIDER_CHAIN:
+
+				break;
+			default:
+				break;
 		}
 
 		if (StringUtils.isBlank(region)) {
@@ -374,7 +503,7 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 
 		if (!Region.getRegion(Regions.fromName(region)).isServiceSupported(endpointPrefix)) {
 			throw new InvalidSettingsException(
-					"The region \"" + region + "\" is not supported by the service \"" + endpointPrefix + "\"");
+				"The region \"" + region + "\" is not supported by the service \"" + endpointPrefix + "\"");
 		}
 
 		if (timeout < 0) {
@@ -382,8 +511,15 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		}
 	}
 
+	/**
+	 * Returns the {@link ConnectionInformation} resulting from the settings
+	 *
+	 * @param credentialsProvider the credentials provider
+	 * @param protocol the protocol
+	 * @return this settings ConnectionInformation
+	 */
 	public ConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
-			final Protocol protocol) {
+		final Protocol protocol) {
 
 		// Create connection information object
 		final ConnectionInformation connectionInformation = new ConnectionInformation();
@@ -393,15 +529,23 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		connectionInformation.setPort(protocol.getPort());
 		connectionInformation.setTimeout(m_timeout);
 
-		// Put accessKeyId as user and secretAccessKey as password
-		if (useWorkflowCredential()) {
-			// Use credentials
-			final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
-			connectionInformation.setUser(credentials.getLogin());
-			connectionInformation.setPassword(credentials.getPassword());
+		// Set the field "useKerberos" to true if "Default Credentials Provider Chain" should be used, otherwise to false
+		connectionInformation.setUseKerberos(m_authType.equals(AuthenticationType.DEF_CRED_PROVIDER_CHAIN));
+
+		if(m_authType.equals(AuthenticationType.DEF_CRED_PROVIDER_CHAIN)) {
+		    connectionInformation.setUser("*****");
+		    connectionInformation.setPassword(null);
 		} else {
-			connectionInformation.setUser(getAccessKeyId());
-			connectionInformation.setPassword(getSecretAccessKey());
+		    // Put accessKeyId as user and secretAccessKey as password
+	        if (useWorkflowCredential()) {
+	            // Use credentials
+	            final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
+	            connectionInformation.setUser(credentials.getLogin());
+	            connectionInformation.setPassword(credentials.getPassword());
+	        } else {
+	            connectionInformation.setUser(getAccessKeyId());
+	            connectionInformation.setPassword(getSecretAccessKey());
+	        }
 		}
 
 		return connectionInformation;

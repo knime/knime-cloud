@@ -52,8 +52,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObject;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
+import org.knime.cloud.aws.AWSConnectionInformationPortObject;
 import org.knime.cloud.aws.SettingsModelAWSConnectionInformation;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
 import org.knime.core.node.CanceledExecutionException;
@@ -85,7 +85,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 * Constructor for the node model.
 	 */
 	protected S3ConnectionNodeModel() {
-		super(new PortType[] {}, new PortType[] { ConnectionInformationPortObject.TYPE });
+		super(new PortType[] {}, new PortType[] { AWSConnectionInformationPortObject.TYPE });
 	}
 
 	/**
@@ -93,7 +93,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 */
 	@Override
 	protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-		return new PortObject[] { new ConnectionInformationPortObject(createSpec()) };
+		return new PortObject[] { new AWSConnectionInformationPortObject(createSpec()) };
 	}
 
 	/**
@@ -165,9 +165,9 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 *             ...
 	 */
 	private ConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
-		SettingsModelAWSConnectionInformation.validateValues(m_model.useWorkflowCredential(),
-				m_model.getWorkflowCredential(), m_model.getAccessKeyId(), m_model.getSecretAccessKey(),
-				m_model.getRegion(), m_model.getEndpointPrefix(), m_model.getTimeout());
+		SettingsModelAWSConnectionInformation.validateValues(m_model.getAuthenticationType(),
+				m_model.useWorkflowCredential(), m_model.getWorkflowCredential(), m_model.getAccessKeyId(),
+				m_model.getSecretAccessKey(), m_model.getRegion(), m_model.getEndpointPrefix(), m_model.getTimeout());
 		final ConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 		return new ConnectionInformationPortObjectSpec(connectionInformation);
