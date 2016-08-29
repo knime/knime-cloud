@@ -8,5 +8,15 @@
       <RemoteFileHandler RemoteFileHandler="org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler">
       </RemoteFileHandler>
    </extension>
+   <extension
+         point="org.knime.core.PortType">
+      <portType
+            hidden="false"
+            name="AWSConnection"
+            objectClass="org.knime.cloud.aws.AWSConnectionInformationPortObject"
+            objectSerializer="org.knime.cloud.aws.AWSConnectionInformationPortObject$Serializer"
+            specClass="org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec">
+      </portType>
+   </extension>
    
 </plugin>

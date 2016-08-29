@@ -51,30 +51,36 @@ package org.knime.cloud.aws;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 
+import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.knime.cloud.aws.SettingsModelAWSConnectionInformation.AuthenticationType;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NotConfigurableException;
@@ -86,12 +92,19 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 
 /**
- * Dialog component that allow users to enter information needed to connect to
- * AWS
+ * Dialog component that allow users to enter information needed to connect to AWS
  *
  * @author Budi Yanto, KNIME.com
  */
-public final class DialogComponentAWSConnectionInformation extends DialogComponent {
+public final class DialogComponentAWSConnectionInformation extends DialogComponent implements ActionListener {
+
+	private final ButtonGroup m_authenticationType = new ButtonGroup();
+
+	private final JRadioButton m_accessKeySecret =
+		createAuthenticationTypeButton(AuthenticationType.ACCESS_KEY_SECRET, m_authenticationType, this);
+
+	private final JRadioButton m_defCredProviderChain =
+		createAuthenticationTypeButton(AuthenticationType.DEF_CRED_PROVIDER_CHAIN, m_authenticationType, this);
 
 	private final JCheckBox m_useWorkflowCredential = new JCheckBox();
 
@@ -112,19 +125,43 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	private final JComboBox<String> m_region = new JComboBox<String>();
 
 	private final JSpinner m_timeout = new JSpinner(
-			new SpinnerNumberModel(SettingsModelAWSConnectionInformation.DEF_TIMEOUT, 0, Integer.MAX_VALUE, 100));
+		new SpinnerNumberModel(SettingsModelAWSConnectionInformation.DEF_TIMEOUT, 0, Integer.MAX_VALUE, 100));
 
 	/* Enum representing each component that can be updated */
 	private enum COMPONENT {
-		USE_WORKFLOW_CREDENTIAL, WORKFLOW_CREDENTIAL, ACCESS_KEY_ID, SECRET_ACCESS_KEY, REGION, TIMEOUT
+		AUTH_TYPE, USE_WORKFLOW_CREDENTIAL, WORKFLOW_CREDENTIAL, ACCESS_KEY_ID, SECRET_ACCESS_KEY, REGION, TIMEOUT
 	}
 
+	private static JRadioButton createAuthenticationTypeButton(final AuthenticationType type, final ButtonGroup group,
+		    final ActionListener l) {
+		final JRadioButton button = new JRadioButton(type.getText());
+		button.setActionCommand(type.getActionCommand());
+		if (type.isDefault()) {
+			button.setSelected(true);
+		}
+		if (type.getToolTip() != null) {
+			button.setToolTipText(type.getToolTip());
+		}
+		if (l != null) {
+			button.addActionListener(l);
+		}
+		group.add(button);
+		return button;
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param model the corresponding {@link SettingsModelAWSConnectionInformation}
+	 */
 	public DialogComponentAWSConnectionInformation(final SettingsModelAWSConnectionInformation model) {
 		super(model);
 		getComponentPanel().setLayout(new GridBagLayout());
 		final GridBagConstraints gbc = new GridBagConstraints();
 		resetGBC(gbc);
 		gbc.weightx = 1;
+		getComponentPanel().add(createAuthenticationPanel(), gbc);
+		gbc.gridy++;
 		m_workflowCredentialPanel = createWorkflowCredentialPanel();
 		getComponentPanel().add(m_workflowCredentialPanel, gbc);
 		gbc.gridy++;
@@ -210,6 +247,19 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		updateComponent();
 	}
 
+	private JPanel createAuthenticationPanel() {
+		final JPanel panel = new JPanel(new GridBagLayout());
+		final GridBagConstraints gbc = new GridBagConstraints();
+		resetGBC(gbc);
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Authentication"));
+		panel.add(m_accessKeySecret, gbc);
+		gbc.gridx++;
+		panel.add(m_defCredProviderChain, gbc);
+		return panel;
+	}
+
 	private JPanel createWorkflowCredentialPanel() {
 		final JPanel panel = new JPanel(new GridBagLayout());
 		final GridBagConstraints gbc = new GridBagConstraints();
@@ -218,7 +268,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		gbc.gridx++;
 		gbc.weightx = 1;
 		panel.add(m_workflowCredentials, gbc);
-		panel.setBorder(new TitledBorder(new EtchedBorder(), "Workflow Credentials"));
+		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Workflow Credentials"));
 		return panel;
 
 	}
@@ -267,8 +317,17 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	@Override
 	protected void updateComponent() {
 		// only update component if values are off
-		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation) getModel();
+		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation)getModel();
 		setEnabledComponents(model.isEnabled());
+
+		//select the correct radio button
+        final Enumeration<AbstractButton> buttons = m_authenticationType.getElements();
+        while (buttons.hasMoreElements()) {
+            final AbstractButton button = buttons.nextElement();
+            if (button.getActionCommand().equals(model.getAuthenticationType().getActionCommand())) {
+                button.setSelected(true);
+            }
+        }
 
 		if (m_workflowCredentials.getItemCount() > 0) {
 			if (m_useWorkflowCredential.isSelected() != model.useWorkflowCredential()) {
@@ -281,7 +340,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		}
 
 		if ((m_workflowCredentials.getSelectedItem() != null)
-				&& (!((String) m_workflowCredentials.getSelectedItem()).equals(model.getWorkflowCredential()))) {
+			&& (!((String)m_workflowCredentials.getSelectedItem()).equals(model.getWorkflowCredential()))) {
 			m_workflowCredentials.setSelectedItem(model.getWorkflowCredential());
 		}
 
@@ -306,7 +365,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 
 		try {
 			m_timeout.commitEdit();
-			final int val = ((Integer) m_timeout.getValue()).intValue();
+			final int val = ((Integer)m_timeout.getValue()).intValue();
 			if (val != model.getTimeout()) {
 				m_timeout.setValue(Integer.valueOf(model.getTimeout()));
 			}
@@ -318,6 +377,25 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	}
 
 	private void updateEnabledState() {
+		final AuthenticationType authType = AuthenticationType.get(m_authenticationType.getSelection().getActionCommand());
+		switch (authType) {
+			case ACCESS_KEY_SECRET:
+				enableAccessKeySecretComponent(true);
+				updateAccessKeySecretState();
+				break;
+
+			case DEF_CRED_PROVIDER_CHAIN:
+				enableAccessKeySecretComponent(false);
+				break;
+			default:
+				break;
+		}
+
+
+
+	}
+
+	private void updateAccessKeySecretState() {
 		// Check if credentials are available
 		final boolean credentialsAvailable = m_workflowCredentials.getItemCount() > 0;
 		m_workflowCredentialPanel.setEnabled(credentialsAvailable);
@@ -329,7 +407,16 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		m_accessKeyId.setEnabled(!m_useWorkflowCredential.isSelected());
 		m_secretAccessKeyLabel.setEnabled(!m_useWorkflowCredential.isSelected());
 		m_secretAccessKey.setEnabled(!m_useWorkflowCredential.isSelected());
+	}
 
+	private void enableAccessKeySecretComponent(final boolean enabled) {
+		m_workflowCredentialPanel.setEnabled(enabled);
+		m_useWorkflowCredential.setEnabled(enabled);
+		m_workflowCredentials.setEnabled(enabled);
+		m_accessKeyIdLabel.setEnabled(enabled);
+		m_accessKeyId.setEnabled(enabled);
+		m_secretAccessKeyLabel.setEnabled(enabled);
+		m_secretAccessKey.setEnabled(enabled);
 	}
 
 	@Override
@@ -364,7 +451,8 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	}
 
 	private void updateModel(final COMPONENT comp) {
-		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation) getModel();
+		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation)getModel();
+		AuthenticationType authType = model.getAuthenticationType();
 		boolean useWorkflowCredential = model.useWorkflowCredential();
 		String workflowCredential = model.getWorkflowCredential();
 		String accessKeyId = model.getAccessKeyId();
@@ -372,40 +460,43 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		String region = model.getRegion();
 		int timeout = model.getTimeout();
 		switch (comp) {
-		case USE_WORKFLOW_CREDENTIAL:
-			useWorkflowCredential = m_useWorkflowCredential.isSelected();
-			break;
-		case WORKFLOW_CREDENTIAL:
-			workflowCredential = (String) m_workflowCredentials.getSelectedItem();
-			break;
-		case ACCESS_KEY_ID:
-			accessKeyId = m_accessKeyId.getText();
-			break;
-		case SECRET_ACCESS_KEY:
-			final char[] secretKey = m_secretAccessKey.getPassword();
-			if (secretKey == null) {
-				secretAccessKey = null;
-			} else {
-				secretAccessKey = new String(secretKey);
-			}
-			break;
-		case REGION:
-			region = (String) m_region.getSelectedItem();
-			break;
-		case TIMEOUT:
-			try {
-				m_timeout.commitEdit();
-				timeout = ((Integer) m_timeout.getValue()).intValue();
-			} catch (final ParseException ex) {
-				// Use default timeout if exception occurs
-				timeout = SettingsModelAWSConnectionInformation.DEF_TIMEOUT;
-			}
-			break;
-		default:
-			throw new IllegalStateException("Unknown component");
+			case AUTH_TYPE:
+				authType = AuthenticationType.get(m_authenticationType.getSelection().getActionCommand());
+				break;
+			case USE_WORKFLOW_CREDENTIAL:
+				useWorkflowCredential = m_useWorkflowCredential.isSelected();
+				break;
+			case WORKFLOW_CREDENTIAL:
+				workflowCredential = (String)m_workflowCredentials.getSelectedItem();
+				break;
+			case ACCESS_KEY_ID:
+				accessKeyId = m_accessKeyId.getText();
+				break;
+			case SECRET_ACCESS_KEY:
+				final char[] secretKey = m_secretAccessKey.getPassword();
+				if (secretKey == null) {
+					secretAccessKey = null;
+				} else {
+					secretAccessKey = new String(secretKey);
+				}
+				break;
+			case REGION:
+				region = (String)m_region.getSelectedItem();
+				break;
+			case TIMEOUT:
+				try {
+					m_timeout.commitEdit();
+					timeout = ((Integer)m_timeout.getValue()).intValue();
+				} catch (final ParseException ex) {
+					// Use default timeout if exception occurs
+					timeout = SettingsModelAWSConnectionInformation.DEF_TIMEOUT;
+				}
+				break;
+			default:
+				throw new IllegalStateException("Unknown component");
 		}
 
-		model.setValues(useWorkflowCredential, workflowCredential, accessKeyId, secretAccessKey, region, timeout);
+		model.setValues(authType, useWorkflowCredential, workflowCredential, accessKeyId, secretAccessKey, region, timeout);
 	}
 
 	/**
@@ -415,8 +506,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	 * @throws NotConfigurableException
 	 */
 	public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs,
-			final CredentialsProvider cp) throws NotConfigurableException {
-
+		    final CredentialsProvider cp) throws NotConfigurableException {
 		super.loadSettingsFrom(settings, specs);
 		loadCredentials(cp);
 		loadRegions();
@@ -426,7 +516,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	 * Loads items in credentials select box.
 	 */
 	private void loadCredentials(final CredentialsProvider cp) {
-		final String savedCredential = ((SettingsModelAWSConnectionInformation) getModel()).getWorkflowCredential();
+		final String savedCredential = ((SettingsModelAWSConnectionInformation)getModel()).getWorkflowCredential();
 		boolean containedCredential = false;
 		m_workflowCredentials.removeAllItems();
 		final Collection<String> names = cp.listNames();
@@ -445,7 +535,7 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	}
 
 	private void loadRegions() {
-		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation) getModel();
+		final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation)getModel();
 		final String savedRegion = model.getRegion();
 		final String defaultRegion = Regions.DEFAULT_REGION.getName();
 		m_region.removeAllItems();
@@ -484,11 +574,9 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 	 * Reset the grid bag constraints to useful defaults.
 	 *
 	 *
-	 * The defaults are all insets to 5, anchor northwest, fill both, x and y 0
-	 * and x and y weight 0.
+	 * The defaults are all insets to 5, anchor northwest, fill both, x and y 0 and x and y weight 0.
 	 *
-	 * @param gbc
-	 *            The constraints object.
+	 * @param gbc The constraints object.
 	 */
 	private static void resetGBC(final GridBagConstraints gbc) {
 		gbc.insets = new Insets(5, 5, 5, 5);
@@ -498,6 +586,15 @@ public final class DialogComponentAWSConnectionInformation extends DialogCompone
 		gbc.weighty = 0;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void actionPerformed(final ActionEvent e) {
+		updateModel(COMPONENT.AUTH_TYPE);
+		updateEnabledState();
 	}
 
 }
