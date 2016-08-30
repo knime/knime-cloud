@@ -9,7 +9,7 @@
       <node
             category-path="/io/filehandling/remote"
             deprecated="false"
-            factory-class="org.knime.cloud.azure.abs.node.fileselector.AzureBSFilePickerNodeFactory">
+            factory-class="org.knime.cloud.azure.abs.node.filepicker.AzureBSFilePickerNodeFactory">
       </node>
 </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">

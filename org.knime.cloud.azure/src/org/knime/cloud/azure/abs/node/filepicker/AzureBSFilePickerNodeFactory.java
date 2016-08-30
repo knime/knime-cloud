@@ -1,4 +1,4 @@
-package org.knime.cloud.azure.abs.node.fileselector;
+package org.knime.cloud.azure.abs.node.filepicker;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
