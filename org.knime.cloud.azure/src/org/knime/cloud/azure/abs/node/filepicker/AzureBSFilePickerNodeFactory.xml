@@ -8,11 +8,11 @@
     
     <fullDescription>
         <intro>
-	        This node reads the Azure Blob Store (AzureBS) connection and generates a pre-signed URL that references a blob.
-	        The URL is only valid for a specific period of time. Upon expiry, the URL will no longer remain active and an 
-	        attempt to access the URL once it has expired will generate an error. It is not needed to set the permission
-	        to access the AzureBS object to public. Using the generated pre-signed URL, any KNIME reader can be utilized to 
-	        directly read the blob without having to fetch the blob locally first.
+	        This node reads the Azure Blob Store connection and generates a pre-signed URL that references a blob. 
+	        The URL is only valid for a specific period of time. Upon expiry, 
+	        the URL will no longer remain active and an attempt to access the URL will generate an error. 
+	        Azure Blob Store objects do not have to have their permissions set to public in order to access them. 
+	        Using the generated pre-signed URL, any KNIME reader can be utilized to directly read the blob without having to fetch the blob locally first.
         </intro>
         
         <option name="Remote File">

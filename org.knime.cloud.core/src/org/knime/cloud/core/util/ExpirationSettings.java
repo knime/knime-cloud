@@ -46,7 +46,7 @@
  * History
  *   Aug 24, 2016 (oole): created
  */
-package org.knime.cloud.aws;
+package org.knime.cloud.core.util;
 
 import java.util.Date;
 
@@ -66,7 +66,8 @@ import org.knime.core.node.util.ButtonGroupEnumInterface;
  */
 public class ExpirationSettings {
 
-	private static final String DEFAULT_EXPIRY = "Time";
+	private static final String CFG_URL_EXPIRATION = "urlExpiration";
+	private static final String DEFAULT_EXPIRY = "Duration";
 	private final SettingsModelDuration m_timeModel = createTimeModel();
 	private final SettingsModelDate m_dateModel = createDateModel();
 	private final SettingsModelString m_buttonModel = createButtonModel();
@@ -78,7 +79,8 @@ public class ExpirationSettings {
 	}
 
 	private SettingsModelDuration createTimeModel() {
-		return new SettingsModelDuration("time", "#d##h##m##s", "0d01h00m00s");
+		// default 1 hour expiration
+		return new SettingsModelDuration(CFG_URL_EXPIRATION, 0,1,0,0);
 	}
 
 	private SettingsModelDate createDateModel() {
@@ -87,7 +89,7 @@ public class ExpirationSettings {
 
 
 	private SettingsModelString createButtonModel() {
-		return new SettingsModelString("buttons", DEFAULT_EXPIRY);
+		return new SettingsModelString("expirationButtons", DEFAULT_EXPIRY);
 	}
 
 	/**

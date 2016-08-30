@@ -46,7 +46,7 @@
  * History
  *   Aug 24, 2016 (oole): created
  */
-package org.knime.cloud.aws;
+package org.knime.cloud.core.util;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -58,7 +58,7 @@ import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
-import org.knime.cloud.aws.ExpirationSettings.ExpirationMode;
+import org.knime.cloud.core.util.ExpirationSettings.ExpirationMode;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -89,8 +89,8 @@ public class ExpirationComponents {
 	 */
 	public ExpirationComponents (final ExpirationSettings settings) {
 		m_settings = settings;
-		m_timeComp = new DialogComponentDuration(m_settings.getTimeModel(), null);
-		m_dateComp = new DialogComponentDate(m_settings.getDateModel(), null, false);
+		m_timeComp = new DialogComponentDuration(m_settings.getTimeModel(), null, false);
+		m_dateComp = new DialogComponentDate(m_settings.getDateModel(), null, false, false);
 		m_buttonComp = new DialogComponentButtonGroup(m_settings.getButtonModel(), null, false, ExpirationMode.values());
 	}
 
