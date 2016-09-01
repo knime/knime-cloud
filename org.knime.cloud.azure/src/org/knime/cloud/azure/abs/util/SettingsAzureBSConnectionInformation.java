@@ -84,7 +84,7 @@ public class SettingsAzureBSConnectionInformation {
 	}
 
 	private SettingsModelAuthentication createAuthenticationModel() {
-		return new SettingsModelAuthentication("auth", AuthenticationType.NONE, null, null, null);
+		return new SettingsModelAuthentication("auth", AuthenticationType.USER_PWD, null, null, null);
 	}
 
 	private SettingsModelInteger createTimeoutModel() {
