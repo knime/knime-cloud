@@ -3,8 +3,8 @@ package org.knime.cloud.aws.s3.filehandler;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Connection;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.util.KnimeEncryption;
 
@@ -26,7 +26,7 @@ public class S3Connection extends Connection {
 
 	private static final NodeLogger LOGGER = NodeLogger.getLogger(S3Connection.class);
 
-	private final ConnectionInformation m_connectionInformation;
+	private final CloudConnectionInformation m_connectionInformation;
 
 	private AmazonS3Client m_client;
 
@@ -34,7 +34,7 @@ public class S3Connection extends Connection {
 
 	private List<String> m_bucketsCache;
 
-	public S3Connection(final ConnectionInformation connectionInformation) {
+	public S3Connection(final CloudConnectionInformation connectionInformation) {
 		m_connectionInformation = connectionInformation;
 		m_bucketsCache = new ArrayList<String>();
 	}
@@ -51,7 +51,7 @@ public class S3Connection extends Connection {
 			try {
 			    final ClientConfiguration clientConfig = new ClientConfiguration().withConnectionTimeout(
 			        m_connectionInformation.getTimeout());
-			    if(m_connectionInformation.useKerberos()) {
+			    if(m_connectionInformation.useKeyChain()) {
 			        m_client = new AmazonS3Client(clientConfig).withRegion(
 			            Regions.fromName(m_connectionInformation.getHost()));
 			    } else {

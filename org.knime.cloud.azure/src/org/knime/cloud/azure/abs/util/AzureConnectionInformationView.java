@@ -81,11 +81,9 @@ public class AzureConnectionInformationView extends JPanel{
         buf.append("<tt>" + connectionInformation.toString() + "</tt>");
         buf.append(NEW_LINE);
 
-        if(!connectionInformation.useKerberos()) {
-            buf.append("<strong>Storage Account:</strong>" + WHITE_SPACE);
-            buf.append("<tt>" + connectionInformation.getUser() + "</tt>");
-            buf.append(NEW_LINE);
-        }
+        buf.append("<strong>Storage Account:</strong>" + WHITE_SPACE);
+        buf.append("<tt>" + connectionInformation.getUser() + "</tt>");
+        buf.append(NEW_LINE);
 
         buf.append("<strong>Connection timeout in milliseconds:</strong>" + WHITE_SPACE);
         buf.append("<tt>" + connectionInformation.getTimeout() + "</tt>");

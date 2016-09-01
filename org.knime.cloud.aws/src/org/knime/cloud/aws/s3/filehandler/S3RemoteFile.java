@@ -64,6 +64,7 @@ import java.util.List;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -88,12 +89,12 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	private File m_tmpFileCache = null;
 
 
-	protected S3RemoteFile(final URI uri, final ConnectionInformation connectionInformation,
+	protected S3RemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor) {
 		this(uri, connectionInformation, connectionMonitor, null);
 	}
 
-	protected S3RemoteFile(final URI uri, final ConnectionInformation connectionInformation,
+	protected S3RemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor, final S3ObjectSummary summary) {
 		super(uri, connectionInformation, connectionMonitor);
 		CheckUtils.checkArgumentNotNull(connectionInformation, "Connection information must not be null");
@@ -110,7 +111,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected S3Connection createConnection() {
-		return new S3Connection(getConnectionInformation());
+		return new S3Connection((CloudConnectionInformation)getConnectionInformation());
 	}
 
 	private AmazonS3Client getClient() throws Exception {
@@ -151,7 +152,8 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 			final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 					getURI().getPort(), createContainerPath(buckets.get(i).getName()), getURI().getQuery(),
 					getURI().getFragment());
-			files[i] = new S3RemoteFile(uri, getConnectionInformation(), getConnectionMonitor());
+			files[i] = new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+					getConnectionMonitor());
 		}
 		return files;
 	}
@@ -174,8 +176,8 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 					final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 							getURI().getPort(), createContainerPath(bucketName) + summary.getKey(),
 							getURI().getQuery(), getURI().getFragment());
-					fileList.add(
-							new S3RemoteFile(uri, getConnectionInformation(), getConnectionMonitor(), summary));
+					fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+							getConnectionMonitor(), summary));
 				}
 			}
 
@@ -183,7 +185,8 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 				final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 						getURI().getPort(), createContainerPath(bucketName) + commPrefix, getURI().getQuery(),
 						getURI().getFragment());
-				fileList.add(new S3RemoteFile(uri, getConnectionInformation(), getConnectionMonitor()));
+				fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+						getConnectionMonitor()));
 			}
 
 			request.setContinuationToken(result.getNextContinuationToken());
