@@ -51,11 +51,11 @@ package org.knime.cloud.aws.s3.node.connector;
 import java.io.File;
 import java.io.IOException;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.aws.AWSConnectionInformationPortObject;
 import org.knime.cloud.aws.SettingsModelAWSConnectionInformation;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -164,13 +164,13 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 * @throws InvalidSettingsException
 	 *             ...
 	 */
-	private ConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
+	private CloudConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
 		SettingsModelAWSConnectionInformation.validateValues(m_model.getAuthenticationType(),
 				m_model.useWorkflowCredential(), m_model.getWorkflowCredential(), m_model.getAccessKeyId(),
 				m_model.getSecretAccessKey(), m_model.getRegion(), m_model.getEndpointPrefix(), m_model.getTimeout());
-		final ConnectionInformation connectionInformation = m_model
+		final CloudConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
-		return new ConnectionInformationPortObjectSpec(connectionInformation);
+		return new CloudConnectionInformationPortObjectSpec(connectionInformation);
 	}
 
 }

@@ -58,6 +58,7 @@ import javax.swing.JTextPane;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.SettingsModelAWSConnectionInformation.AuthenticationType;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
 /**
  * The AWS connection information port view
@@ -75,36 +76,36 @@ public class AWSConnectionInformationView extends JPanel {
     private static final String NEW_LINE = "<br/><br/>";
 
     /**
-     * @param connectionInformation the {@link ConnectionInformation} containing the connection information
+     * @param cloudConnectioInformation the {@link ConnectionInformation} containing the connection information
      */
-    public AWSConnectionInformationView(final ConnectionInformation connectionInformation) {
+    public AWSConnectionInformationView(final CloudConnectionInformation cloudConnectioInformation) {
         super(new GridBagLayout());
         super.setName("Connection");
         final StringBuilder buf = new StringBuilder("<html><body>");
         buf.append("<strong>Root URL:</strong>" + WHITE_SPACE);
-        buf.append("<tt>" + connectionInformation.toString() + "</tt>");
+        buf.append("<tt>" + cloudConnectioInformation.toString() + "</tt>");
         buf.append(NEW_LINE);
 
         buf.append("<strong>Authentication type:</strong>" + WHITE_SPACE);
-        if(connectionInformation.useKerberos()) {
+        if(cloudConnectioInformation.useKeyChain()) {
             buf.append("<tt>" + AuthenticationType.DEF_CRED_PROVIDER_CHAIN.getText() + "</tt>");
         } else {
             buf.append("<tt>" + AuthenticationType.ACCESS_KEY_SECRET.getText() + "</tt>");
         }
         buf.append(NEW_LINE);
 
-        if(!connectionInformation.useKerberos()) {
+        if(!cloudConnectioInformation.useKeyChain()) {
             buf.append("<strong>Access key ID:</strong>" + WHITE_SPACE);
-            buf.append("<tt>" + connectionInformation.getUser() + "</tt>");
+            buf.append("<tt>" + cloudConnectioInformation.getUser() + "</tt>");
             buf.append(NEW_LINE);
         }
 
         buf.append("<strong>Region:</strong>" + WHITE_SPACE);
-        buf.append("<tt>" + connectionInformation.getHost() + "</tt>");
+        buf.append("<tt>" + cloudConnectioInformation.getHost() + "</tt>");
         buf.append(NEW_LINE);
 
         buf.append("<strong>Connection timeout in milliseconds:</strong>" + WHITE_SPACE);
-        buf.append("<tt>" + connectionInformation.getTimeout() + "</tt>");
+        buf.append("<tt>" + cloudConnectioInformation.getTimeout() + "</tt>");
 
         final JTextPane textArea = new JTextPane();
         textArea.setContentType("text/html");

@@ -7,6 +7,8 @@ import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.base.filehandling.remote.files.Protocol;
 import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.base.filehandling.remote.files.RemoteFileHandler;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.util.CheckUtils;
 
 import com.amazonaws.services.s3.AmazonS3;
 
@@ -32,7 +34,12 @@ public class S3RemoteFileHandler implements RemoteFileHandler<S3Connection> {
 	@Override
 	public RemoteFile<S3Connection> createRemoteFile(final URI uri, final ConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor) throws Exception {
-		final S3RemoteFile remoteFile = new S3RemoteFile(uri, connectionInformation, connectionMonitor);
+		CheckUtils.checkArgument(connectionInformation instanceof CloudConnectionInformation, 
+				"Connection information to be expected of class %s but it is %s", 
+				CloudConnectionInformation.class.getSimpleName(), 
+				connectionInformation == null ? "<null>" : connectionInformation.getClass().getSimpleName());
+		final S3RemoteFile remoteFile = new S3RemoteFile(uri, 
+				(CloudConnectionInformation)connectionInformation, connectionMonitor);
 		return remoteFile;
 	}
 

@@ -44,61 +44,74 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Aug 16, 2016 (budiyanto): created
+ *   Aug 30, 2016 (oole): created
  */
-package org.knime.cloud.aws;
+package org.knime.cloud.core.util.port;
 
-import javax.swing.JComponent;
+import java.io.DataOutput;
+import java.io.IOException;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObject;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
-import org.knime.core.node.port.PortType;
+import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.ModelContentRO;
+import org.knime.core.node.ModelContentWO;
 
 /**
+ * Extended {@link ConnectionInformation}. This provides functionality to have information about whether or not to use a
+ * credentials key chain. This is just a flag. To use of a key chain must be implemented in the cloud storage connection
  *
- * @author Budi Yanto, KNIME.com
+ * @author Ole Ostergaard, KNIME.com GmbH
  */
-public class AWSConnectionInformationPortObject extends ConnectionInformationPortObject {
+public class CloudConnectionInformation extends ConnectionInformation {
+
+	private static final long serialVersionUID = 1L;
+
+	private boolean m_useKeyChain;
 
 	/**
-     * @noreference This class is not intended to be referenced by clients.
-     */
-    public static final class Serializer extends AbstractSimplePortObjectSerializer<AWSConnectionInformationPortObject> {}
-
-    /**
-	 * No-argument constructor for framework
+	 * Parameterless constructor
 	 */
-	public AWSConnectionInformationPortObject() {
+	public CloudConnectionInformation() { }
+
+	/**
+	 * @param model
+	 * @throws InvalidSettingsException
+	 */
+	protected CloudConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
+        super(model);
+        this.setUseKeyChain(model.getBoolean("keyChain", false));
 	}
 
 
-    /**
-     * Type of this port.
-     */
-    public static final PortType TYPE = ConnectionInformationPortObject.TYPE;
+	/**
+	 * Set whether some key chain should be used when connecting
+	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
+	 */
+	public void setUseKeyChain(final boolean use) {
+		m_useKeyChain = use;
+	}
 
-    /**
-     * Type of this optional port.
-     */
-    public static final PortType TYPE_OPTIONAL = ConnectionInformationPortObject.TYPE_OPTIONAL;
+	/**
+	 * Returns whether the key chain should be used or not
+	 * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
+	 */
+	public boolean useKeyChain() {
+		return m_useKeyChain;
+	}
 
-    /**
-     * Creates a port object with the given connection information.
-     *
-     * @param connectionInformationPOS The spec wrapping the connection
-     *            information.
-     */
-    public AWSConnectionInformationPortObject(final CloudConnectionInformationPortObjectSpec connectionInformationPOS) {
-        super(connectionInformationPOS);
-    }
+	@Override
+	public void save(final ModelContentWO model) {
+		super.save(model);
+		model.addBoolean("keyChain", m_useKeyChain);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public JComponent[] getViews() {
-        return new JComponent[] {new AWSConnectionInformationView((CloudConnectionInformation)getConnectionInformation())};
-    }
+	@Override
+	public void save(final DataOutput output) throws IOException {
+		super.save(output);
+		output.writeBoolean(m_useKeyChain);
+	}
 
+	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
+		return new CloudConnectionInformation(model);
+	}
 }

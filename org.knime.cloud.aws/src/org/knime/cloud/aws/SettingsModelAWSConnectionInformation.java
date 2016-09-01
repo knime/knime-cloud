@@ -51,6 +51,7 @@ package org.knime.cloud.aws;
 import org.apache.commons.lang3.StringUtils;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Protocol;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -518,11 +519,11 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 	 * @param protocol the protocol
 	 * @return this settings ConnectionInformation
 	 */
-	public ConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
+	public CloudConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
 		final Protocol protocol) {
 
 		// Create connection information object
-		final ConnectionInformation connectionInformation = new ConnectionInformation();
+		final CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
 
 		connectionInformation.setProtocol(protocol.getName());
 		connectionInformation.setHost(getRegion());
@@ -530,7 +531,7 @@ public class SettingsModelAWSConnectionInformation extends SettingsModel {
 		connectionInformation.setTimeout(m_timeout);
 
 		// Set the field "useKerberos" to true if "Default Credentials Provider Chain" should be used, otherwise to false
-		connectionInformation.setUseKerberos(m_authType.equals(AuthenticationType.DEF_CRED_PROVIDER_CHAIN));
+		connectionInformation.setUseKeyChain(m_authType.equals(AuthenticationType.DEF_CRED_PROVIDER_CHAIN));
 
 		if(m_authType.equals(AuthenticationType.DEF_CRED_PROVIDER_CHAIN)) {
 		    connectionInformation.setUser("*****");
