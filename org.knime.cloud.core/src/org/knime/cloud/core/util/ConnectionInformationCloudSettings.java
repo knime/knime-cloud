@@ -46,29 +46,30 @@
  * History
  *   Aug 11, 2016 (oole): created
  */
-package org.knime.cloud.azure.abs.util;
+package org.knime.cloud.core.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Protocol;
-import org.knime.cloud.azure.abs.filehandler.AzureBSConnection;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.DialogComponentAuthentication;
+import org.knime.core.node.defaultnodesettings.SettingsModel;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelNumber;
 import org.knime.core.node.workflow.CredentialsProvider;
-import org.knime.core.node.workflow.ICredentials;
 
 /**
  * Settings model representing the Azure Blob Store connection information
  *
  * @author Ole Ostergaard, KNIME.com GmbH
  */
-public class SettingsAzureBSConnectionInformation {
+public abstract class ConnectionInformationCloudSettings {
 
+	/** The default Timeout */
 	public static final int DEFAULT_TIMEOUT = 30000;
 
 	private final SettingsModelAuthentication m_authModel = createAuthenticationModel();
@@ -79,116 +80,162 @@ public class SettingsAzureBSConnectionInformation {
 	/**
 	 * Constructor.
 	 */
-	public SettingsAzureBSConnectionInformation(final String prefix) {
+	public ConnectionInformationCloudSettings(final String prefix) {
 		m_prefix = prefix;
 	}
 
-	private SettingsModelAuthentication createAuthenticationModel() {
-		return new SettingsModelAuthentication("auth", AuthenticationType.USER_PWD, null, null, null);
-	}
+	
+	/**
+	 * This function should implement the {@link SettingsModelAuthentication} corresponding the the {@link ConnectionInformationCloudComponents}'s {@link DialogComponentAuthentication}.
+	 * 
+	 * @return the {@link SettingsModelAuthentication} corresponding to the {@link ConnectionInformationCloudComponents}'s {@link DialogComponentAuthentication}.
+	 */
+	abstract protected SettingsModelAuthentication createAuthenticationModel();
 
 	private SettingsModelInteger createTimeoutModel() {
 		return new SettingsModelInteger("timeout", DEFAULT_TIMEOUT);
 	}
 
+	/**
+	 * Save all the {@link SettingsModel}s to {@link NodeSettingsWO}.
+	 */
 	public void saveSettingsTo(final NodeSettingsWO settings) {
 		m_authModel.saveSettingsTo(settings);
 		m_timeoutModel.saveSettingsTo(settings);
 	}
 
+	/**
+	 * Load all the {@link SettingsModel}s from {@link NodeSettingsRO}.
+	 */
 	public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 		m_authModel.loadSettingsFrom(settings);
 		m_timeoutModel.loadSettingsFrom(settings);
 	}
 
+	/**
+	 * Validate all the {@link SettingsModel}s from {@link NodeSettingsRO}.
+	 */
 	public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 		m_authModel.validateSettings(settings);
 		m_timeoutModel.validateSettings(settings);
 	}
 
+	/**
+	 * Get the {@link SettingsModelAuthentication}
+	 * 
+	 * @return The {@link SettingsModelAuthentication}
+	 */
 	public SettingsModelAuthentication getAuthenticationModel() {
 		return m_authModel;
 	}
 
+	/**
+	 * Get the selected {@link AuthenticationType}.
+	 * 
+	 * @return The selected {@link AuthenticationType}.
+	 */
+	public AuthenticationType getAuthenticationType() {
+		return m_authModel.getAuthenticationType();
+	}
+
+	/**
+	 * Get the {@link SettingsModelNumber} for the timeout.
+	 * 
+	 * @return The {@link SettingsModelNumber} for the timeout.
+	 */
 	public SettingsModelNumber getTimeoutModel() {
 		return m_timeoutModel;
 	}
 
-	public String getStorageAccount() {
+	/**
+	 * Get the string value stored for the user
+	 * 
+	 * @return The string value stored for the user
+	 */
+	public String getUserValue() {
 		return m_authModel.getUsername();
 	}
 
-	public String getAccessKey() {
+	/**
+	 * Get the string value stored for the password.
+	 * 
+	 * @return The string value stored for the password.
+	 */
+	public String getPasswordValue() {
 		return m_authModel.getPassword();
 	}
 
+	
+	/**
+	 * Whether the workflowcredentials are used or not
+	 * 
+	 * @return whether the workflowcredentials are used (<code>true</code>) or not (<code>false</code>)
+	 */
 	public Boolean useWorkflowCredential() {
 		return m_authModel.useCredential();
 	}
 
+	
+	/**
+	 * Get the timeout
+	 * 
+	 * @return The timeout
+	 */
 	public Integer getTimeout() {
 		return m_timeoutModel.getIntValue();
 	}
+	
+	/**
+	 * Get the credential
+	 * 
+	 * @return The workflow credential
+	 */
 	public String getWorkflowCredential() {
 		return m_authModel.getCredential();
 	}
 
 	/**
-	 * @param useWorkflowCredential
-	 * @param workflowCredential
-	 * @param storageAccount
-	 * @param accessKey
-	 * @param timeout
-	 * @throws InvalidSettingsException
+	 * Validate the values for all the {@link SettingsModel}s
+	 * 
+	 * @throws InvalidSettingsException When a setting is set inappropriately.
 	 */
-	public static void validateValues(Boolean useWorkflowCredential, String workflowCredential, String storageAccount,
-			String accessKey, Integer timeout) throws InvalidSettingsException {
-		if (useWorkflowCredential) {
-			if (StringUtils.isBlank(workflowCredential)) {
-				throw new InvalidSettingsException("Please enter a valid workflow credential");
-			}
-		} else {
-			if (StringUtils.isBlank(storageAccount)) {
-				throw new InvalidSettingsException("Please enter a valid access key id");
-			}
+	public void validateValues() throws InvalidSettingsException {
+		if (getAuthenticationType().equals(AuthenticationType.USER_PWD) || getAuthenticationType().equals(AuthenticationType.CREDENTIALS)) {
 
-			if (StringUtils.isBlank(accessKey)) {
-				throw new InvalidSettingsException("Please enter a valid secret access key");
+			if (useWorkflowCredential()) {
+				if (StringUtils.isBlank(getWorkflowCredential())) {
+					throw new InvalidSettingsException("Please enter a valid workflow credential");
+				}
+			} else {
+				if (StringUtils.isBlank(getUserValue())) {
+					throw new InvalidSettingsException("Please enter a valid access key id");
+				}
+
+				if (StringUtils.isBlank(getPasswordValue())) {
+					throw new InvalidSettingsException("Please enter a valid secret access key");
+				}
 			}
 		}
 
-		if (timeout < 0) {
+		if (getTimeout() < 0) {
 			throw new InvalidSettingsException("Timeout must be a positive number");
 		}
 	}
 
 	/**
-	 * @param credentialsProvider
-	 * @param protocol
-	 * @return
+	 * Create the {@link ConnectionInformation} based on the {@link SettingsModel}s.
+	 * @param credentialsProvider The {@link CredentialsProvider} 
+	 * @param protocol The cloud connectors {@link Protocol}
+	 * @return The ConnectionInformation corresponding to the {@link SettingsModel}s.
 	 */
-	public ConnectionInformation createConnectionInformation(CredentialsProvider credentialsProvider,
-			Protocol protocol) {
+	abstract public ConnectionInformation createConnectionInformation(CredentialsProvider credentialsProvider,
+			Protocol protocol);
 
-		// Create connection information object
-		final ConnectionInformation connectionInformation = new ConnectionInformation();
-
-		connectionInformation.setProtocol(protocol.getName());
-		connectionInformation.setHost(AzureBSConnection.HOST);
-		connectionInformation.setPort(protocol.getPort());
-		connectionInformation.setTimeout(m_timeoutModel.getIntValue());
-
-		// Put storageAccount as user and accessKey as password
-		if (useWorkflowCredential()) {
-			// Use credentials
-			final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
-			connectionInformation.setUser(credentials.getLogin());
-			connectionInformation.setPassword(credentials.getPassword());
-		} else {
-			connectionInformation.setUser(getStorageAccount());
-			connectionInformation.setPassword(getAccessKey());
-		}
-
-		return connectionInformation;
+	/**
+	 * Returns the connection prefix for this Cloud Settings model
+	 * @return this cloud setting model's connection prefix
+	 */
+	public String getPrefix() {
+		return m_prefix;
 	}
 }
