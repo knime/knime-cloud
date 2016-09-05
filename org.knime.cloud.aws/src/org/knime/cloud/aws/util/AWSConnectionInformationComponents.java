@@ -46,108 +46,100 @@
  * History
  *   Jul 31, 2016 (budiyanto): created
  */
-package org.knime.cloud.azure.abs.node.connector;
+package org.knime.cloud.aws.util;
 
-import java.awt.Container;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
 
-import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import org.knime.base.filehandling.remote.connectioninformation.node.TestConnectionDialog;
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.cloud.azure.abs.filehandler.AzureBSRemoteFileHandler;
-import org.knime.cloud.azure.abs.util.AzureConnectionInformationComponents;
-import org.knime.cloud.azure.abs.util.AzureConnectionInformationSettings;
+import org.knime.cloud.core.util.ConnectionInformationCloudComponents;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
+import org.knime.core.node.defaultnodesettings.DialogComponentAuthentication;
+import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
+import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.CredentialsProvider;
+import org.knime.core.util.Pair;
+
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 
 /**
+ * Dialog component that allow users to enter information needed to connect to AWS
  *
- * @author Ole Ostergaard, KNIME.com GmbH
+ * @author Budi Yanto, KNIME.com
  */
-public class AzureBSConnectionNodeDialog extends NodeDialogPane {
+public final class AWSConnectionInformationComponents extends ConnectionInformationCloudComponents<AWSConnectionInformationSettings> {
 
-	private final AzureConnectionInformationSettings m_settings = AzureBSConnectionNodeModel.createAzureBSSettings();
-	private final AzureConnectionInformationComponents m_components = new AzureConnectionInformationComponents(m_settings, AzureBSConnectionNodeModel.getNameMap());
+	private final DialogComponentStringSelection m_region;
 
-	public AzureBSConnectionNodeDialog() {
-		final JPanel panel = new JPanel(new GridBagLayout());
+	/**
+	 * Creates the DialogComponents including the s3 specifig region chooser
+	 * @param settings The correpsonding {@link AWSConnectionInformationSettings}
+	 * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
+	 */
+	public AWSConnectionInformationComponents(AWSConnectionInformationSettings settings,
+			HashMap<AuthenticationType, Pair<String, String>> nameMap) {
+		super(settings, nameMap);
+		final ArrayList<String> regions = loadRegions();
+		m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions , false);
+	}
+
+	private ArrayList<String> loadRegions() {
+		final AWSConnectionInformationSettings model = getSettings();
+		final ArrayList<String> regionNames = new ArrayList<String>();
+		for (final Regions regions : Regions.values()) {
+			final Region region = Region.getRegion(regions);
+			if (region.isServiceSupported(model.getPrefix())) {
+				final String reg = region.getName();
+				regionNames.add(reg);
+			}
+		}
+		return regionNames;
+	}
+
+	@Override
+	protected JPanel getAuthenticationPanel() {
+		final JPanel auth = new JPanel(new GridBagLayout());
 		final GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(5,5,5,5);
-		gbc.fill = GridBagConstraints.BOTH;
-		gbc.weighty = 0;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
-		panel.add(m_components.getDialogPanel(), gbc);
+		gbc.fill =  GridBagConstraints.BOTH;
+		auth.add(getAuthenticationComponent().getComponentPanel());
 		gbc.gridy++;
 		gbc.fill = GridBagConstraints.NONE;
-		gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
-		final JButton testConnectionButton = new JButton("Test connection");
-		testConnectionButton.addActionListener(new TestConnectionListener());
-		panel.add(testConnectionButton,gbc);
-		addTab("Options", panel);
+		auth.add(m_region.getComponentPanel(), gbc);
+		return auth;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-		m_components.saveSettingsTo(settings);
+	protected DialogComponentAuthentication defineAuthenticationComponent() {
+		final DialogComponentAuthentication  authComponent = new DialogComponentAuthentication(m_settings.getAuthenticationModel(),
+				"Authentication", getNameMap(), AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS, AuthenticationType.KERBEROS);
+		authComponent.setUsernameLabel("Access Key ID");
+		authComponent.setPasswordLabel("Secret Key");
+		return authComponent;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
-			throws NotConfigurableException {
-		final CredentialsProvider cp = getCredentialsProvider();
-		m_components.loadSettingsFrom(settings, specs, cp);
+	public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp) throws NotConfigurableException {
+		super.loadSettingsFrom(settings, specs, cp);
+		m_region.loadSettingsFrom(settings, specs);
 	}
 
-	/**
-	 * Listener that opens the test connection dialog.
-	 *
-	 *
-	 * @author Patrick Winter, KNIME.com, Zurich, Switzerland
-	 */
-	private class TestConnectionListener implements ActionListener {
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void actionPerformed(final ActionEvent e) {
-			// Get frame
-			Frame frame = null;
-			Container container = getPanel().getParent();
-			while (container != null) {
-				if (container instanceof Frame) {
-					frame = (Frame) container;
-					break;
-				}
-				container = container.getParent();
-			}
-
-			// Get connection information to current settings
-			final AzureConnectionInformationSettings model = m_components.getSettings();
-			final ConnectionInformation connectionInformation = model
-					.createConnectionInformation(getCredentialsProvider(), AzureBSRemoteFileHandler.PROTOCOL);
-
-			new TestConnectionDialog(connectionInformation).open(frame);
-		}
-
+	@Override
+	public void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+		super.saveSettingsTo(settings);
+		m_region.saveSettingsTo(settings);
 	}
 }

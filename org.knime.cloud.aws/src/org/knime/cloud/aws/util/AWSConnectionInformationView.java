@@ -46,7 +46,7 @@
  * History
  *   Aug 16, 2016 (budiyanto): created
  */
-package org.knime.cloud.aws;
+package org.knime.cloud.aws.util;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -57,7 +57,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.cloud.aws.SettingsModelAWSConnectionInformation.AuthenticationType;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
 /**
@@ -88,9 +87,9 @@ public class AWSConnectionInformationView extends JPanel {
 
         buf.append("<strong>Authentication type:</strong>" + WHITE_SPACE);
         if(cloudConnectioInformation.useKeyChain()) {
-            buf.append("<tt>" + AuthenticationType.DEF_CRED_PROVIDER_CHAIN.getText() + "</tt>");
+            buf.append("<tt>" + "Default Credential Provider Chain"+ "</tt>");
         } else {
-            buf.append("<tt>" + AuthenticationType.ACCESS_KEY_SECRET.getText() + "</tt>");
+            buf.append("<tt>" + "Access Key ID & Secret Key" + "</tt>");
         }
         buf.append(NEW_LINE);
 

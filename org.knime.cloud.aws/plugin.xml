@@ -13,8 +13,8 @@
       <portType
             hidden="false"
             name="AWSConnection"
-            objectClass="org.knime.cloud.aws.AWSConnectionInformationPortObject"
-            objectSerializer="org.knime.cloud.aws.AWSConnectionInformationPortObject$Serializer"
+            objectClass="org.knime.cloud.aws.util.AWSConnectionInformationPortObject"
+            objectSerializer="org.knime.cloud.aws.util.AWSConnectionInformationPortObject$Serializer"
             specClass="org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec">
       </portType>
    </extension>

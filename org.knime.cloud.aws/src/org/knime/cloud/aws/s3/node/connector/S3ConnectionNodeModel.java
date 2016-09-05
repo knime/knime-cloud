@@ -50,10 +50,11 @@ package org.knime.cloud.aws.s3.node.connector;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
-import org.knime.cloud.aws.AWSConnectionInformationPortObject;
-import org.knime.cloud.aws.SettingsModelAWSConnectionInformation;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
+import org.knime.cloud.aws.util.AWSConnectionInformationPortObject;
+import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
@@ -63,9 +64,11 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
+import org.knime.core.util.Pair;
 
 import com.amazonaws.services.s3.AmazonS3;
 
@@ -75,10 +78,17 @@ import com.amazonaws.services.s3.AmazonS3;
  */
 public class S3ConnectionNodeModel extends NodeModel {
 
-	private final SettingsModelAWSConnectionInformation m_model = createAWSConnectionModel();
+	private final AWSConnectionInformationSettings m_model = createAWSConnectionModel();
 
-	static SettingsModelAWSConnectionInformation createAWSConnectionModel() {
-		return new SettingsModelAWSConnectionInformation("aws-connection", AmazonS3.ENDPOINT_PREFIX);
+	static AWSConnectionInformationSettings createAWSConnectionModel() {
+		return new AWSConnectionInformationSettings(AmazonS3.ENDPOINT_PREFIX);
+	}
+
+	static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
+		final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
+		nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Access Key ID and Secret Key", "Access Key ID and Secret Access Key based authentication"));
+		nameMap.put(AuthenticationType.KERBEROS, new Pair<String, String>("Default Credential Provider Chain", "Use the Default Credential Provider Chain for authentication"));
+		return nameMap;
 	}
 
 	/**
@@ -145,7 +155,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 */
 	@Override
 	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-		m_model.loadSettingsFrom(settings);
+		m_model.loadValidatedSettings(settings);
 	}
 
 	/**
@@ -165,9 +175,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 *             ...
 	 */
 	private CloudConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
-		SettingsModelAWSConnectionInformation.validateValues(m_model.getAuthenticationType(),
-				m_model.useWorkflowCredential(), m_model.getWorkflowCredential(), m_model.getAccessKeyId(),
-				m_model.getSecretAccessKey(), m_model.getRegion(), m_model.getEndpointPrefix(), m_model.getTimeout());
+		m_model.validateValues();
 		final CloudConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 		return new CloudConnectionInformationPortObjectSpec(connectionInformation);

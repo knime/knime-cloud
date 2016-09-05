@@ -50,13 +50,14 @@ package org.knime.cloud.azure.abs.node.connector;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.azure.abs.filehandler.AzureBSConnection;
 import org.knime.cloud.azure.abs.filehandler.AzureBSRemoteFileHandler;
 import org.knime.cloud.azure.abs.util.AzureConnectionInformationPortObject;
-import org.knime.cloud.azure.abs.util.SettingsAzureBSConnectionInformation;
+import org.knime.cloud.azure.abs.util.AzureConnectionInformationSettings;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -64,9 +65,11 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
+import org.knime.core.util.Pair;
 
 /**
  *	Node model for the Azure Blob Store Connection
@@ -75,12 +78,17 @@ import org.knime.core.node.port.PortType;
  */
 public class AzureBSConnectionNodeModel extends NodeModel {
 
-	private final SettingsAzureBSConnectionInformation m_model = createAzureBSSettings();
+	private final AzureConnectionInformationSettings m_model = createAzureBSSettings();
 
-	static SettingsAzureBSConnectionInformation createAzureBSSettings() {
-		return new SettingsAzureBSConnectionInformation(AzureBSConnection.PREFIX);
+	static AzureConnectionInformationSettings createAzureBSSettings() {
+		return new AzureConnectionInformationSettings(AzureBSConnection.PREFIX);
 	}
 
+	static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
+		final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
+		nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Storage Account and Access Key", "Storage Account and Access Key based authentication"));
+		return nameMap;
+	}
 	/**
 	 * @param nrInDataPorts
 	 * @param nrOutDataPorts
@@ -163,9 +171,7 @@ public class AzureBSConnectionNodeModel extends NodeModel {
 	 * @throws InvalidSettingsException
 	 */
 	private ConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
-		SettingsAzureBSConnectionInformation.validateValues(m_model.useWorkflowCredential(),
-				m_model.getWorkflowCredential(), m_model.getStorageAccount(), m_model.getAccessKey(),
-				m_model.getTimeout());
+		m_model.validateValues();
 		final ConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), AzureBSRemoteFileHandler.PROTOCOL);
 		return new ConnectionInformationPortObjectSpec(connectionInformation);

@@ -61,9 +61,9 @@ import javax.swing.JPanel;
 
 import org.knime.base.filehandling.remote.connectioninformation.node.TestConnectionDialog;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.cloud.aws.DialogComponentAWSConnectionInformation;
-import org.knime.cloud.aws.SettingsModelAWSConnectionInformation;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
+import org.knime.cloud.aws.util.AWSConnectionInformationComponents;
+import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
@@ -77,8 +77,8 @@ import org.knime.core.node.port.PortObjectSpec;
  */
 public class S3ConnectionNodeDialog extends NodeDialogPane {
 
-	private DialogComponentAWSConnectionInformation m_awsComp = new DialogComponentAWSConnectionInformation(
-			S3ConnectionNodeModel.createAWSConnectionModel());
+	private final AWSConnectionInformationComponents m_awsComp = new AWSConnectionInformationComponents(
+			S3ConnectionNodeModel.createAWSConnectionModel(), S3ConnectionNodeModel.getNameMap());
 
 	public S3ConnectionNodeDialog() {
 		final JPanel panel = new JPanel(new GridBagLayout());
@@ -86,13 +86,13 @@ public class S3ConnectionNodeDialog extends NodeDialogPane {
 		gbc.insets = new Insets(5, 5, 5, 5);
 		gbc.anchor = GridBagConstraints.NORTHWEST;
 		gbc.fill = GridBagConstraints.BOTH;
-		gbc.weightx = 1;
 		gbc.weighty = 0;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
-		panel.add(m_awsComp.getComponentPanel(), gbc);
+		panel.add(m_awsComp.getDialogPanel(), gbc);
 		gbc.gridy++;
 		gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
 		final JButton testConnectionButton = new JButton("Test connection");
 		testConnectionButton.addActionListener(new TestConnectionListener());
 		panel.add(testConnectionButton, gbc);
@@ -141,8 +141,7 @@ public class S3ConnectionNodeDialog extends NodeDialogPane {
 			}
 
 			// Get connection information to current settings
-			final SettingsModelAWSConnectionInformation model = (SettingsModelAWSConnectionInformation) m_awsComp
-					.getModel();
+			final AWSConnectionInformationSettings model = m_awsComp.getSettings();
 			final ConnectionInformation connectionInformation = model
 					.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 

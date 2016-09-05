@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.knime.core.PortType">
+      <portType
+            hidden="false"
+            name="CloudConnection"
+            objectClass="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec"
+            objectSerializer="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec$Serializer"
+            specClass="org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec">
+      </portType>
+   </extension>
+
+</plugin>

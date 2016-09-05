@@ -46,7 +46,7 @@
  * History
  *   Aug 16, 2016 (budiyanto): created
  */
-package org.knime.cloud.aws;
+package org.knime.cloud.aws.util;
 
 import javax.swing.JComponent;
 
