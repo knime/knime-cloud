@@ -80,7 +80,7 @@ public class ExpirationSettings {
 
 	private SettingsModelDuration createTimeModel() {
 		// default 1 hour expiration
-		return new SettingsModelDuration(CFG_URL_EXPIRATION, 0,1,0,0);
+		return new SettingsModelDuration(CFG_URL_EXPIRATION, "0", "1", "0" , "0");
 	}
 
 	private SettingsModelDate createDateModel() {
@@ -145,7 +145,7 @@ public class ExpirationSettings {
 	 * @return the time until expiration in milliseconds
 	 */
 	public long getTimeInMillis() {
-		return m_timeModel.getDurationInMillis();
+		return m_timeModel.getDuration().toMillis();
 	}
 
 	/**
