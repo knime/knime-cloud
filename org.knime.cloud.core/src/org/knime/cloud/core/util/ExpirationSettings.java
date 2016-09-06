@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.core.util;
 
+import java.time.Duration;
 import java.util.Date;
 
 import org.knime.core.node.InvalidSettingsException;
@@ -66,7 +67,9 @@ import org.knime.core.node.util.ButtonGroupEnumInterface;
  */
 public class ExpirationSettings {
 
-	private static final String CFG_URL_EXPIRATION = "urlExpiration";
+	private static final String CFG_EXPIRATION_DURATION = "expirationDuration";
+	private static final String CFG_EXIRATION_DATE = "expirationDate";
+	private static final String CFG_EXPIRATION_BUTTONS = "expiratonButtons";
 	private static final String DEFAULT_EXPIRY = "Duration";
 	private final SettingsModelDuration m_timeModel = createTimeModel();
 	private final SettingsModelDate m_dateModel = createDateModel();
@@ -80,16 +83,16 @@ public class ExpirationSettings {
 
 	private SettingsModelDuration createTimeModel() {
 		// default 1 hour expiration
-		return new SettingsModelDuration(CFG_URL_EXPIRATION, "0", "1", "0" , "0");
+		return new SettingsModelDuration(CFG_EXPIRATION_DURATION, Duration.parse("P0DT1H0M0S"));
 	}
 
 	private SettingsModelDate createDateModel() {
-		return new SettingsModelDate("date");
+		return new SettingsModelDate(CFG_EXIRATION_DATE);
 	}
 
 
 	private SettingsModelString createButtonModel() {
-		return new SettingsModelString("expirationButtons", DEFAULT_EXPIRY);
+		return new SettingsModelString(CFG_EXPIRATION_BUTTONS, DEFAULT_EXPIRY);
 	}
 
 	/**
