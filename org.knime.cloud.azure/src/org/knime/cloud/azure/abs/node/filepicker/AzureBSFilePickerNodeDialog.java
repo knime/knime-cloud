@@ -70,16 +70,17 @@ public class AzureBSFilePickerNodeDialog extends AbstractFilePickerNodeDialog {
 	 */
 	@Override
 	protected void checkConnectionInformation(PortObjectSpec specs) throws NotConfigurableException {
+		String error = "No Azure BlobStore connection information available";
 		if (specs != null) {
 			final ConnectionInformationPortObjectSpec object = (ConnectionInformationPortObjectSpec) specs;
 			m_connectionInformation = object.getConnectionInformation();
 			// Check if the port object has connection information
 			if (m_connectionInformation == null
 					|| !m_connectionInformation.getProtocol().equals(AzureBSConnection.PREFIX)) {
-				throw new NotConfigurableException("No ABS connection information is available");
+				throw new NotConfigurableException(error);
 			}
 		} else {
-			throw new NotConfigurableException("No ABS connection information available");
+			throw new NotConfigurableException(error);
 		}
 	}
 
