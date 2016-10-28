@@ -49,32 +49,32 @@
 package org.knime.cloud.aws.s3.filehandler;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.apache.commons.io.FileUtils;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
+import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.cloud.core.file.CloudRemoteFile;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.util.CheckUtils;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.s3.transfer.Download;
+import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
@@ -85,9 +85,6 @@ import com.amazonaws.services.s3.transfer.Upload;
  * @author Ole Ostergaard, KNIME.com GmbH
  */
 public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
-
-	private File m_tmpFileCache = null;
-
 
 	protected S3RemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor) {
@@ -152,7 +149,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 			final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 					getURI().getPort(), createContainerPath(buckets.get(i).getName()), getURI().getQuery(),
 					getURI().getFragment());
-			files[i] = new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+			files[i] = new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
 					getConnectionMonitor());
 		}
 		return files;
@@ -176,7 +173,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 					final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 							getURI().getPort(), createContainerPath(bucketName) + summary.getKey(),
 							getURI().getQuery(), getURI().getFragment());
-					fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+					fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
 							getConnectionMonitor(), summary));
 				}
 			}
@@ -185,7 +182,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 				final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 						getURI().getPort(), createContainerPath(bucketName) + commPrefix, getURI().getQuery(),
 						getURI().getFragment());
-				fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(), 
+				fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
 						getConnectionMonitor()));
 			}
 
@@ -281,80 +278,58 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	public InputStream openInputStream() throws Exception {
 		final String bucketName = getContainerName();
 		final String key = getBlobName();
-		final Download download = getTransferManager().download(bucketName, key, getTempFile());
-		download.waitForCompletion();
-		return new BufferedInputStream(new FileInputStream(getTempFile()));
+
+		final GetObjectRequest getRequest = new GetObjectRequest(bucketName, key);
+		// create input stream from the S3Object specified in the getRequest
+		final S3Object object = getClient().getObject(getRequest);
+		final S3ObjectInputStream s3inputStream = object.getObjectContent();
+
+		return new BufferedInputStream(s3inputStream);
 	}
 
 	/**
 	 * {@inheritDoc}
+	 * This must not be used. The {@link #write(RemoteFile, ExecutionContext) write} is overwritten.
 	 */
 	@Override
 	public OutputStream openOutputStream() throws Exception {
-		return new S3OutputStream(this);
+		throw new UnsupportedOperationException("openOutputStream must not be used for S3 connections.");
 	}
 
-	private File getTempFile() throws Exception {
-		if (m_tmpFileCache == null) {
-			m_tmpFileCache = File.createTempFile("s3tmpfile", null);
-			m_tmpFileCache.deleteOnExit();
+	/**
+     * Write the given remote file into this files location.
+     *
+     *
+     * This method will overwrite the old file if it exists.
+     *
+     * @param file Source remote file
+     * @param exec Execution context for <code>checkCanceled()</code> and
+     *            <code>setProgress()</code>
+     * @throws Exception If the operation could not be executed
+     */
+    @SuppressWarnings("rawtypes")
+	@Override
+	public void write(final RemoteFile file, final ExecutionContext exec) throws Exception {
+        // Default implementation using just remote file methods
+        final InputStream in = file.openInputStream();
+        final String uri = getURI().toString();
+        final ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(file.getSize());
+		final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);
+		final Upload upload = getTransferManager().upload(putRequest);
+		while (!upload.getState().equals(TransferState.Completed)) {
+			if (exec != null) {
+                exec.checkCanceled();
+                exec.setProgress(upload.getProgress().getPercentTransferred() / 100, () -> "Written: " + FileUtils.byteCountToDisplaySize(upload.getProgress().getBytesTransferred()) + " to file " + uri);
+            }
 		}
-		return m_tmpFileCache;
-	}
+        in.close();
+    }
+
 
 	@Override
 	protected void resetCache() throws Exception {
 		super.resetCache();
 		getOpenedConnection().resetCache();
-	}
-
-	private class S3OutputStream extends OutputStream {
-
-		private final S3RemoteFile m_file;
-		private final OutputStream m_stream;
-
-		private S3OutputStream(final S3RemoteFile file) throws Exception {
-			m_file = file;
-			m_stream = new BufferedOutputStream(new FileOutputStream(file.getTempFile()));
-		}
-
-		@Override
-		public void write(final int b) throws IOException {
-			m_stream.write(b);
-		}
-
-		@Override
-		public void write(final byte[] b) throws IOException {
-			m_stream.write(b);
-		}
-
-		@Override
-		public void write(final byte[] b, final int off, final int len) throws IOException {
-			m_stream.write(b, off, len);
-		}
-
-		@Override
-		public void flush() throws IOException {
-			m_stream.flush();
-		}
-
-		@Override
-		public void close() throws IOException {
-			m_stream.close();
-			try {
-				upload();
-			} catch (final Exception ex) {
-				throw new IOException(ex.getMessage());
-			}
-		}
-
-		private void upload() throws Exception {
-			final String bucketName = m_file.getContainerName();
-			final String key = m_file.getBlobName();
-			final Upload upload = m_file.getTransferManager().upload(bucketName, key, m_file.getTempFile());
-			upload.waitForCompletion();
-			m_file.getTempFile().delete();
-			m_file.resetCache();
-		}
 	}
 }
