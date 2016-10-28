@@ -75,8 +75,10 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 	private final SettingsModelString m_region = createRegionModel();
 
 	private SettingsModelString createRegionModel() {
-		return new SettingsModelString("region", "");
+		return new SettingsModelString("region", "us-east-1");
 	}
+
+
 
 	/**
 	 * @param prefix
