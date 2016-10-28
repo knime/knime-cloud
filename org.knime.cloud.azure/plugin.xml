@@ -24,7 +24,8 @@
             name="AzureConnection"
             objectClass="org.knime.cloud.azure.abs.util.AzureConnectionInformationPortObject"
             objectSerializer="org.knime.cloud.azure.abs.util.AzureConnectionInformationPortObject$Serializer"
-            specClass="org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec">
+            specClass="org.knime.base.filehandling.remote.connectioninformation.port.CloudConnectionInformationPortObjectSpec"
+            specSerializer="org.knime.base.filehandling.remote.connectioninformation.port.CloudConnectionInformationPortObjectSpec$Serializer">
       </portType>
    </extension>
    

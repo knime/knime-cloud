@@ -57,9 +57,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.util.CheckUtils;
 
@@ -85,7 +85,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * @param connectionMonitor
 	 * @throws Exception
 	 */
-	public AzureBSRemoteFile(URI uri, ConnectionInformation connectionInformation,
+	public AzureBSRemoteFile(URI uri, final CloudConnectionInformation connectionInformation,
 			ConnectionMonitor<AzureBSConnection> connectionMonitor) throws Exception {
 		this(uri, connectionInformation, connectionMonitor, null);
 	}
@@ -97,7 +97,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * @param blob
 	 * @throws Exception
 	 */
-	public AzureBSRemoteFile(URI uri, ConnectionInformation connectionInformation,
+	public AzureBSRemoteFile(URI uri, final CloudConnectionInformation connectionInformation,
 			ConnectionMonitor<AzureBSConnection> connectionMonitor, CloudBlockBlob blob) throws Exception {
 		super(uri, connectionInformation, connectionMonitor);
 		CheckUtils.checkArgumentNotNull(connectionInformation, "Connection Information mus not be null");
@@ -122,7 +122,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 */
 	@Override
 	protected AzureBSConnection createConnection() {
-		return new AzureBSConnection(getConnectionInformation());
+		return new AzureBSConnection((CloudConnectionInformation)getConnectionInformation());
 	}
 
 	/**
@@ -152,7 +152,8 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 			final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 					getURI().getPort(), createContainerPath(containerList.get(i).getName()), getURI().getQuery(),
 					getURI().getFragment());
-			files[i] = new AzureBSRemoteFile(uri, getConnectionInformation(), getConnectionMonitor());
+			files[i] = new AzureBSRemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
+					getConnectionMonitor());
 		}
 		return files;
 	}
@@ -173,14 +174,14 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 					final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 							getURI().getPort(), createContainerPath(containerName) + blob.getName(),
 							getURI().getQuery(), getURI().getFragment());
-					fileList.add(new AzureBSRemoteFile(uri, getConnectionInformation(), getConnectionMonitor(), blob));
+					fileList.add(new AzureBSRemoteFile(uri,(CloudConnectionInformation) getConnectionInformation(), getConnectionMonitor(), blob));
 				}
 			} else if (listBlobItem instanceof CloudBlobDirectory) {
 				final CloudBlobDirectory blobDir = (CloudBlobDirectory) listBlobItem;
 				final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 						getURI().getPort(), createContainerPath(containerName) + blobDir.getPrefix(),
 						getURI().getQuery(), getURI().getFragment());
-				fileList.add(new AzureBSRemoteFile(uri, getConnectionInformation(), getConnectionMonitor()));
+				fileList.add(new AzureBSRemoteFile(uri,(CloudConnectionInformation) getConnectionInformation(), getConnectionMonitor()));
 			}
 		}
 		final AzureBSRemoteFile[] files = fileList.toArray(new AzureBSRemoteFile[fileList.size()]);

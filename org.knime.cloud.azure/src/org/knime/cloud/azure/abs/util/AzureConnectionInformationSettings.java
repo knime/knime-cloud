@@ -48,10 +48,10 @@
  */
 package org.knime.cloud.azure.abs.util;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Protocol;
 import org.knime.cloud.azure.abs.filehandler.AzureBSConnection;
 import org.knime.cloud.core.util.ConnectionInformationCloudSettings;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.workflow.CredentialsProvider;
@@ -87,11 +87,11 @@ public class AzureConnectionInformationSettings extends ConnectionInformationClo
 	 * @return
 	 */
 	@Override
-	public ConnectionInformation createConnectionInformation(CredentialsProvider credentialsProvider,
+	public CloudConnectionInformation createConnectionInformation(CredentialsProvider credentialsProvider,
 			Protocol protocol) {
 
 		// Create connection information object
-		final ConnectionInformation connectionInformation = new ConnectionInformation();
+		final CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
 
 		connectionInformation.setProtocol(protocol.getName());
 		connectionInformation.setHost(AzureBSConnection.HOST);

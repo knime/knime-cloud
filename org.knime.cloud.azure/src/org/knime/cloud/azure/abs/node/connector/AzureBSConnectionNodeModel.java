@@ -52,12 +52,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.azure.abs.filehandler.AzureBSConnection;
 import org.knime.cloud.azure.abs.filehandler.AzureBSRemoteFileHandler;
 import org.knime.cloud.azure.abs.util.AzureConnectionInformationPortObject;
 import org.knime.cloud.azure.abs.util.AzureConnectionInformationSettings;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -170,10 +170,10 @@ public class AzureBSConnectionNodeModel extends NodeModel {
 	 * @return the ouput port specs
 	 * @throws InvalidSettingsException
 	 */
-	private ConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
+	private CloudConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
 		m_model.validateValues();
-		final ConnectionInformation connectionInformation = m_model
+		final CloudConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), AzureBSRemoteFileHandler.PROTOCOL);
-		return new ConnectionInformationPortObjectSpec(connectionInformation);
+		return new CloudConnectionInformationPortObjectSpec(connectionInformation);
 	}
 }
