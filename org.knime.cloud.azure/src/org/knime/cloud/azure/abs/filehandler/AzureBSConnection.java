@@ -51,8 +51,8 @@ package org.knime.cloud.azure.abs.filehandler;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Connection;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.util.KnimeEncryption;
@@ -75,14 +75,14 @@ public class AzureBSConnection extends Connection {
 	public static final int PORT = -1;
 	private static final NodeLogger LOGGER = NodeLogger.getLogger(AzureBSConnection.class);
 
-	private final ConnectionInformation m_connectionInformation;
+	private final CloudConnectionInformation m_connectionInformation;
 
 	private CloudBlobClient m_client;
 
 	/**
 	 * Constructor.
 	 */
-	public AzureBSConnection(final ConnectionInformation connectionInformation) {
+	public AzureBSConnection(final CloudConnectionInformation connectionInformation) {
 		m_connectionInformation = connectionInformation;
 	}
 

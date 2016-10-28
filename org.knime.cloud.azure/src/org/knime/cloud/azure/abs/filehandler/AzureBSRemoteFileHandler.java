@@ -55,6 +55,7 @@ import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.base.filehandling.remote.files.Protocol;
 import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.base.filehandling.remote.files.RemoteFileHandler;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
 /**
  * Azure Blob Storage remote file handler.
@@ -82,7 +83,7 @@ public class AzureBSRemoteFileHandler implements RemoteFileHandler<AzureBSConnec
 	@Override
 	public RemoteFile<AzureBSConnection> createRemoteFile(URI uri, ConnectionInformation connectionInformation,
 			ConnectionMonitor<AzureBSConnection> connectionMonitor) throws Exception {
-		final AzureBSRemoteFile remoteFile = new AzureBSRemoteFile(uri, connectionInformation, connectionMonitor);
+		final AzureBSRemoteFile remoteFile = new AzureBSRemoteFile(uri,(CloudConnectionInformation) connectionInformation, connectionMonitor);
 		return remoteFile;
 	}
 
