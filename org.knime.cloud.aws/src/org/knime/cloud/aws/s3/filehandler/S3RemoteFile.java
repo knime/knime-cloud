@@ -64,6 +64,9 @@ import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.util.CheckUtils;
 
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressListener;
+import com.amazonaws.event.ProgressTracker;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -74,7 +77,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
@@ -123,7 +125,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected boolean doesContainerExist(String containerName) throws Exception {
+	protected boolean doesContainerExist(final String containerName) throws Exception {
 		return getOpenedConnection().isOwnBucket(containerName);
 	}
 
@@ -131,7 +133,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
+	protected boolean doestBlobExist(final String containerName, final String blobName) throws Exception {
 		return getClient().doesObjectExist(containerName, blobName);
 	}
 
@@ -256,7 +258,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected boolean createDirectory(String dirName) throws Exception {
+	protected boolean createDirectory(final String dirName) throws Exception {
 		final ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentLength(0);
 
@@ -311,19 +313,27 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	@Override
 	public void write(final RemoteFile file, final ExecutionContext exec) throws Exception {
         // Default implementation using just remote file methods
-        final InputStream in = file.openInputStream();
-        final String uri = getURI().toString();
-        final ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(file.getSize());
-		final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);
-		final Upload upload = getTransferManager().upload(putRequest);
-		while (!upload.getState().equals(TransferState.Completed)) {
-			if (exec != null) {
-                exec.checkCanceled();
-                exec.setProgress(upload.getProgress().getPercentTransferred() / 100, () -> "Written: " + FileUtils.byteCountToDisplaySize(upload.getProgress().getBytesTransferred()) + " to file " + uri);
-            }
-		}
-        in.close();
+        try (final InputStream in = file.openInputStream()) {
+            final String uri = getURI().toString();
+            final ObjectMetadata metadata = new ObjectMetadata();
+            long fileSize = file.getSize();
+            metadata.setContentLength(fileSize);
+            final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);
+            final Upload upload = getTransferManager().upload(putRequest);
+
+            ProgressListener progressListener = new ProgressTracker() {
+                long totalTransferred = 0;
+                @Override
+                public void progressChanged(final ProgressEvent progressEvent) {
+                    totalTransferred+=progressEvent.getBytesTransferred();
+                    double percent = totalTransferred/(fileSize/100);
+                    exec.setProgress(percent / 100, () -> "Written: " + FileUtils.byteCountToDisplaySize(totalTransferred) + " to file " + uri);
+                }
+
+            };
+            upload.addProgressListener(progressListener);
+            upload.waitForCompletion();
+        }
     }
 
 
