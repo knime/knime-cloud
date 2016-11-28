@@ -54,6 +54,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -77,8 +78,10 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.transfer.PersistableTransfer;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.transfer.internal.S3ProgressListener;
 
 /**
  * Implementation of {@link CloudRemoteFile} for Amazon S3
@@ -310,19 +313,21 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
      * @throws Exception If the operation could not be executed
      */
     @SuppressWarnings("rawtypes")
-	@Override
-	public void write(final RemoteFile file, final ExecutionContext exec) throws Exception {
+    @Override
+    public void write(final RemoteFile file, final ExecutionContext exec) throws Exception {
         // Default implementation using just remote file methods
-        try (final InputStream in = file.openInputStream()) {
+        try (final InputStream in = file.openInputStream()){
             final String uri = getURI().toString();
             final ObjectMetadata metadata = new ObjectMetadata();
             long fileSize = file.getSize();
             metadata.setContentLength(fileSize);
             final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);
-            final Upload upload = getTransferManager().upload(putRequest);
+            Upload upload = getTransferManager().upload(putRequest);
+    
+            S3ProgressListener progressListener = new S3ProgressListener() {
 
-            ProgressListener progressListener = new ProgressTracker() {
                 long totalTransferred = 0;
+
                 @Override
                 public void progressChanged(final ProgressEvent progressEvent) {
                     totalTransferred+=progressEvent.getBytesTransferred();
@@ -330,9 +335,21 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
                     exec.setProgress(percent / 100, () -> "Written: " + FileUtils.byteCountToDisplaySize(totalTransferred) + " to file " + uri);
                 }
 
+                @Override
+                public void onPersistableTransfer(final PersistableTransfer persistableTransfer) {
+                    // Not used since we are not going to pause/unpause upload
+                }
             };
+
             upload.addProgressListener(progressListener);
             upload.waitForCompletion();
+        } catch (InterruptedException e) {
+            // removes uploaded parts of failed uploads on given bucket uploaded before now
+            final Date now = new Date (System.currentTimeMillis());
+            getTransferManager().abortMultipartUploads(getContainerName(), now);
+            // check if canceled, otherwise throw exception
+            exec.checkCanceled();
+            throw e;
         }
     }
 
