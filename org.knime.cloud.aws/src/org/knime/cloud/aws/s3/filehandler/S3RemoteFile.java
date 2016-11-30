@@ -66,9 +66,8 @@ import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.util.CheckUtils;
 
 import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.event.ProgressTracker;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -160,45 +159,51 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 		return files;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected S3RemoteFile[] listDirectoryFiles() throws Exception {
-		final String bucketName = getContainerName();
-		final String prefix = getBlobName();
-		final ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(bucketName)
-				.withPrefix(prefix).withDelimiter(DELIMITER);
-		ListObjectsV2Result result;
-		final List<S3RemoteFile> fileList = new ArrayList<S3RemoteFile>();
-		do {
-			result = getClient().listObjectsV2(request);
-			for (final S3ObjectSummary summary : result.getObjectSummaries()) {
-				if (!summary.getKey().equals(prefix)) {
-					final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
-							getURI().getPort(), createContainerPath(bucketName) + summary.getKey(),
-							getURI().getQuery(), getURI().getFragment());
-					fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
-							getConnectionMonitor(), summary));
-				}
-			}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected S3RemoteFile[] listDirectoryFiles() throws Exception {
+        S3RemoteFile[] files;
+        try {
+            final String bucketName = getContainerName();
+            final String prefix = getBlobName();
+            final ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(bucketName)
+                    .withPrefix(prefix).withDelimiter(DELIMITER);
+            ListObjectsV2Result result;
+            final List<S3RemoteFile> fileList = new ArrayList<S3RemoteFile>();
+            do {
+                result = getClient().listObjectsV2(request);
+                for (final S3ObjectSummary summary : result.getObjectSummaries()) {
+                    if (!summary.getKey().equals(prefix)) {
+                        final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
+                                getURI().getPort(), createContainerPath(bucketName) + summary.getKey(),
+                                getURI().getQuery(), getURI().getFragment());
+                        fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
+                                getConnectionMonitor(), summary));
+                    }
+                }
 
-			for (final String commPrefix : result.getCommonPrefixes()) {
-				final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
-						getURI().getPort(), createContainerPath(bucketName) + commPrefix, getURI().getQuery(),
-						getURI().getFragment());
-				fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
-						getConnectionMonitor()));
-			}
+                for (final String commPrefix : result.getCommonPrefixes()) {
+                    final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
+                            getURI().getPort(), createContainerPath(bucketName) + commPrefix, getURI().getQuery(),
+                            getURI().getFragment());
+                    fileList.add(new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
+                            getConnectionMonitor()));
+                }
 
-			request.setContinuationToken(result.getNextContinuationToken());
-		} while (result.isTruncated());
+                request.setContinuationToken(result.getNextContinuationToken());
+            } while (result.isTruncated());
 
-		final S3RemoteFile[] files = fileList.toArray(new S3RemoteFile[fileList.size()]);
-		// Arrays.sort(files);
+            files = fileList.toArray(new S3RemoteFile[fileList.size()]);
+            // Arrays.sort(files);
 
-	return files;
-	}
+        } catch (AmazonS3Exception e){
+            // Listing does not work, when bucket is in wrong region, return empty array of files -- see AP-6662
+            files = new S3RemoteFile[0];
+        }
+        return files;
+    }
 
 	/**
 	 * {@inheritDoc}
@@ -323,7 +328,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
             metadata.setContentLength(fileSize);
             final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);
             Upload upload = getTransferManager().upload(putRequest);
-    
+
             S3ProgressListener progressListener = new S3ProgressListener() {
 
                 long totalTransferred = 0;
