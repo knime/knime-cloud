@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Amazon Cloud Connectors
 Bundle-SymbolicName: org.knime.cloud.aws;singleton:=true
-Bundle-Version: 3.3.0.qualifier
+Bundle-Version: 3.4.0.qualifier
 Bundle-ClassPath: s3connection.jar,
  lib/aws-java-sdk-core-1.11.22.jar,
  lib/aws-java-sdk-s3-1.11.22.jar,
