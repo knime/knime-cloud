@@ -515,4 +515,16 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 		m_exists = null;
 		m_isDir = null;
 	}
+
+	/**
+	 * Creates an Hadoop Filesystem URI to access the given file via the Hadoop
+	 * Filesystem APIs. Implementations of this method may throw
+	 * java.lang.UnsupportedOperationException to indicate that the creation of
+	 * such an URI is not supported.
+	 *
+	 * @throws java.lang.UnsupportedOperationException
+	 *             if creation of such an URI is not supported.
+	 * @return Hadoop Filesystem URI
+	 */
+	public abstract URI getHadoopFilesystemURI() throws Exception;
 }

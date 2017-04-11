@@ -275,5 +275,14 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 		return blobOutputStream;
 	}
 
-
+    @Override
+    public URI getHadoopFilesystemURI() throws Exception {
+        // wasb(s)://<containername>@<accountname>.blob.core.windows.net/path
+        final CloudConnectionInformation connectionInfo = (CloudConnectionInformation) getConnectionInformation();
+        final String scheme = "wasb";
+        final String account = connectionInfo.getUser();
+        final String container = getContainerName();
+        final String host = account + ".blob.core.windows.net";
+        return new URI(scheme, container, host, -1, DELIMITER + getBlobName(), null, null);
+    }
 }

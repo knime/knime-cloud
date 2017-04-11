@@ -364,4 +364,10 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 		super.resetCache();
 		getOpenedConnection().resetCache();
 	}
+
+    @Override
+    public URI getHadoopFilesystemURI() throws Exception {
+        // s3://<containername>/<path>
+        return new URI("s3", null, getContainerName(), -1, DELIMITER + getBlobName(), null, null);
+    }
 }
