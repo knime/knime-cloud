@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse version="3.0"?><plugin>
+   <extension point="org.knime.workbench.repository.nodes">
+   <node
+         category-path="/io/filehandling/remote/connections"
+         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory"
+         id="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory">
+   </node>
+   <node
+         category-path="/io/filehandling/remote/connections"
+         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory"
+         id="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory">
+   </node>
+   <node
+         category-path="/database/database-connector"
+         deprecated="false"
+         factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory">
+   </node>
+</extension>
+   <extension
+         point="org.knime.core.DatabaseUtility">
+      <databaseUtility
+            class="org.knime.cloud.aws.redshift.connector.utility.RedshiftUtility"
+            database="redshift">
+      </databaseUtility>
+   </extension>
+   
+</plugin>
