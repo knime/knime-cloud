@@ -47,9 +47,11 @@
  */
 package org.knime.cloud.aws.redshift.connector.utility;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.commons.lang3.ObjectUtils.Null;
 import org.knime.core.node.port.database.DatabaseConnectionSettings;
 import org.knime.core.node.port.database.DatabaseUtility;
 import org.knime.core.node.port.database.StatementManipulator;
@@ -64,9 +66,11 @@ import org.knime.core.node.port.database.aggregation.function.StdDevSampDBAggreg
 import org.knime.core.node.port.database.aggregation.function.SumDistinctDBAggregationFunction;
 import org.knime.core.node.port.database.aggregation.function.VarPopDBAggregationFunction;
 import org.knime.core.node.port.database.aggregation.function.VarSampDBAggregationFunction;
+import org.knime.core.node.port.database.connection.DefaultDBDriverFactory;
 import org.knime.core.node.port.database.tablecreator.DBTableCreator;
 import org.knime.core.node.port.database.tablecreator.DBTableCreatorIfNotExistsImpl;
-import org.knime.database.connectors.postgresql.utility.PostgreSQLUtility;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * Database utility for Amazon Redshift.
@@ -74,6 +78,7 @@ import org.knime.database.connectors.postgresql.utility.PostgreSQLUtility;
  * @author Ole Ostergaard, KNIME.com
  */
 public class RedshiftUtility extends DatabaseUtility {
+
     private static class RedshiftStatementManipulator extends StatementManipulator {
 
         /**
@@ -82,6 +87,7 @@ public class RedshiftUtility extends DatabaseUtility {
         public RedshiftStatementManipulator() {
             super(true);
         }
+
         /**
          * {@inheritDoc}
          */
@@ -120,22 +126,42 @@ public class RedshiftUtility extends DatabaseUtility {
     public static final String DATABASE_IDENTIFIER = "redshift";
 
     /** The driver's class name. */
-    public static final String DRIVER = PostgreSQLUtility.DRIVER;
+    public static final String DRIVER = RedshiftDriverFactory.RS_DRIVER_NAME;
 
     /** The Redshift default port number */
     public static final Integer DEFAULT_PORT = 5439;
 
     /**
      * Constructor.
+     *
+     * Uses the {@link RedshiftDriverFactory} when it's available otherwise it falls back to the
+     * PostgreSQL driver.
      */
     public RedshiftUtility() {
-        super(DATABASE_IDENTIFIER, MANIPULATOR,
+        super(DATABASE_IDENTIFIER, MANIPULATOR, getFactory(),
             new AvgDistinctDBAggregationFunction.Factory(), new BitAndDBAggregationFunction.Factory(),
             new BitOrDBAggregationFunction.Factory(), new CountDistinctDBAggregationFunction.Factory(),
             new MaxDBAggregationFunction.Factory(), new MinDBAggregationFunction.Factory(),
             new SumDistinctDBAggregationFunction.Factory(), new StdDevPopDBAggregationFunction.Factory(),
             new StdDevSampDBAggregationFunction.Factory(), new VarPopDBAggregationFunction.Factory(),
             new VarSampDBAggregationFunction.Factory());
+    }
+
+    /**
+     * Returns the {@link RedshiftDriverFactory} when it's driver is available and {@link Null} otherwise.
+     *
+     * @return The {@link DefaultDBDriverFactory} for the redshift driver or {@link Null} when it's not available
+     */
+    private static DefaultDBDriverFactory getFactory() {
+        DefaultDBDriverFactory driverFactory = null;
+        Bundle bundle = FrameworkUtil.getBundle(RedshiftUtility.class);
+        try {
+            bundle.loadClass(DRIVER);
+            driverFactory = new RedshiftDriverFactory(DRIVER, bundle);
+        } catch (ClassNotFoundException | IOException ex) {
+            // driver fragment not installed
+        }
+        return driverFactory;
     }
 
     @Override

@@ -175,6 +175,8 @@ class RedshiftConnectorNodeModel extends NodeModel {
     }
 
     /**
+     * Returns the JDBC url depending on the present driver.
+     *
      * @param settings The settings
      * @return JDBC URL based on the given settings
      */

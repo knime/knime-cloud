@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: KNIME Amazon Redshift Tools
+Bundle-Name: KNIME Amazon Redshift Connector And Cluster Tools
 Bundle-SymbolicName: org.knime.cloud.aws.redshift;singleton:=true
 Bundle-Version: 3.4.0.qualifier
 Bundle-ClassPath: redshift.jar,

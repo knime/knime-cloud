@@ -44,65 +44,35 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Created on Jan 7, 2017 by oole
+ *   May 11, 2017 (oole): created
  */
 package org.knime.cloud.aws.redshift.connector.utility;
 
-import org.knime.core.node.NodeLogger;
-import org.knime.core.node.port.database.DatabaseUtility;
-import org.knime.database.connectors.postgresql.utility.PostgreSQLUtility;
+import java.io.IOException;
+
+import org.knime.core.node.port.database.connection.DefaultDBDriverFactory;
+import org.osgi.framework.Bundle;
 
 /**
- * Detects registered Redshift Drivers, uses the PostgreSQL driver by if no Redshift driver is found.
+ * The DriverFactory for the proprietary Amazon Redshift driver.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftDriverDetector {
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(RedshiftDriverDetector.class);
+public class RedshiftDriverFactory extends DefaultDBDriverFactory {
+
+
+    /** The driver name for the proprietary redshift driver **/
+    public static final String RS_DRIVER_NAME = "com.amazon.redshift.jdbc.Driver";
 
     /**
-     * Searches for drivers and returns preferred driver to use (external drivers are preferred).
+     * Constructor.
      *
-     * @return the driver class name of the preferred driver to use.
+     * @param driverName The driver's class name
+     * @param bundle The bundle containing the driver
+     * @throws IOException If the driver cannot be registered
      */
-    public static String getDriverName() {
-        String driverName;
-
-        if (rsDriverAvailable()) {
-            driverName = RedshiftUtility.DRIVER;
-            LOGGER.debug("Using Proprietary Redshift Driver " + driverName);
-
-        } else {
-            driverName = PostgreSQLUtility.DRIVER;
-            LOGGER.debug("Open-Source PostgreSQL Driver: " + driverName);
-        }
-
-        return driverName;
+    public RedshiftDriverFactory(final String driverName, final Bundle bundle) throws IOException {
+        super(RS_DRIVER_NAME, bundle);
     }
 
-    /**
-     * Maps the driver name to a pretty string representation for dialogs.
-     *
-     * @param driverName the driver's name that should be mapped to it's pretty representation; must not be
-     *            <code>null</code>
-     * @return a pretty driver name for display purposes
-     */
-    public static String mapToPrettyDriverName(final String driverName) {
-        if (driverName.equals(RedshiftUtility.DRIVER)) {
-            return String.format("Proprietary Redshift Driver (%s)", driverName);
-        } else if (driverName.equals(PostgreSQLUtility.DRIVER)) {
-            return String.format("Open-Source PostgreSQL Driver (%s)", driverName);
-        } else {
-            return driverName;
-        }
-    }
-
-    /**
-     * Returns whether or not the proprietary Redshift driver has been registered.
-     *
-     * @return <code>true</code> if the Amazon driver has been registered, <code>false</code> otherwise
-     */
-    public static boolean rsDriverAvailable() {
-        return DatabaseUtility.getJDBCDriverClasses().contains(RedshiftUtility.DRIVER);
-    }
 }
