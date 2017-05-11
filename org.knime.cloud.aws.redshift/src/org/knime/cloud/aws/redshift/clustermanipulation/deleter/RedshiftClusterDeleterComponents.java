@@ -68,35 +68,35 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.CredentialsProvider;
 
 /**
- * The extended {@link RedshiftGeneralComponents} for the {@link RedshiftClusterDeleterNodeModel}.
+ * The extended {@link RedshiftGeneralComponents} for the RedshiftClusterDeleterNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterDeleterComponents extends RedshiftGeneralComponents<RedshiftClusterDeleterNodeSettings>{
+class RedshiftClusterDeleterComponents extends RedshiftGeneralComponents<RedshiftClusterDeleterNodeSettings> {
 
     private RedshiftClusterChooserComponent<RedshiftClusterDeleterNodeSettings> m_clusterName;
 
     private DialogComponentBoolean m_skipFinalSnapshot =
-            new DialogComponentBoolean(m_settings.getSkipFinalClusterSnapshotModel(), "Skip final snapshot");
+        new DialogComponentBoolean(m_settings.getSkipFinalClusterSnapshotModel(), "Skip final snapshot");
 
     private DialogComponentString m_finalClusterSnapshotName =
-            new DialogComponentString(m_settings.getFinalClusterSnapshotNameModel(), "Final snapshot name:     ");
+        new DialogComponentString(m_settings.getFinalClusterSnapshotNameModel(), "Final snapshot name:     ");
 
     /**
-     * Builds the dialogcomponents
+     * Builds the dialog components.
      *
-     * @param settings The {@link RedshiftClusterDeleterNodeSettings} for the dialog components
-     * @param cp The node's credentialsprovider
+     * @param settings The RedshiftClusterDeleterNodeSettings for the dialog components
+     * @param cp The node's {@link CredentialsProvider}
      */
-    public RedshiftClusterDeleterComponents(final RedshiftClusterDeleterNodeSettings settings, final CredentialsProvider cp) {
+    public RedshiftClusterDeleterComponents(final RedshiftClusterDeleterNodeSettings settings,
+        final CredentialsProvider cp) {
         super(settings);
-        m_clusterName = new RedshiftClusterChooserComponent<RedshiftClusterDeleterNodeSettings>(settings.getClusterNameModel(), settings, settings.getPrefix(), cp);
+        m_clusterName = new RedshiftClusterChooserComponent<RedshiftClusterDeleterNodeSettings>(
+            settings.getClusterNameModel(), settings, settings.getPrefix(), cp);
     }
 
     /**
-     * Get the {@link JPanel} for the Cloud connector dialog
-     *
-     * @return The panel for the cloud connector dialog
+     * {@inheritDoc}
      */
     @Override
     public JPanel getDialogPanel() {
@@ -111,16 +111,19 @@ public class RedshiftClusterDeleterComponents extends RedshiftGeneralComponents<
         gbc.gridy = 0;
         panel.add(authPanel, gbc);
         gbc.gridy++;
-        panel.add(createClusterComponent(),gbc);
+        panel.add(createClusterComponent(), gbc);
         return panel;
     }
 
     /**
-     * @return Create the panel for the cluster specific settings
+     * Create the panel for the cluster specific settings.
+     *
+     * @return The panel for the cluster specific settings
      */
     protected JPanel createClusterComponent() {
         final JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " " + "Redshift Settings" + " "));
+        panel.setBorder(
+            BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " " + "Redshift Settings" + " "));
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.weighty = 0;
@@ -132,12 +135,15 @@ public class RedshiftClusterDeleterComponents extends RedshiftGeneralComponents<
         gbc.gridy++;
         panel.add(m_clusterName.getComponentPanel(), gbc);
         gbc.gridy++;
-        panel.add(m_skipFinalSnapshot.getComponentPanel(),gbc);
+        panel.add(m_skipFinalSnapshot.getComponentPanel(), gbc);
         gbc.gridy++;
         panel.add(m_finalClusterSnapshotName.getComponentPanel(), gbc);
         return panel;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
         super.saveSettingsTo(settings);
@@ -147,15 +153,17 @@ public class RedshiftClusterDeleterComponents extends RedshiftGeneralComponents<
     }
 
     /**
-     * Loads the settings and passes the necessary credentials to the dialog to enable querying existing cluster names
+     * Loads the settings and passes the necessary credentials to the dialog to enable querying existing cluster names.
      *
      * @param settings the settings to load from
      * @param specs the {@link PortObjectSpec} to load from
      * @param cp The nodes {@link CredentialsProvider}
      * @param settingsModel The actual {@link SettingsModel}
-     * @throws NotConfigurableException
+     * @throws NotConfigurableException If the settings are invalid
      */
-    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp, final RedshiftClusterDeleterNodeSettings settingsModel) throws NotConfigurableException {
+    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs,
+        final CredentialsProvider cp, final RedshiftClusterDeleterNodeSettings settingsModel)
+        throws NotConfigurableException {
         super.loadSettingsFrom(settings, specs, cp);
         m_clusterName.loadSettingsFrom(settings, specs, cp, settingsModel);
         m_skipFinalSnapshot.loadSettingsFrom(settings, specs);

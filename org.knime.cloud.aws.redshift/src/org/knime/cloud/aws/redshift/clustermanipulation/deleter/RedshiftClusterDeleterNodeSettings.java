@@ -52,16 +52,15 @@ import org.knime.cloud.aws.redshift.clustermanipulation.util.RedshiftGeneralSett
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModel;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
 /**
- * The extended {@link RedshiftGeneralSettings} for the {@link RedshiftClusterDeleterNodeModel}
+ * The extended {@link RedshiftGeneralSettings} for the RedshiftClusterDeleterNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
+class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings {
 
     /**
      * Constructor.
@@ -76,22 +75,22 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     protected final SettingsModelString m_clusterName = new SettingsModelString("clusterName", "");
 
     /** Whether a final cluster snapshot should be taken */
-    protected final SettingsModelBoolean m_skipFinalClusterSnapshot = new SettingsModelBoolean("skipFinalSnapshot", true);
+    protected final SettingsModelBoolean m_skipFinalClusterSnapshot =
+        new SettingsModelBoolean("skipFinalSnapshot", true);
 
     /** Hold the final cluster snapshhot name */
-    protected final SettingsModelString m_finalClusterSnapshotName = createFinalClusterSnapshotNameModel(m_skipFinalClusterSnapshot);
+    protected final SettingsModelString m_finalClusterSnapshotName =
+        createFinalClusterSnapshotNameModel(m_skipFinalClusterSnapshot);
 
     private SettingsModelString createFinalClusterSnapshotNameModel(final SettingsModelBoolean skipSnapshot) {
         SettingsModelString model = new SettingsModelString("finalSnapshotName", "");
-        skipSnapshot.addChangeListener(
-            e -> model.setEnabled(!skipSnapshot.getBooleanValue()));
+        skipSnapshot.addChangeListener(e -> model.setEnabled(!skipSnapshot.getBooleanValue()));
         model.setEnabled(!skipSnapshot.getBooleanValue());
         return model;
     }
 
     /**
-     * Save all the {@link SettingsModel}s to {@link NodeSettingsWO}.
-     * @param settings The {@link NodeSettingsWO} to save to
+     * {@inheritDoc}
      */
     @Override
     public void saveSettingsTo(final NodeSettingsWO settings) {
@@ -102,9 +101,7 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     }
 
     /**
-     * Load all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-     * @param settings the {@link NodeSettingsRO} to load from
-     * @throws InvalidSettingsException If the settings are invalid
+     * {@inheritDoc}
      */
     @Override
     public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
@@ -115,9 +112,7 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     }
 
     /**
-     * Validate all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-     * @param settings the {@link NodeSettingsRO} to validate from
-     * @throws InvalidSettingsException If settings are not valid
+     * {@inheritDoc}
      */
     @Override
     public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
@@ -155,7 +150,7 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     }
 
     /**
-     * Returns the model for the cluster name
+     * Returns the model for the cluster name.
      *
      * @return The model for the cluster name
      */
@@ -164,7 +159,7 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     }
 
     /**
-     * Returns the model for skipping of the final cluster snapshot
+     * Returns the model for skipping of the final cluster snapshot.
      *
      * @return The model for the skipping of the final cluster snapshot
      */
@@ -173,7 +168,7 @@ public class RedshiftClusterDeleterNodeSettings extends RedshiftGeneralSettings{
     }
 
     /**
-     * Returns the model for the final cluster snapshot name
+     * Returns the model for the final cluster snapshot name.
      *
      * @return The model for the final cluster snapshot name
      */

@@ -53,7 +53,6 @@ import org.knime.cloud.aws.redshift.connector.utility.RedshiftUtility;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModel;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
@@ -61,14 +60,16 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
 /**
- * The extended {@link RedshiftGeneralSettings} for the {@link RedshiftClusterLauncherNodeModel}.
+ * The extended {@link RedshiftGeneralSettings} for the RedshiftClusterLauncherNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings{
+class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings {
 
     /**
-     * @param prefix
+     * Constructor.
+     *
+     * @param prefix The connection's prefix
      */
     public RedshiftClusterLauncherNodeSettings(final String prefix) {
         super(prefix);
@@ -78,10 +79,11 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     protected final SettingsModelString m_clusterName = new SettingsModelString("clusterName", "");
 
     /** Holds the default DB name */
-    protected final SettingsModelString m_defaultDB = new SettingsModelString("defaultBD","");
+    protected final SettingsModelString m_defaultDB = new SettingsModelString("defaultBD", "");
 
     /** Holds the master name for the cluster */
-    protected final SettingsModelAuthentication m_clusterCredentials = new SettingsModelAuthentication("clusterLogin", SettingsModelAuthentication.AuthenticationType.USER_PWD);
+    protected final SettingsModelAuthentication m_clusterCredentials =
+        new SettingsModelAuthentication("clusterLogin", SettingsModelAuthentication.AuthenticationType.USER_PWD);
 
     /** The node type */
     protected final SettingsModelString m_nodeType = new SettingsModelString("nodeType", "");
@@ -95,10 +97,8 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     /** Whether the node should fail if the cluster already exists */
     protected final SettingsModelBoolean m_failIfExists = new SettingsModelBoolean("failIfExists", false);
 
-
     /**
-     * Save all the {@link SettingsModel}s to {@link NodeSettingsWO}.
-     * @param settings The {@link NodeSettingsWO} to save to
+     * {@inheritDoc}
      */
     @Override
     public void saveSettingsTo(final NodeSettingsWO settings) {
@@ -113,9 +113,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     }
 
     /**
-     * Load all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-     * @param settings the {@link NodeSettingsRO} to load from
-     * @throws InvalidSettingsException If the settings are invalid
+     * {@inheritDoc}
      */
     @Override
     public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
@@ -130,9 +128,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     }
 
     /**
-     * Validate all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-     * @param settings the {@link NodeSettingsRO} to validate from
-     * @throws InvalidSettingsException If settings are not valid
+     * {@inheritDoc}
      */
     @Override
     public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
@@ -147,7 +143,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     }
 
     /**
-     * Returns the cluster name
+     * Returns the cluster name.
      *
      * @return The cluster name
      */
@@ -169,7 +165,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
      *
      * @return The master name for the cluster
      */
-    public String getMasterName(){
+    public String getMasterName() {
         return m_clusterCredentials.getUsername();
     }
 
@@ -178,7 +174,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
      *
      * @return The master password for the cluster
      */
-    public String getMasterPassword(){
+    public String getMasterPassword() {
         return m_clusterCredentials.getPassword();
     }
 
@@ -187,7 +183,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
      *
      * @return The node type
      */
-    public String getNodeType(){
+    public String getNodeType() {
         return m_nodeType.getStringValue();
     }
 
@@ -201,11 +197,11 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     }
 
     /**
-     * Returns the number of nodes
-     *.
+     * Returns the number of nodes.
+     *
      * @return The number of nodes
      */
-    public Integer getNodeNumber(){
+    public Integer getNodeNumber() {
         return m_nodeNumber.getIntValue();
     }
 
@@ -230,7 +226,7 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     /**
      * Returns the model for the default database name.
      *
-     *  @return The model for the default database name
+     * @return The model for the default database name
      */
     public SettingsModelString getDefaultDBModel() {
         return m_defaultDB;
@@ -254,7 +250,6 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
         return m_nodeType;
     }
 
-
     /**
      * Returns the model for the number of nodes.
      *
@@ -264,7 +259,6 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
         return m_nodeNumber;
     }
 
-
     /**
      * Returns the model for the port number.
      *
@@ -273,7 +267,6 @@ public class RedshiftClusterLauncherNodeSettings extends RedshiftGeneralSettings
     public SettingsModelInteger getPortNumberModel() {
         return m_portNumber;
     }
-
 
     /**
      * Returns the model for whether the node should fail if the cluster already exists.

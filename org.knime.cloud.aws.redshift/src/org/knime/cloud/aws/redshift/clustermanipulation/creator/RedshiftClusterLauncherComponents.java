@@ -72,40 +72,47 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.CredentialsProvider;
 
 /**
- *  The extended {@link RedshiftGeneralComponents} for the {@link RedshiftClusterLauncherNodeModel}.
+ * The extended {@link RedshiftGeneralComponents} for the RedshiftClusterLauncherNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents<RedshiftClusterLauncherNodeSettings>{
+class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents<RedshiftClusterLauncherNodeSettings> {
 
-    private DialogComponentAuthentication m_clusterCredentials =
-            defineClusterAuthenticationComponent();
+    private DialogComponentAuthentication m_clusterCredentials = defineClusterAuthenticationComponent();
+
     private DialogComponentString m_defaultDB =
-            new DialogComponentString(m_settings.getDefaultDBModel(), "Database name:              ");
+        new DialogComponentString(m_settings.getDefaultDBModel(), "Database name:              ");
+
     private DialogComponentStringSelection m_nodeType =
-            new DialogComponentStringSelection(m_settings.getNodeTypeModel(), "Node type:                                      ",
-                RedshiftClusterLauncherNodeModel.getClusterTypes());
-    private DialogComponentNumber m_nodeNumber =
-            new DialogComponentNumber(m_settings.getNodeNumberModel(), "Number of nodes:                                          ", 1, 2);
-    private DialogComponentNumber m_portNumber =
-            new DialogComponentNumber(m_settings.getPortNumberModel(), "Port number:                                             ", RedshiftUtility.DEFAULT_PORT);
+        new DialogComponentStringSelection(m_settings.getNodeTypeModel(),
+            "Node type:                                      ", RedshiftClusterLauncherNodeModel.getClusterTypes());
+
+    private DialogComponentNumber m_nodeNumber = new DialogComponentNumber(m_settings.getNodeNumberModel(),
+        "Number of nodes:                                          ", 1, 2);
+
+    private DialogComponentNumber m_portNumber = new DialogComponentNumber(m_settings.getPortNumberModel(),
+        "Port number:                                             ", RedshiftUtility.DEFAULT_PORT);
+
     private DialogComponentBoolean m_failIfExists =
-            new DialogComponentBoolean(m_settings.getFailIfExistsModel(), "Fail if cluster exists");
+        new DialogComponentBoolean(m_settings.getFailIfExistsModel(), "Fail if cluster exists");
+
     private RedshiftClusterChooserComponent<RedshiftClusterLauncherNodeSettings> m_clusterChoser;
 
     /**
-     * Builds the dialog components for the {@link RedshiftClusterLauncherNodeDialog}
+     * Builds the dialog components for the RedshiftClusterLauncherDialog.
      *
-     * @param settings The corresponding {@link RedshiftClusterLauncherNodeSettings}
+     * @param settings The corresponding RedshiftClusterLauncherNodeSettings
      * @param cp The node's {@link CredentialsProvider}
      */
-    public RedshiftClusterLauncherComponents(final RedshiftClusterLauncherNodeSettings settings, final CredentialsProvider cp) {
+    public RedshiftClusterLauncherComponents(final RedshiftClusterLauncherNodeSettings settings,
+        final CredentialsProvider cp) {
         super(settings);
-        m_clusterChoser = new RedshiftClusterChooserComponent<RedshiftClusterLauncherNodeSettings>(m_settings.getClusterNameModel(), settings, settings.getPrefix(), cp);
+        m_clusterChoser = new RedshiftClusterChooserComponent<RedshiftClusterLauncherNodeSettings>(
+            m_settings.getClusterNameModel(), settings, settings.getPrefix(), cp);
     }
 
     /**
-     * Get the {@link JPanel} for the Cloud connector dialog
+     * Get the {@link JPanel} for the Cloud connector dialog.
      *
      * @return The panel for the cloud connector dialog
      */
@@ -122,16 +129,19 @@ public class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents
         gbc.gridy = 0;
         panel.add(authPanel, gbc);
         gbc.gridy++;
-        panel.add(createClusterComponent(),gbc);
+        panel.add(createClusterComponent(), gbc);
         return panel;
     }
 
     /**
-     * @return Create the panel for the cluster specific settings
+     * Create the panel for the cluster specific settings.
+     *
+     * @return The panel for the cluster specific settings
      */
     protected JPanel createClusterComponent() {
         final JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " " + "Redshift Settings" + " "));
+        panel.setBorder(
+            BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " " + "Redshift Settings" + " "));
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.weighty = 0;
@@ -139,13 +149,13 @@ public class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
-//        panel.add(m_clusterName.getComponentPanel(), gbc);
-//        gbc.gridy++;
-        panel.add(m_clusterChoser.getComponentPanel(),gbc);
+        //        panel.add(m_clusterName.getComponentPanel(), gbc);
+        //        gbc.gridy++;
+        panel.add(m_clusterChoser.getComponentPanel(), gbc);
         gbc.gridy++;
         panel.add(m_portNumber.getComponentPanel(), gbc);
         gbc.gridy++;
-        panel.add(m_clusterCredentials.getComponentPanel(),gbc);
+        panel.add(m_clusterCredentials.getComponentPanel(), gbc);
         gbc.gridy++;
         panel.add(m_defaultDB.getComponentPanel(), gbc);
         gbc.gridy++;
@@ -158,11 +168,14 @@ public class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents
     }
 
     /**
-     * @return Creates the authentication component for the redshift master user, master password
+     * Create the authentication component for the Redshift master user, master password.
+     *
+     * @return The authentication component for the Redshift master user, master password
      */
     protected DialogComponentAuthentication defineClusterAuthenticationComponent() {
-        final DialogComponentAuthentication  authComponent = new DialogComponentAuthentication(m_settings.getClusterCredentials(),
-                "Cluster credentials", AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS);
+        final DialogComponentAuthentication authComponent =
+            new DialogComponentAuthentication(m_settings.getClusterCredentials(), "Cluster credentials",
+                AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS);
         authComponent.setUsernameLabel("Master user");
         authComponent.setPasswordLabel("Master password");
         return authComponent;
@@ -181,15 +194,17 @@ public class RedshiftClusterLauncherComponents extends RedshiftGeneralComponents
     }
 
     /**
-     * Loads the settings and passes the necessary credentials to the dialog to enable querying existing cluster names
+     * Loads the settings and passes the necessary credentials to the dialog to enable querying existing cluster names.
      *
      * @param settings the settings to load from
      * @param specs the specs to load from
      * @param cp The nodes {@link CredentialsProvider}
      * @param settingsModel The actual settings model
-     * @throws NotConfigurableException
+     * @throws NotConfigurableException if the settings are invalid
      */
-    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp, final RedshiftClusterLauncherNodeSettings settingsModel) throws NotConfigurableException {
+    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs,
+        final CredentialsProvider cp, final RedshiftClusterLauncherNodeSettings settingsModel)
+        throws NotConfigurableException {
         super.loadSettingsFrom(settings, specs, cp);
         m_portNumber.loadSettingsFrom(settings, specs);
         m_clusterCredentials.loadSettingsFrom(settings, specs, cp);

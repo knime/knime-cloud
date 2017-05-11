@@ -62,31 +62,33 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.port.PortObjectSpec;
 
 /**
- * The node dialog for the {@link RedshiftClusterDeleterNodeModel}.
+ * The node dialog for the RedshiftClusterDeleterNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterDeleterNodeDialog extends NodeDialogPane {
+class RedshiftClusterDeleterNodeDialog extends NodeDialogPane {
 
-    private RedshiftClusterDeleterNodeSettings m_settings = RedshiftClusterDeleterNodeModel.createRedshiftConnectionModel();
+    private RedshiftClusterDeleterNodeSettings m_settings =
+        RedshiftClusterDeleterNodeModel.createRedshiftConnectionModel();
 
-    private final RedshiftClusterDeleterComponents m_redshiftComp= new RedshiftClusterDeleterComponents(m_settings, getCredentialsProvider());
+    private final RedshiftClusterDeleterComponents m_redshiftComp =
+        new RedshiftClusterDeleterComponents(m_settings, getCredentialsProvider());
 
     /**
      * Constructor.
      */
     public RedshiftClusterDeleterNodeDialog() {
-		final JPanel panel = new JPanel(new GridBagLayout());
-		final GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(5, 5, 5, 5);
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.fill = GridBagConstraints.BOTH;
-		gbc.weighty = 0;
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		panel.add(m_redshiftComp.getDialogPanel(), gbc);
-		addTab("Options", panel);
-	}
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(m_redshiftComp.getDialogPanel(), gbc);
+        addTab("Options", panel);
+    }
 
     /**
      * {@inheritDoc}
@@ -96,13 +98,12 @@ public class RedshiftClusterDeleterNodeDialog extends NodeDialogPane {
         m_redshiftComp.saveSettingsTo(settings);
     }
 
-
     /**
      * {@inheritDoc}
      */
     @Override
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
-            throws NotConfigurableException {
+        throws NotConfigurableException {
         m_redshiftComp.loadSettingsFrom(settings, specs, getCredentialsProvider(), m_settings);
     }
 }

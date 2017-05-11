@@ -126,7 +126,7 @@ public class RedshiftUtility extends DatabaseUtility {
     public static final Integer DEFAULT_PORT = 5439;
 
     /**
-     *
+     * Constructor.
      */
     public RedshiftUtility() {
         super(DATABASE_IDENTIFIER, MANIPULATOR,

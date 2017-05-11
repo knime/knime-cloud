@@ -62,15 +62,17 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.port.PortObjectSpec;
 
 /**
- *  The dialog for the {@link RedshiftClusterLauncherNodeModel}.
+ *  The dialog for the RedshiftClusterLauncherNodeModel.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterLauncherNodeDialog extends NodeDialogPane {
+class RedshiftClusterLauncherNodeDialog extends NodeDialogPane {
 
-    private RedshiftClusterLauncherNodeSettings m_settings = RedshiftClusterLauncherNodeModel.createRedshiftConnectionModel();
+    private RedshiftClusterLauncherNodeSettings m_settings =
+            RedshiftClusterLauncherNodeModel.createRedshiftConnectionModel();
 
-    private final RedshiftClusterLauncherComponents m_redshiftComp = new RedshiftClusterLauncherComponents(m_settings, getCredentialsProvider());
+    private final RedshiftClusterLauncherComponents m_redshiftComp =
+            new RedshiftClusterLauncherComponents(m_settings, getCredentialsProvider());
 
 
 

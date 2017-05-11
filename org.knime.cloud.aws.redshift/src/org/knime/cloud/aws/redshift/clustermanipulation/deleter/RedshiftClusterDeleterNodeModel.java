@@ -80,15 +80,13 @@ import com.amazonaws.services.redshift.model.UnauthorizedOperationException;
 
 /**
  *
- *  Deletes an Amazon Redshift cluster given it's cluster name. May create an optional final snapshot upon deletion.
+ * Deletes an Amazon Redshift cluster given it's cluster name. May create an optional final snapshot upon deletion.
  *
- *  @author Ole Ostergaard, KNIME.com
+ * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftClusterDeleterNodeModel extends NodeModel {
+class RedshiftClusterDeleterNodeModel extends NodeModel {
 
-    /**
-     * The endpoints authentification credentials
-     */
+    /** The endpoint's authentification credentials */
     protected final RedshiftClusterDeleterNodeSettings m_settings = createNodeSettings();
 
     static RedshiftClusterDeleterNodeSettings createRedshiftConnectionModel() {
@@ -96,13 +94,14 @@ public class RedshiftClusterDeleterNodeModel extends NodeModel {
     }
 
     static ArrayList<String> getClusterTypes() {
-        return new ArrayList<>(Arrays.asList("dc1.large", "dc1.8xlarge",
-            "ds2.xlarge", "ds2.8xlarge",
-            "ds1.xlarge", "ds1.8xlarge"));
+        return new ArrayList<>(
+            Arrays.asList("dc1.large", "dc1.8xlarge", "ds2.xlarge", "ds2.8xlarge", "ds1.xlarge", "ds1.8xlarge"));
     }
 
     /**
-     * @return the {@link SettingsModelAuthentication} for {@link RedshiftClusterDeleterNodeModel}
+     * Returns the {@link SettingsModelAuthentication} for the RedshiftClusterDeleterNodeModel.
+     *
+     * @return the {@link SettingsModelAuthentication} for RedshiftClusterDeleterNodeModel
      */
     protected static RedshiftClusterDeleterNodeSettings createNodeSettings() {
         return new RedshiftClusterDeleterNodeSettings(AmazonRedshift.ENDPOINT_PREFIX);
@@ -110,110 +109,111 @@ public class RedshiftClusterDeleterNodeModel extends NodeModel {
 
     static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
         final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
-        nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Access Key ID and Secret Key", "Access Key ID and Secret Access Key based authentication"));
-        nameMap.put(AuthenticationType.KERBEROS, new Pair<String, String>("Default Credential Provider Chain", "Use the Default Credential Provider Chain for authentication"));
+        nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Access Key ID and Secret Key",
+            "Access Key ID and Secret Access Key based authentication"));
+        nameMap.put(AuthenticationType.KERBEROS, new Pair<String, String>("Default Credential Provider Chain",
+            "Use the Default Credential Provider Chain for authentication"));
         return nameMap;
     }
 
-	/**
-	 * Constructor for the node model.
-	 */
-	protected RedshiftClusterDeleterNodeModel() {
-		super(new PortType[] {}, new PortType[] {});
-	}
+    /**
+     * Constructor for the node model.
+     */
+    protected RedshiftClusterDeleterNodeModel() {
+        super(new PortType[]{}, new PortType[]{});
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-	    AmazonRedshiftClient client = RedshiftClusterUtility.getClient(m_settings, getCredentialsProvider());
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
+        AmazonRedshiftClient client = RedshiftClusterUtility.getClient(m_settings, getCredentialsProvider());
 
-	    DeleteClusterRequest request = new DeleteClusterRequest()
-	            .withClusterIdentifier(m_settings.getClusterName())
-	            .withSkipFinalClusterSnapshot(m_settings.skipFinalClusterSnapshot());
-	    if (!m_settings.skipFinalClusterSnapshot()) {
-	        request.withFinalClusterSnapshotIdentifier(m_settings.getFinalClusterSnapshotName());
-	    }
-	    try {
-	        exec.setMessage("Cluster creation requested");
-	        Cluster response = client.deleteCluster(request);
-	        exec.setMessage("Shutting down cluster " + response.getClusterIdentifier());
-	        String status = response.getClusterStatus();
-	        while (!status.equalsIgnoreCase("deleting")) {
-	            exec.checkCanceled();
+        DeleteClusterRequest request = new DeleteClusterRequest().withClusterIdentifier(m_settings.getClusterName())
+            .withSkipFinalClusterSnapshot(m_settings.skipFinalClusterSnapshot());
+        if (!m_settings.skipFinalClusterSnapshot()) {
+            request.withFinalClusterSnapshotIdentifier(m_settings.getFinalClusterSnapshotName());
+        }
+        try {
+            exec.setMessage("Cluster creation requested");
+            Cluster response = client.deleteCluster(request);
+            exec.setMessage("Shutting down cluster " + response.getClusterIdentifier());
+            String status = response.getClusterStatus();
+            while (!status.equalsIgnoreCase("deleting")) {
+                exec.checkCanceled();
                 Thread.sleep(m_settings.getPollingInterval());
-                DescribeClustersResult describeClusters = client.describeClusters(new DescribeClustersRequest().withClusterIdentifier(response.getClusterIdentifier()));
+                DescribeClustersResult describeClusters = client.describeClusters(
+                    new DescribeClustersRequest().withClusterIdentifier(response.getClusterIdentifier()));
                 List<Cluster> clusters = describeClusters.getClusters();
                 response = clusters.get(0);
                 status = response.getClusterStatus();
             }
-	        exec.setMessage("Cluster status: " + status);
-	    } catch(UnauthorizedOperationException e) {
-	        throw new InvalidSettingsException("Check user permissons.", e);
-	    } catch(Exception e) {
-	        throw e;
-	    }
+            exec.setMessage("Cluster status: " + status);
+        } catch (UnauthorizedOperationException e) {
+            throw new InvalidSettingsException("Check user permissons.", e);
+        } catch (Exception e) {
+            throw e;
+        }
 
-        return new PortObject[] { };
-	}
-
+        return new PortObject[]{};
+    }
 
     /**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
-        return new PortObjectSpec[] {};
-	}
+     * {@inheritDoc}
+     */
+    @Override
+    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        return new PortObjectSpec[]{};
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
-			throws IOException, CanceledExecutionException {
-		// TODO Auto-generated method stub
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+        // nothing to do
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
-			throws IOException, CanceledExecutionException {
-		// TODO Auto-generated method stub
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+        // nothing to do
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void saveSettingsTo(final NodeSettingsWO settings) {
-		m_settings.saveSettingsTo(settings);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
+        m_settings.saveSettingsTo(settings);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-		m_settings.validateSettings(settings);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        m_settings.validateSettings(settings);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-		m_settings.loadValidatedSettings(settings);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
+        m_settings.loadValidatedSettings(settings);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void reset() {
-		// TODO Auto-generated method stub
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void reset() {
+        // nothing to do
+    }
 }

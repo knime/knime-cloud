@@ -76,6 +76,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.defaultnodesettings.DialogComponent;
+import org.knime.core.node.defaultnodesettings.SettingsModel;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.util.StringHistory;
@@ -91,7 +92,7 @@ import com.amazonaws.services.redshift.model.DescribeClustersResult;
  * @author Ole Ostergaard, KNIME.com
  * @param <S> The extended {@link RedshiftGeneralSettings}
  */
-public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> extends DialogComponent{
+public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> extends DialogComponent {
 
     private final String m_historyID;
 
@@ -106,14 +107,15 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
     private CredentialsProvider m_credentialProvider;
 
     /**
-     * Build the component and its functionality
+     * Build the component and its functionality.
      *
      * @param model The {@link SettingsModelString} to save the selected or entered cluster name to
      * @param settings the settings for from the dialog
-     * @param historyID the history id for the combobox
+     * @param historyID the history id for the {@link JComboBox}
      * @param cp The credentials provider for the {@link AmazonRedshiftClient}
      */
-    public RedshiftClusterChooserComponent(final SettingsModelString model, final S settings, final String historyID, final CredentialsProvider cp) {
+    public RedshiftClusterChooserComponent(final SettingsModelString model, final S settings, final String historyID,
+        final CredentialsProvider cp) {
         super(model);
         m_credentialProvider = cp;
         m_label = new JLabel(" Cluster name:    ");
@@ -154,7 +156,7 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
                 Container container = m_selectButton.getParent();
                 while (container != null) {
                     if (container instanceof Frame) {
-                        frame  = (Frame) container;
+                        frame = (Frame)container;
                         break;
                     }
                     container = container.getParent();
@@ -163,7 +165,8 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
                 AmazonRedshiftClient client = RedshiftClusterUtility.getClient(settings, m_credentialProvider);
                 String msg = getMsg(client);
                 String[] clusterArray = getClusterArray(client);
-                clusterName = (String)JOptionPane.showInputDialog(frame, msg, "Choose existing cluster name", JOptionPane.PLAIN_MESSAGE, null, clusterArray, null);
+                clusterName = (String)JOptionPane.showInputDialog(frame, msg, "Choose existing cluster name",
+                    JOptionPane.PLAIN_MESSAGE, null, clusterArray, null);
 
                 if (clusterName != null) {
                     m_existingIntoCB = true;
@@ -182,10 +185,10 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
         try {
             DescribeClustersResult describeClusters = client.describeClusters();
             List<Cluster> clusters = describeClusters.getClusters();
-            if(clusters.size()<= 0) {
+            if (clusters.size() <= 0) {
                 msg = "No clusters launched";
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             if (e.getMessage().contains("is not authorized")) {
                 msg = "Check AWS user permissons.";
             } else {
@@ -197,14 +200,14 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
     }
 
     /**
-     * @return Get the panel
+     * {@inheritDoc}
      */
     @Override
     public JPanel getComponentPanel() {
         final JPanel panel = new JPanel(new GridBagLayout());
         final GridBagConstraints gbc = new GridBagConstraints();
         NodeUtils.resetGBC(gbc);
-        gbc.insets = new Insets(0,0,0,0);
+        gbc.insets = new Insets(0, 0, 0, 0);
         gbc.weightx = 1;
         panel.add(m_label, gbc);
         gbc.gridx++;
@@ -216,9 +219,11 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
         return panel;
     }
 
-
     /**
-     * @param settings the settings from the dialog
+     * Returns an array of available clusters for a the given {@link AmazonRedshiftClient}.
+     *
+     * @param client the {@link AmazonRedshiftClient}
+     * @return An array of available clusters
      */
     private String[] getClusterArray(final AmazonRedshiftClient client) {
         String[] clusterArray = new String[0];
@@ -227,21 +232,19 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
             List<Cluster> clusters = describeClusters.getClusters();
             Iterator<Cluster> iterator = clusters.iterator();
             ArrayList<String> clusterNames = new ArrayList<String>();
-            while(iterator.hasNext()){
+            while (iterator.hasNext()) {
                 clusterNames.add(iterator.next().getClusterIdentifier());
             }
             clusterArray = clusterNames.toArray(new String[0]);
-        } catch(Exception e) {
+        } catch (Exception e) {
             // Do nothing
         }
 
         return clusterArray;
     }
 
-
     /**
      * Set the selection of this file chooser.
-     *
      *
      * @param selection The new selection
      */
@@ -316,12 +319,16 @@ public class RedshiftClusterChooserComponent<S extends RedshiftGeneralSettings> 
     }
 
     /**
-     * @param settings
-     * @param specs
-     * @param cp
+     * Loads the settings and passes the necessary credentials to the dialog to enable querying existing cluster names.
+     *
+     * @param settings the settings to load from
+     * @param specs the {@link PortObjectSpec} to load from
+     * @param cp The nodes {@link CredentialsProvider}
+     * @param settingsModel The actual {@link SettingsModel}
      * @throws NotConfigurableException
      */
-    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp,final S settingsModel) throws NotConfigurableException {
+    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs,
+        final CredentialsProvider cp, final S settingsModel) throws NotConfigurableException {
         super.loadSettingsFrom(settings, specs);
         m_credentialProvider = cp;
     }

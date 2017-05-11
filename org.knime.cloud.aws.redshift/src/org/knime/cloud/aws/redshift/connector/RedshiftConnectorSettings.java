@@ -56,17 +56,20 @@ import org.knime.core.node.config.ConfigWO;
 import org.knime.core.node.workflow.CredentialsProvider;
 
 /**
- *  Model for the Amazon Redshift connector node.
+ * Model for the Amazon Redshift connector node.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings {
+class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings {
+
     private static final String CFG_KEY = "redshift-connection";
 
     private static final String CFG_SSL = "useSsl";
+
     private boolean m_useSsl = false;
 
     private static final String CFG_PARAMETER = "parameter";
+
     private String m_parameter = "";
 
     RedshiftConnectorSettings() {
@@ -76,13 +79,17 @@ public class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings
     }
 
     /**
-     * @return the useSsl
+     * Returns whether ssl should be used or not.
+     *
+     * @return whether ssl should be used or not
      */
     public boolean getUseSsl() {
         return m_useSsl;
     }
 
     /**
+     * Returns the additional parameters or an empty string.
+     *
      * @return the additional parameter or an empty string
      */
     public String getParameter() {
@@ -90,15 +97,18 @@ public class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings
     }
 
     /**
-     * Sets the additional parameter in the SettingsModel
+     * Sets the additional parameter in the SettingsModel.
      *
      * @param parameter the additional parameter to be set
      */
     public void setParamter(final String parameter) {
         m_parameter = parameter;
     }
+
     /**
-     * @param useSsl the useSsl to set
+     * Sets wether ssl is to be used or not.
+     *
+     * @param useSsl wether ssl should be used or not
      */
     public void setUseSsl(final boolean useSsl) {
         m_useSsl = useSsl;

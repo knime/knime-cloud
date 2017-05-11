@@ -69,49 +69,50 @@ import com.amazonaws.regions.Regions;
  */
 public class RedshiftGeneralSettings {
 
-    /**
-     * The default polling interval
-     */
+    /** The default polling interval */
     public static final int DEFAULT_POLLING_INTERVAL = 30;
 
     private final SettingsModelAuthentication m_authModel = createAuthenticationModel();
+
     private final SettingsModelInteger m_pollingModel = createPollingModel();
 
+    private final SettingsModelString m_region = createRegionModel();
 
-	private final SettingsModelString m_region = createRegionModel();
+    private final String m_prefix;
 
-	private final String m_prefix;
+    private SettingsModelString createRegionModel() {
+        return new SettingsModelString("region", "us-east-1");
+    }
 
-	private SettingsModelString createRegionModel() {
-		return new SettingsModelString("region", "us-east-1");
-	}
+    /**
+     * Constructor
+     * @param prefix the connection's prefix
+     */
+    public RedshiftGeneralSettings(final String prefix) {
+        m_prefix = prefix;
+    }
 
-	/**
-	 * @param prefix
-	 */
-	public RedshiftGeneralSettings(final String prefix) {
-	    m_prefix = prefix;
-	}
-
-	private SettingsModelInteger createPollingModel() {
+    private SettingsModelInteger createPollingModel() {
         return new SettingsModelInteger("timeout", DEFAULT_POLLING_INTERVAL);
     }
 
-	/**
-	 * Returns the selected region
-	 * @return the selected region
-	 */
-	public String getRegion() {
-		return m_region.getStringValue();
-	}
+    /**
+     * Returns the selected region.
+     *
+     * @return the selected region
+     */
+    public String getRegion() {
+        return m_region.getStringValue();
+    }
 
-	/**
-	 * Validates the values for the aws authentication
-	 *
-	 * @throws InvalidSettingsException If the values for the aws authentication are invalid
-	 */
-	public void validateValues() throws InvalidSettingsException {
-	    if (getAuthenticationType().equals(AuthenticationType.USER_PWD) || getAuthenticationType().equals(AuthenticationType.CREDENTIALS)) {
+    /**
+     * Validates the values for the aws authentication.
+     *
+     * @throws InvalidSettingsException If the values for the aws authentication are invalid
+     */
+    public void validateValues() throws InvalidSettingsException {
+        if (getAuthenticationType().equals(AuthenticationType.USER_PWD)
+            || getAuthenticationType().equals(AuthenticationType.CREDENTIALS)) {
 
             if (useWorkflowCredential()) {
                 if (StringUtils.isBlank(getWorkflowCredential())) {
@@ -131,68 +132,72 @@ public class RedshiftGeneralSettings {
         if (getPollingInterval() < 0) {
             throw new InvalidSettingsException("Timeout must be a positive number");
         }
-		if (StringUtils.isBlank(getRegion())) {
-			throw new InvalidSettingsException("Please enter a valid region");
-		}
+        if (StringUtils.isBlank(getRegion())) {
+            throw new InvalidSettingsException("Please enter a valid region");
+        }
 
-		if (!Region.getRegion(Regions.fromName(getRegion())).isServiceSupported(getPrefix())) {
-			throw new InvalidSettingsException(
-				"The region \"" + getRegion() + "\" is not supported by the service \"" + getPrefix() + "\"");
-		}
+        if (!Region.getRegion(Regions.fromName(getRegion())).isServiceSupported(getPrefix())) {
+            throw new InvalidSettingsException(
+                "The region \"" + getRegion() + "\" is not supported by the service \"" + getPrefix() + "\"");
+        }
 
-	}
+    }
 
-	/**
-	 * Returns the authentication model for AWS Redshift
-	 *
-	 * @return The authentication model for AWS Redshift
-	 */
-	protected SettingsModelAuthentication createAuthenticationModel() {
-		return new SettingsModelAuthentication("auth", AuthenticationType.KERBEROS, null, null, null);
-	}
+    /**
+     * Returns the authentication model for AWS Redshift.
+     *
+     * @return The authentication model for AWS Redshift
+     */
+    protected SettingsModelAuthentication createAuthenticationModel() {
+        return new SettingsModelAuthentication("auth", AuthenticationType.KERBEROS, null, null, null);
+    }
 
-	/**
+    /**
      * Save all the {@link SettingsModel}s to {@link NodeSettingsWO}.
-	 * @param settings the {@link NodeSettingsWO} to save to
+     *
+     * @param settings the {@link NodeSettingsWO} to save to
      */
-	public void saveSettingsTo(final NodeSettingsWO settings) {
-	    m_authModel.saveSettingsTo(settings);
+    public void saveSettingsTo(final NodeSettingsWO settings) {
+        m_authModel.saveSettingsTo(settings);
         m_pollingModel.saveSettingsTo(settings);
-		m_region.saveSettingsTo(settings);
-	}
+        m_region.saveSettingsTo(settings);
+    }
 
-	/**
+    /**
      * Load all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-	 * @param settings The {@link NodeSettingsRO}to save to
-	 * @throws InvalidSettingsException If the settings are invalid
+     *
+     * @param settings The {@link NodeSettingsRO}to save to
+     * @throws InvalidSettingsException If the settings are invalid
      */
-	public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-	    m_authModel.loadSettingsFrom(settings);
+    public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        m_authModel.loadSettingsFrom(settings);
         m_pollingModel.loadSettingsFrom(settings);
-		m_region.loadSettingsFrom(settings);
-	}
+        m_region.loadSettingsFrom(settings);
+    }
 
-	/**
+    /**
      * Validate all the {@link SettingsModel}s from {@link NodeSettingsRO}.
-	 * @param settings the settings to validate from
-	 * @throws InvalidSettingsException If the settings are invalid
+     *
+     * @param settings the settings to validate from
+     * @throws InvalidSettingsException If the settings are invalid
      */
-	public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-	    m_authModel.validateSettings(settings);
+    public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        m_authModel.validateSettings(settings);
         m_pollingModel.validateSettings(settings);
-		m_region.validateSettings(settings);
-	}
+        m_region.validateSettings(settings);
+    }
 
-	/**
-	 * Get the {@link SettingsModelString} for the region selector
-	 * @return the {@link SettingsModelString} for the region selector
-	 */
-	public SettingsModelString getRegionModel() {
-		return m_region;
-	}
+    /**
+     * Get the {@link SettingsModelString} for the region selector.
+     *
+     * @return the {@link SettingsModelString} for the region selector
+     */
+    public SettingsModelString getRegionModel() {
+        return m_region;
+    }
 
-	/**
-     * Get the {@link SettingsModelAuthentication}
+    /**
+     * Get the {@link SettingsModelAuthentication}.
      *
      * @return The {@link SettingsModelAuthentication}
      */
@@ -219,7 +224,7 @@ public class RedshiftGeneralSettings {
     }
 
     /**
-     * Get the string value stored for the user
+     * Get the string value stored for the user.
      *
      * @return The string value stored for the user
      */
@@ -236,9 +241,8 @@ public class RedshiftGeneralSettings {
         return m_authModel.getPassword();
     }
 
-
     /**
-     * Whether the workflowcredentials are used or not
+     * Whether the workflowcredentials are used or not.
      *
      * @return whether the workflowcredentials are used (<code>true</code>) or not (<code>false</code>)
      */
@@ -246,18 +250,17 @@ public class RedshiftGeneralSettings {
         return m_authModel.useCredential();
     }
 
-
     /**
-     * Returns the polling interval in milliseconds
+     * Returns the polling interval in milliseconds.
      *
      * @return The polling interval in milliseconds
      */
     public Integer getPollingInterval() {
-        return m_pollingModel.getIntValue()*1000;
+        return m_pollingModel.getIntValue() * 1000;
     }
 
     /**
-     * Get the credential
+     * Get the credential.
      *
      * @return The workflow credential
      */
@@ -266,10 +269,11 @@ public class RedshiftGeneralSettings {
     }
 
     /**
-     * Returns the connection prefix for this Cloud Settings model
+     * Returns the connection prefix for this Cloud Settings model.
+     *
      * @return this cloud setting model's connection prefix
      */
-    public String getPrefix(){
+    public String getPrefix() {
         return m_prefix;
     }
 

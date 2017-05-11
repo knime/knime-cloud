@@ -59,6 +59,7 @@ import org.knime.core.node.port.database.DatabaseUtility;
 public class RedshiftDriverDetector {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(RedshiftDriverDetector.class);
 
+    /** The driver name for the proprietary redshift driver **/
     public static final String RS_DRIVER_NAME = "com.amazon.redshift.jdbc.Driver";
 
 

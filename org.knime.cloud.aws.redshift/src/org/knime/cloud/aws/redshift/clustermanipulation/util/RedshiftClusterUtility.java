@@ -69,16 +69,19 @@ public class RedshiftClusterUtility {
      * @param credentialsProvider The credential provider to use for the client
      * @return An {@link AmazonRedshiftClient} according to the given settings and credential provider
      */
-    public static AmazonRedshiftClient getClient(final RedshiftGeneralSettings settings, final CredentialsProvider credentialsProvider) {
-        AmazonRedshiftClient client =null;
+    public static AmazonRedshiftClient getClient(final RedshiftGeneralSettings settings,
+        final CredentialsProvider credentialsProvider) {
+        AmazonRedshiftClient client = null;
         if (settings.getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS)) {
             client = new AmazonRedshiftClient();
         } else if (settings.getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.CREDENTIALS)) {
             ICredentials iCredentials = credentialsProvider.get(settings.getAuthenticationModel().getCredential());
-            client = new AmazonRedshiftClient(new BasicAWSCredentials(iCredentials.getLogin(), iCredentials.getPassword()));
+            client =
+                new AmazonRedshiftClient(new BasicAWSCredentials(iCredentials.getLogin(), iCredentials.getPassword()));
         } else {
-    
-            client =new AmazonRedshiftClient(new BasicAWSCredentials(settings.getUserValue(), settings.getPasswordValue()));
+
+            client =
+                new AmazonRedshiftClient(new BasicAWSCredentials(settings.getUserValue(), settings.getPasswordValue()));
         }
         client.setEndpoint("https://redshift." + settings.getRegion() + ".amazonaws.com/");
         return client;

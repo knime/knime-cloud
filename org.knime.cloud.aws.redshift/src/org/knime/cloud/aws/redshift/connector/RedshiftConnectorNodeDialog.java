@@ -101,6 +101,7 @@ class RedshiftConnectorNodeDialog extends NodeDialogPane {
             m_c.weightx = 1;
             add(m_driver, m_c);
         }
+
         /**
          * {@inheritDoc}
          */
@@ -119,6 +120,9 @@ class RedshiftConnectorNodeDialog extends NodeDialogPane {
             m_settings.setUseSsl(m_useSsl.isSelected());
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected String getJDBCURL(final String host, final int port, final String dbName) {
             return RedshiftConnectorNodeModel.getJdbcUrl(m_settings);
@@ -131,9 +135,7 @@ class RedshiftConnectorNodeDialog extends NodeDialogPane {
 
     private final StringHistoryPanel m_parameter = new StringHistoryPanel(getClass().getName() + "_parameter    ");
 
-
-    private final RedshiftConnectionPanel m_connectionPanel =
-        new RedshiftConnectionPanel(m_settings);
+    private final RedshiftConnectionPanel m_connectionPanel = new RedshiftConnectionPanel(m_settings);
 
     private final DBAuthenticationPanel<DatabaseConnectionSettings> m_authPanel =
         new DBAuthenticationPanel<DatabaseConnectionSettings>(m_settings);
@@ -141,8 +143,8 @@ class RedshiftConnectorNodeDialog extends NodeDialogPane {
     private final DBTimezonePanel<DatabaseConnectionSettings> m_tzPanel =
         new DBTimezonePanel<DatabaseConnectionSettings>(m_settings);
 
-    private final DBMiscPanel<DatabaseConnectionSettings> m_miscPanel = new DBMiscPanel<DatabaseConnectionSettings>(
-        m_settings, true);
+    private final DBMiscPanel<DatabaseConnectionSettings> m_miscPanel =
+        new DBMiscPanel<DatabaseConnectionSettings>(m_settings, true);
 
     RedshiftConnectorNodeDialog() {
         JPanel p = new JPanel(new GridBagLayout());

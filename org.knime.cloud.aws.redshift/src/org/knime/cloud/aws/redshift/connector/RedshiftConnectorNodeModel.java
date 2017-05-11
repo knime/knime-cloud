@@ -91,16 +91,15 @@ class RedshiftConnectorNodeModel extends NodeModel {
             m_settings.setDriver(RedshiftDriverDetector.getDriverName());
         }
 
-        if ((m_settings.getCredentialName() == null)
-            && ((m_settings.getUserName(getCredentialsProvider()) == null) || m_settings.getUserName(
-                getCredentialsProvider()).isEmpty())) {
+        if ((m_settings.getCredentialName() == null) && ((m_settings.getUserName(getCredentialsProvider()) == null)
+            || m_settings.getUserName(getCredentialsProvider()).isEmpty())) {
             throw new InvalidSettingsException("No credentials or username for authentication given");
         }
         if ((m_settings.getHost() == null) || m_settings.getHost().isEmpty()) {
             throw new InvalidSettingsException("No hostname for database server given");
         }
 
-        return new PortObjectSpec[] { createSpec() };
+        return new PortObjectSpec[]{createSpec()};
     }
 
     private DatabaseConnectionPortObjectSpec createSpec() {
@@ -131,23 +130,23 @@ class RedshiftConnectorNodeModel extends NodeModel {
             throw new SQLException("Could not create connection to database: " + cause.getMessage(), ex);
         }
 
-        return new PortObject[] { new DatabaseConnectionPortObject(spec) };
+        return new PortObject[]{new DatabaseConnectionPortObject(spec)};
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec) throws IOException,
-        CanceledExecutionException {
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec) throws IOException,
-        CanceledExecutionException {
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
     }
 
     /**
@@ -182,7 +181,8 @@ class RedshiftConnectorNodeModel extends NodeModel {
     static String getJdbcUrl(final RedshiftConnectorSettings settings) {
         StringBuilder buf = new StringBuilder();
         if (RedshiftDriverDetector.rsDriverAvailable()) {
-            buf.append("jdbc:redshift://" + settings.getHost() + ":" + settings.getPort() + "/" + settings.getDatabaseName());
+            buf.append(
+                "jdbc:redshift://" + settings.getHost() + ":" + settings.getPort() + "/" + settings.getDatabaseName());
             if (settings.getUseSsl()) {
                 buf.append("?ssl=true&sslfactory=com.amazon.redshift.ssl.NonValidatingFactory");
             }
@@ -190,7 +190,7 @@ class RedshiftConnectorNodeModel extends NodeModel {
             final String parameter = settings.getParameter();
             if (parameter != null && !parameter.trim().isEmpty()) {
                 if (!settings.getUseSsl()) {
-                    if (!parameter.startsWith("?")){
+                    if (!parameter.startsWith("?")) {
                         buf.append("?");
                     }
                     if (parameter.startsWith("&")) {
@@ -211,7 +211,8 @@ class RedshiftConnectorNodeModel extends NodeModel {
                 }
             }
         } else {
-            buf.append("jdbc:postgresql://" + settings.getHost() + ":" + settings.getPort() + "/" + settings.getDatabaseName());
+            buf.append("jdbc:postgresql://" + settings.getHost() + ":" + settings.getPort() + "/"
+                + settings.getDatabaseName());
             if (settings.getUseSsl()) {
                 buf.append("?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
             }

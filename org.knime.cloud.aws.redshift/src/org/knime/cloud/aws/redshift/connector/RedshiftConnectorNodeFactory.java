@@ -75,7 +75,8 @@ public class RedshiftConnectorNodeFactory extends NodeFactory<RedshiftConnectorN
      * {@inheritDoc}
      */
     @Override
-    public NodeView<RedshiftConnectorNodeModel> createNodeView(final int viewIndex, final RedshiftConnectorNodeModel nodeModel) {
+    public NodeView<RedshiftConnectorNodeModel> createNodeView(final int viewIndex,
+        final RedshiftConnectorNodeModel nodeModel) {
         return null;
     }
 

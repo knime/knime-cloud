@@ -5,7 +5,7 @@ import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
 
 /**
- * <code>NodeFactory</code> for the {@link RedshiftClusterLauncherNodeModel}.
+ * <code>NodeFactory</code> for the RedshiftClusterLauncherNodeModel.
  *
  *
  * @author Ole Ostergaard, KNIME.com
