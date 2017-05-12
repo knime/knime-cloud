@@ -734,7 +734,7 @@ propagated with or for interoperation with KNIME.
          version="0.0.0"/>
 
    <plugin
-         id="org.knime.cloud.aws.redshift.dfrag"
+         id="org.knime.cloud.aws.redshift.driver"
          download-size="0"
          install-size="0"
          version="0.0.0"
