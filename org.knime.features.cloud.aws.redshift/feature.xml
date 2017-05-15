@@ -6,7 +6,7 @@
       provider-name="KNIME GmbH, Konstanz, Germany">
 
    <description>
-      This feature contains nodes for interacting with Amazon Web Services (AWS).
+      This feature contains nodes for interacting with Amazon Redshift.
    </description>
 
    <copyright>
@@ -732,12 +732,5 @@ propagated with or for interoperation with KNIME.
          download-size="0"
          install-size="0"
          version="0.0.0"/>
-
-   <plugin
-         id="org.knime.cloud.aws.redshift.driver"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"/>
 
 </feature>
