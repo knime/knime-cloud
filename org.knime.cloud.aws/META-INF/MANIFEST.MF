@@ -3,22 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Amazon Cloud Connectors
 Bundle-SymbolicName: org.knime.cloud.aws;singleton:=true
 Bundle-Version: 3.4.0.qualifier
-Bundle-ClassPath: s3connection.jar,
- lib/aws-java-sdk-core-1.11.22.jar,
- lib/aws-java-sdk-s3-1.11.22.jar,
- lib/httpclient-4.5.2.jar,
- lib/httpcore-4.4.4.jar
 Bundle-Vendor: KNIME GmbH, Konstanz, Germany
 Export-Package: org.knime.cloud.aws.s3.filehandler
-Require-Bundle: org.knime.workbench.repository;bundle-version="[3.2.0,4.0.0)",
+Require-Bundle: org.apache.commons.lang3;bundle-version="[3.2.1,4.0.0)",
+ com.amazonaws.aws-java-sdk-core;bundle-version="[1.11.133,2.0.0)",
+ com.amazonaws.aws-java-sdk-s3;bundle-version="[1.11.133,2.0.0)",
  org.knime.base;bundle-version="[3.2.0,4.0.0)",
  org.knime.base.filehandling;bundle-version="[3.2.0,4.0.0)",
- org.apache.commons.logging;bundle-version="[1.1.1,2.0.0)",
- joda-time;bundle-version="[2.5.0,3.0.0)",
- com.fasterxml.jackson.core.jackson-annotations;bundle-version="[2.7.1,3.0.0)",
- com.fasterxml.jackson.core.jackson-core;bundle-version="[2.7.1,3.0.0)",
- com.fasterxml.jackson.core.jackson-databind;bundle-version="[2.7.1,3.0.0)",
- org.apache.commons.lang3;bundle-version="[3.2.1,4.0.0)",
  org.knime.cloud.core;bundle-version="[3.3.0,4.0.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy

@@ -3,9 +3,5 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="lib" path="lib/httpclient-4.5.2.jar"/>
-	<classpathentry kind="lib" path="lib/httpcore-4.4.4.jar"/>
-	<classpathentry kind="lib" path="lib/aws-java-sdk-core-1.11.22.jar" sourcepath="lib/aws-java-sdk-core-1.11.22-sources.jar"/>
-	<classpathentry kind="lib" path="lib/aws-java-sdk-s3-1.11.22.jar" sourcepath="lib/aws-java-sdk-s3-1.11.22-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
