@@ -93,11 +93,15 @@ public class RedshiftUtility extends DatabaseUtility {
          */
         @Override
         public void setFetchSize(final Statement statement, final int fetchSize) throws SQLException {
-            if (fetchSize >= 0) {
-                // fix 2741: postgresql databases ignore fetchsize when
-                // AUTOCOMMIT on; setting it to false
-                DatabaseConnectionSettings.setAutoCommit(statement.getConnection(), false);
+            if (RedshiftDriverDetector.rsDriverAvailable()) {
                 super.setFetchSize(statement, fetchSize);
+            } else {
+                if (fetchSize >= 0) {
+                    // fix 2741: postgresql databases ignore fetchsize when
+                    // AUTOCOMMIT on; setting it to false
+                    DatabaseConnectionSettings.setAutoCommit(statement.getConnection(), false);
+                    super.setFetchSize(statement, fetchSize);
+                }
             }
         }
 
