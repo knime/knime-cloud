@@ -1,0 +1,315 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "clusterName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the HDInsight cluster to be created. The cluster name must be globally unique."
+            }
+        },
+        "clusterLoginUserName": {
+            "type": "string",
+            "defaultValue": "admin",
+            "metadata": {
+                "description": "These credentials can be used to submit jobs to the cluster and to log into cluster dashboards."
+            }
+        },
+        "clusterLoginPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password must be at least 10 characters in length and must contain at least one digit, one non-alphanumeric character, and one upper or lower case letter."
+            }
+        },
+        "sshUserName": {
+            "type": "string",
+            "defaultValue": "sshuser",
+            "metadata": {
+                "description": "These credentials can be used to remotely access the cluster."
+            }
+        },
+        "sshPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password must be at least 10 characters in length and must contain at least one digit, one non-alphanumeric character, and one upper or lower case letter."
+            }
+        },
+        "headNodeSize": {
+          "type": "string",
+          "metadata": {
+            "description": "Size of the head node in the cluster"
+          },
+          "defaultValue": "Standard_D12_v2",
+            "allowedValues": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D11_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D5"
+          ]
+        },
+        "workerNodeSize": {
+          "type": "string",
+          "metadata": {
+            "description": "Size of the worker nodes in the cluster"
+          },
+          "defaultValue": "Standard_D4_v2",
+            "allowedValues": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D11_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D5"
+          ]
+        },
+        "numberOfWorkerNodes": {
+          "type": "int",
+          "metadata": {
+            "description": "Number of worker nodes in the cluster"
+          },
+          "defaultValue": 4,
+          "minValue": 1
+        },
+        "edgeNodeSize": {
+          "type": "string",
+          "metadata": {
+            "description": "Size of the edge node that hosts the Spark Job Server"
+          },
+          "defaultValue": "Standard_D12_v2",
+            "allowedValues": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D11_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D5"
+          ]
+        },
+        "contextPerJvm": {
+          "type": "string",
+          "metadata": {
+            "description": "Whether VM per Context should be enabled"
+          },
+          "defaultValue": "true",
+          "allowedValues": [
+            "false",
+            "true"
+          ]
+        },
+        "numCpuCores": {
+          "type": "int",
+          "metadata": {
+            "description": "How many CPU Cores should be used by the Spark Job Server for KNIME Spark Executor (Choose appropriately to edge node size)"
+          },
+          "defaultValue": 4,
+          "minValue": 4,
+          "maxValue": 16
+        },
+        "memoryPerYarnContainer": {
+          "type": "string",
+          "metadata": {
+            "description": "The amount of memory to be used per Spark executor process (e.g. 512M, 1G)"
+          },
+          "defaultValue": "8G"
+        }
+    },
+    "variables": {
+        "clusterStorageAccountName": "[concat(parameters('clusterName'),'store')]",
+        "storageAccountType": "Standard_LRS",
+        "clusterApiVersion": "2015-03-01-preview",
+        "applicationName": "spark-job-server-for-knime-spark-executor",
+        "vNet":{
+            "name": "[concat(parameters('clusterName'),'-vnet')]",
+            "addressSpacePrefix": "10.0.0.0/16",
+            "subnetName": "subnet1",
+            "subnetPrefix": "10.0.0.0/24",
+            "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet'))]",
+            "subnet": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet')), '/subnets/subnet1')]"
+          }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('vNet').name]",
+            "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
+            "properties": {
+            "addressSpace": {
+            "addressPrefixes": [
+                "[variables('vNet').addressSpacePrefix]"
+              ]
+            },
+          "subnets": [
+            {
+              "name": "[variables('vNet').subnetName]",
+              "properties": {
+                "addressPrefix": "[variables('vNet').subnetPrefix]"
+              }
+            }
+          ]
+          }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('clusterStorageAccountName')]",
+            "apiVersion": "2016-01-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage",
+            "properties": {}
+        },
+        {
+            "name": "[parameters('clusterName')]",
+            "type": "Microsoft.HDInsight/clusters",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-03-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/',variables('clusterStorageAccountName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/',variables('vNet').name)]"
+            ],
+            "tags": {},
+            "properties": {
+                "clusterVersion": "3.5",
+                "osType": "Linux",
+                "tier": "Standard",
+                "clusterDefinition": {
+                   "kind": "spark",
+                   "componentVersion": {
+                        "Spark": "1.6"
+                    },
+                   "configurations": {
+                       "gateway": {
+                           "restAuthCredential.isEnabled": true,
+                           "restAuthCredential.username": "[parameters('clusterLoginUserName')]",
+                           "restAuthCredential.password": "[parameters('clusterLoginPassword')]"
+                       }
+                   }
+                 },
+                "storageProfile": {
+                    "storageaccounts": [
+                        {
+                            "name": "[replace(replace(reference(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').primaryEndpoints.blob,'https://',''),'/','')]",
+                            "isDefault": true,
+                            "container": "[parameters('clusterName')]",
+                            "key": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').keys[0].value]"
+                        }
+                    ]
+                },
+                "computeProfile": {
+                    "roles": [
+                        {
+                            "name": "headnode",
+                            "targetInstanceCount": "2",
+                            "hardwareProfile": {
+                                "vmSize": "[parameters('headNodeSize')]"
+                            },
+                            "osProfile": {
+                                "linuxOperatingSystemProfile": {
+                                    "username": "[parameters('sshUserName')]",
+                                    "password": "[parameters('sshPassword')]"
+                                }
+                            },
+                            "virtualNetworkProfile": {
+                              "id": "[variables('vNet').id]",
+                              "subnet": "[variables('vNet').subnet]"
+                            }
+                        },
+                        {
+                            "name": "workernode",
+                            "targetInstanceCount": "[parameters('numberOfWorkerNodes')]",
+                            "hardwareProfile": {
+                                "vmSize": "[parameters('workerNodeSize')]"
+                            },
+                            "osProfile": {
+                                "linuxOperatingSystemProfile": {
+                                    "username": "[parameters('sshUserName')]",
+                                    "password": "[parameters('sshPassword')]"
+                                }
+                            },
+                            "virtualNetworkProfile": {
+                              "id": "[variables('vNet').id]",
+                              "subnet": "[variables('vNet').subnet]"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "[concat(parameters('clusterName'),'/', variables('applicationName'))]",
+            "type": "Microsoft.HDInsight/clusters/applications",
+            "apiVersion": "2015-03-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.HDInsight/clusters/',parameters('clusterName'))]"
+            ],
+            "properties": {
+                "marketPlaceIdentifier": "EmptyNode",
+                "computeProfile": {
+                    "roles": [
+                        {
+                            "name": "edgenode",
+                            "targetInstanceCount": 1,
+                            "hardwareProfile": {
+                                "vmSize": "[parameters('edgeNodeSize')]"
+                            }
+                        }
+                    ]
+                },
+                "installScriptActions": [
+                  {
+                    "name": "[concat('knime-spark-job-server-install','-',uniquestring(variables('applicationName')))]",
+                    "uri": "https://download.knime.org/store/3.3/install-jobserver-hdinsight.sh",
+                    "parameters": "[concat(parameters('contextPerJvm'), ' ', parameters('numCpuCores'), ' ',  parameters('memoryPerYarnContainer'))]",
+                    "roles": ["edgenode"]
+                  }
+                ],
+                "uninstallScriptActions": [],
+                "httpsEndpoints": [
+                  {
+            				"subDomainSuffix": "sjs",
+                    "accessModes": ["webpage"],
+                    "destinationPort": 8090
+                  }
+                ],
+                "applicationType": "CustomApplication"
+            }
+        }
+    ],
+    "outputs": {
+        "vnet": {
+          "type": "object",
+          "value": "[reference(resourceId('Microsoft.Network/virtualNetworks',variables('vNet').name))]"
+        },
+        "storage": {
+            "type": "object",
+            "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')))]"
+        },
+        "cluster": {
+            "type": "object",
+            "value": "[reference(resourceId('Microsoft.HDInsight/clusters',parameters('clusterName')))]"
+        },
+        "application": {
+            "type": "object",
+            "value": "[reference(resourceId('Microsoft.HDInsight/clusters/applications/',parameters('clusterName'), variables('applicationName')))]"
+        }
+    }
+}
