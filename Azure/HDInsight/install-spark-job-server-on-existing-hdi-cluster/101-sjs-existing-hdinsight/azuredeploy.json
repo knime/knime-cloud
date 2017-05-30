@@ -1,0 +1,127 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "existingClusterName": {
+            "type": "String",
+            "metadata": {
+                "description": "The name of the existing HDInsight cluster"
+            }
+        },
+        "gallerypackageIdentity": {
+            "defaultValue": "Spark Job Server for KNIME Spark Executor",
+            "type": "String",
+            "metadata": {
+                "description": "Any non-empty value is accepted. After the package is published, this parameter will be used to link the application install to details about the application in the marketplace."
+            }
+        },
+        "edgeNodeSize": {
+            "defaultValue": "Standard_D12_v2",
+            "allowedValues": [
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D11_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D5"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Size of the edge node that hosts the application"
+            }
+        },
+        "jvmPerContext": {
+            "defaultValue": "true",
+            "allowedValues": [
+                "false",
+                "true"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Whether VM per Context should be enabled"
+            }
+        },
+        "numCpuCores": {
+            "defaultValue": 4,
+            "minValue": 4,
+            "maxValue": 16,
+            "type": "Int",
+            "metadata": {
+                "description": "How many CPU Cores should be used by the Spark Job Server for KNIME Spark Executor (Choose appropriately to edge node size)"
+            }
+        },
+        "memoryPerYarnContainer": {
+            "defaultValue": "8G",
+            "type": "String",
+            "metadata": {
+                "description": "The amount of memory to be used per Spark executor process (e.g. 512M, 1G)"
+            }
+        }
+    },
+    "variables": {
+        "clusterApiVersion": "2015-03-01-preview",
+        "applicationName": "spark-job-server-for-knime-spark-executor"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.HDInsight/clusters/applications",
+            "name": "[concat(parameters('existingClusterName'), '/', variables('applicationName'))]",
+            "apiVersion": "[variables('clusterApiVersion')]",
+            "properties": {
+                "marketPlaceIdentifier": "[parameters('galleryPackageIdentity')]",
+                "computeProfile": {
+                    "roles": [
+                        {
+                            "name": "edgenode",
+                            "targetInstanceCount": 1,
+                            "hardwareProfile": {
+                                "vmSize": "[parameters('edgeNodeSize')]"
+                            }
+                        }
+                    ]
+                },
+                "installScriptActions": [
+                    {
+                        "name": "[concat('knime-spark-job-server-install','-',uniquestring(variables('applicationName')))]",
+                        "uri": "https://download.knime.org/store/3.3/install-jobserver-hdinsight.sh",
+                        "parameters": "[concat(parameters('jvmPerContext'), ' ', parameters('numCpuCores'), ' ',  parameters('memoryPerYarnContainer'))]",
+                        "roles": [
+                            "edgenode"
+                        ]
+                    }
+                ],
+                "uninstallScriptActions": [],
+                "httpsEndpoints": [
+                    {
+                        "subDomainSuffix": "sjs",
+                        "accessModes": [
+                            "webpage"
+                        ],
+                        "destinationPort": 8090
+                    }
+                ],
+                "sshEndpoints": [],
+                "provisioningState": "InProgress",
+                "applicationState": "DeleteError",
+                "errors": [
+                    {
+                        "code": "FailedToRemoveApplicationErrorCode",
+                        "message": "Failed to prepare remove application with id: 27969"
+                    }
+                ],
+                "applicationType": "CustomApplication"
+            }
+        }
+    ],
+    "outputs": {
+        "application": {
+            "type": "Object",
+            "value": "[reference(resourceId('Microsoft.HDInsight/clusters/applications/', parameters('existingClusterName'), variables('applicationName')))]"
+        }
+    }
+}
