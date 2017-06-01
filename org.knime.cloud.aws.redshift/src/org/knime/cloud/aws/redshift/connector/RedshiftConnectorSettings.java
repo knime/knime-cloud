@@ -66,7 +66,7 @@ class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings {
 
     private static final String CFG_SSL = "useSsl";
 
-    private boolean m_useSsl = false;
+    private boolean m_useSsl = true;
 
     private static final String CFG_PARAMETER = "parameter";
 

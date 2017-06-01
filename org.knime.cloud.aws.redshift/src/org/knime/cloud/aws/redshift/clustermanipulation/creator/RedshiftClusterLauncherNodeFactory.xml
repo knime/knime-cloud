@@ -3,7 +3,7 @@
     <name>Amazon Redshift Cluster Launcher</name>
     
     <shortDescription>
-    	Creates an Amazon Redshift Cluster according to the settings provided. Passes on the cluster's information as flow variables.
+    	Creates an Amazon Redshift Cluster.
     </shortDescription>
     
     <fullDescription>
@@ -11,6 +11,10 @@
         	<p>
         		This node creates an Amazon Redshift Cluster according to the settings provided. 
         		The clusters information, such as hostname, port and default database name, are provided as flow variables.
+        		<br/>
+        		<br/>
+        		Creating an Amazon Redshift Cluster can take several minutes to complete, 
+        		during this time the node will remain in the executing state.
         	</p>
         	<p>
         		For further documentation please take a look at the <a href="https://aws.amazon.com/documentation/redshift/">Redshift Documentation</a>.
@@ -44,9 +48,9 @@
         <option name="Cluster name">
         	The name for the cluster
         	<br/>
-        	<b>Query...</b>
+        	<b>Browse...</b>
         	<br/>
-        	This allows to query already existing clusters. Existing cluster names can then be selected from a list.
+        	This allows to browse already existing clusters. Existing cluster names can then be selected from a list.
         </option>
         <option name="Port number">
         	The port number for the cluster

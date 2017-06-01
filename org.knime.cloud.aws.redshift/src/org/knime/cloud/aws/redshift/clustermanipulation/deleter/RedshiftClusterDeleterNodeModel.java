@@ -68,6 +68,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.Authe
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
+import org.knime.core.node.port.flowvariable.FlowVariablePortObject;
 import org.knime.core.util.Pair;
 
 import com.amazonaws.services.redshift.AmazonRedshift;
@@ -120,7 +121,7 @@ class RedshiftClusterDeleterNodeModel extends NodeModel {
      * Constructor for the node model.
      */
     protected RedshiftClusterDeleterNodeModel() {
-        super(new PortType[]{}, new PortType[]{});
+        super(new PortType[]{FlowVariablePortObject.TYPE_OPTIONAL}, new PortType[]{});
     }
 
     /**

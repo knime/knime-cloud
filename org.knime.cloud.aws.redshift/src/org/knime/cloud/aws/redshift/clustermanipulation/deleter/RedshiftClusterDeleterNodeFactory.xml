@@ -10,6 +10,9 @@
         <intro>
         	<p>
         		This node deletes an Amazon Redshift Cluster according to the settings provided. 
+        		<br/>
+        		<br/>
+        		You can find created snapshots in your <a href="https://console.aws.amazon.com/console">AWS management console for Redshift</a>.
         	</p>
         	<p>
         		For further documentation please take a look at the <a href="https://aws.amazon.com/documentation/redshift/">Redshift Documentation</a>.
@@ -35,26 +38,27 @@
         	When selected the default credential provider chain is used for authentication. Default location is "~/.aws/credentials" on most platforms. 
        	</option>
         <option name="Region">
-        	The Amazon AWS geographical region the cluster should be launched in.
+        	The Amazon AWS geographical region the cluster should be deleted in.
         </option>
         <option name="Polling interval [s]">
         	The interval (in seconds) in which the cluster status should be checked after issuing the delete order.
         </option>
         <option name="Cluster name">
-        	The name for the cluster
+        	The name of the cluster
         	<br/>
-        	<b>Query...</b>
+        	<b>Browse...</b>
         	<br/>
-        	This allows to query already existing clusters. Existing cluster names can then be selected from a list.
+        	This allows to browse existing clusters. Existing cluster names can then be selected from a list.
         </option>
         <option name="Final snapshot name">
-			The name of the final snapshot that can be created when deleting a redshift cluster.
+			The name of the final snapshot that can be created when deleting a Redshift cluster.
         </option>
         <option name="Skip final snapshot">
 			Whether the creation of the final snapshot should be skipped.
         </option>
     </fullDescription>
     
-    <ports>        
+    <ports>      
+    <inPort index="0" name="Flow Variables">Optional input containing flow variables for parameterization.</inPort>
     </ports>  
 </knimeNode>
