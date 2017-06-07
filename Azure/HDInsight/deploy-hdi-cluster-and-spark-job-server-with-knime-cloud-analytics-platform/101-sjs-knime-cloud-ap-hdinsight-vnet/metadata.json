@@ -1,0 +1,7 @@
+{
+  "itemDisplayName": "Install Spark Job Server For KNIME Spark Executor on an Existing HDInsight Cluster",
+  "description": "This template allows you to install the spark job server for the KNIME Spar Executor on an edge node to an existing HDInsight cluster.",
+  "summary": "Install Spark Job Server for KNIME Spark Executor on existing Spark cluster in Azure HDInsight.",
+  "githubUsername": "oole",
+  "dateUpdated": "2017-05-15"
+}
