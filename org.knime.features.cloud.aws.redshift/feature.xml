@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="org.knime.features.cloud.aws.redshift"
-      label="KNIME Redshift Connector And Tools"
+      label="KNIME Amazon Redshift Connector And Tools"
       version="3.4.0.qualifier"
       provider-name="KNIME GmbH, Konstanz, Germany">
 
