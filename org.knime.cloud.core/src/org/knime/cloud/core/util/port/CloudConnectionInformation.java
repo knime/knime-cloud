@@ -48,9 +48,6 @@
  */
 package org.knime.cloud.core.util.port;
 
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
@@ -103,12 +100,6 @@ public class CloudConnectionInformation extends ConnectionInformation {
 	public void save(final ModelContentWO model) {
 		super.save(model);
 		model.addBoolean("keyChain", m_useKeyChain);
-	}
-
-	@Override
-	public void save(final DataOutput output) throws IOException {
-		super.save(output);
-		output.writeBoolean(m_useKeyChain);
 	}
 
 	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
