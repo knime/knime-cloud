@@ -3,14 +3,14 @@
       id="org.knime.features.cloud.aws.redshift"
       label="KNIME Amazon Redshift Connector And Tools"
       version="3.5.0.qualifier"
-      provider-name="KNIME GmbH, Konstanz, Germany">
+      provider-name="KNIME AG, Zurich, Switzerland">
 
    <description>
       This feature contains nodes for interacting with Amazon Redshift. For full functionality please install the KNIME Amazon Redshift Driver as well.
    </description>
 
    <copyright>
-      Copyright by KNIME GmbH, Konstanz, Germany
+      Copyright by KNIME AG, Zurich, Switzerland
    </copyright>
 
    <license>

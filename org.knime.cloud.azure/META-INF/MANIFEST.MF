@@ -6,7 +6,7 @@ Bundle-Version: 3.5.0.qualifier
 Bundle-ClassPath: lib/azure-keyvault-core-0.8.0.jar,
  lib/azure-storage-4.3.0.jar,
  absconnection.jar
-Bundle-Vendor: KNIME GmbH, Konstanz, Germany
+Bundle-Vendor: KNIME AG, Zurich, Switzerland
 Require-Bundle: org.knime.workbench.repository;bundle-version="[3.2.0,4.0.0)",
  org.knime.base;bundle-version="[3.2.0,4.0.0)",
  org.knime.base.filehandling;bundle-version="[3.2.0,4.0.0)",

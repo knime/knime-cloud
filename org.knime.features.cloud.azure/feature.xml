@@ -3,14 +3,14 @@
       id="org.knime.features.cloud.azure"
       label="KNIME Azure Cloud Connectors"
       version="3.5.0.qualifier"
-      provider-name="KNIME GmbH, Konstanz, Germany">
+      provider-name="KNIME AG, Zurich, Switzerland">
 
    <description>
       This feature contains nodes for interacting with Microsoft Azure.
    </description>
 
    <copyright>
-      Copyright by KNIME GmbH, Konstanz, Germany
+      Copyright by KNIME AG, Zurich, Switzerland
    </copyright>
 
    <license>
