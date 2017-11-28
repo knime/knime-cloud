@@ -57,6 +57,10 @@
         </option>
         <option name="Test connection">
         	Open dialog that tests the current connection.
+        	<p>
+        	Note: The connection will also succeed if you have restricted permissions for file listing in S3.
+        	In that case browsing in the file handling nodes will not be possible but paths can be entered manually.
+        	</p>
         </option>
                
     </fullDescription>

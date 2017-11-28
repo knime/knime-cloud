@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.util.KnimeEncryption;
 
@@ -13,6 +14,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.transfer.TransferManager;
 
@@ -61,9 +63,20 @@ public class S3Connection extends Connection {
 			    }
 
 				resetCache();
-				getBuckets();
+				try {
+				    // Try to fetch buckets. Will not work if ListAllMyBuckets is set to false
+				    getBuckets();
+				} catch (final AmazonS3Exception e){
+				    if (e.getErrorCode().equals("InvalidAccessKeyId")) {
+				        throw new InvalidSettingsException("Check your Access Key ID / Secret Key.");
+				    } else if (e.getErrorCode().equals("AccessDenied")) {
+				        // do nothing
+				    } else {
+				        throw e;
+				    }
+				}
 				m_transferManager = new TransferManager(m_client);
-			} catch (final Exception ex) {
+			} catch (final AmazonS3Exception ex) {
 				close();
 				throw ex;
 			}
@@ -109,9 +122,9 @@ public class S3Connection extends Connection {
 	/**
 	 * Get the List of this connection's cached buckets
 	 * @return the list of this connection's cached buckets
-	 * @throws Exception
+	 * @throws AmazonS3Exception
 	 */
-	public List<String> getBuckets() throws Exception {
+	public List<String> getBuckets() throws AmazonS3Exception {
 		if (m_bucketsCache == null) {
 			m_bucketsCache = new ArrayList<String>();
 			for (final Bucket bucket : m_client.listBuckets()) {
