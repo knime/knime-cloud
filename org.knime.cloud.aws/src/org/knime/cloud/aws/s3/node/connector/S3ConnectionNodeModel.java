@@ -50,8 +50,13 @@ package org.knime.cloud.aws.s3.node.connector;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 
+import org.knime.base.filehandling.remote.files.ConnectionMonitor;
+import org.knime.base.filehandling.remote.files.RemoteFileFactory;
+import org.knime.cloud.aws.s3.filehandler.S3Connection;
+import org.knime.cloud.aws.s3.filehandler.S3RemoteFile;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
 import org.knime.cloud.aws.util.AWSConnectionInformationPortObject;
 import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
@@ -178,6 +183,17 @@ public class S3ConnectionNodeModel extends NodeModel {
 		m_model.validateValues();
 		final CloudConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
+		URI resolve = connectionInformation.toURI().resolve("/");
+            try {
+                final S3RemoteFile remoteFile = (S3RemoteFile) RemoteFileFactory.createRemoteFile(resolve,
+                    connectionInformation, new ConnectionMonitor<S3Connection>());
+            } catch (Exception ex) {
+                if (ex instanceof InvalidSettingsException) {
+                    throw (InvalidSettingsException)ex;
+                } else {
+                    throw new InvalidSettingsException(ex.getMessage());
+                }
+            }
 		return new CloudConnectionInformationPortObjectSpec(connectionInformation);
 	}
 
