@@ -2,6 +2,7 @@ package org.knime.cloud.aws.s3.filehandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -67,10 +68,10 @@ public class S3Connection extends Connection {
 				    // Try to fetch buckets. Will not work if ListAllMyBuckets is set to false
 				    getBuckets();
 				} catch (final AmazonS3Exception e){
-				    if (e.getErrorCode().equals("InvalidAccessKeyId")) {
+				    if (Objects.equals(e.getErrorCode(), "InvalidAccessKeyId")) {
 				        throw new InvalidSettingsException("Check your Access Key ID / Secret Key.");
-				    } else if (e.getErrorCode().equals("AccessDenied")) {
-				        // do nothing
+				    } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
+				        // do nothing, see AP-8279
 				    } else {
 				        throw e;
 				    }
