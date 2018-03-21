@@ -58,6 +58,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.core.node.workflow.ICredentials;
@@ -73,17 +74,23 @@ import com.amazonaws.regions.Regions;
 public class AWSConnectionInformationSettings extends ConnectionInformationCloudSettings {
 
 	private final SettingsModelString m_region = createRegionModel();
+	private final SettingsModelBoolean m_sSEncryption = createSSEncrpyionModel();
+
+	private final static String SSE_KEY = "ssencryption";
 
 	private SettingsModelString createRegionModel() {
 		return new SettingsModelString("region", "us-east-1");
 	}
 
+	private SettingsModelBoolean createSSEncrpyionModel() {
+	    return new SettingsModelBoolean(SSE_KEY, false);
+	}
 
 
 	/**
 	 * @param prefix
 	 */
-	public AWSConnectionInformationSettings(String prefix) {
+	public AWSConnectionInformationSettings(final String prefix) {
 		super(prefix);
 	}
 
@@ -154,6 +161,9 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 	            connectionInformation.setPassword(getPasswordValue());
 	        }
 		}
+
+		connectionInformation.setUseSSEncryption(getSSEncryptionModel().getBooleanValue());
+
 		return connectionInformation;
 	}
 
@@ -161,18 +171,28 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 	public void saveSettingsTo(final NodeSettingsWO settings) {
 		super.saveSettingsTo(settings);
 		m_region.saveSettingsTo(settings);
+		// New Server Side Encryption AP-8823
+		m_sSEncryption.saveSettingsTo(settings);
 	}
 
 	@Override
 	public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 		super.loadValidatedSettings(settings);
 		m_region.loadSettingsFrom(settings);
+		// New Server Side Encryption AP-8823
+		if (settings.containsKey(SSE_KEY)) {
+		    m_sSEncryption.loadSettingsFrom(settings);
+		}
 	}
 
 	@Override
 	public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 		super.validateSettings(settings);
 		m_region.validateSettings(settings);
+		// New Server Side Encryption AP-8823
+		if (settings.containsKey(SSE_KEY)) {
+		    m_sSEncryption.validateSettings(settings);
+		}
 	}
 
 	/**
@@ -181,6 +201,14 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 	 */
 	public SettingsModelString getRegionModel() {
 		return m_region;
+	}
+
+	/**
+	 * Get the {@link SettingsModelBoolean} for the Server Side Encryption.
+	 * @return the {@link SettingsModelBoolean} for the Server Side Encryption
+	 */
+	public SettingsModelBoolean getSSEncryptionModel() {
+	    return m_sSEncryption;
 	}
 
 

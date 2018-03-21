@@ -37,6 +37,7 @@ public class S3Connection extends Connection {
 
 	private List<String> m_bucketsCache;
 
+
 	public S3Connection(final CloudConnectionInformation connectionInformation) {
 		m_connectionInformation = connectionInformation;
 		m_bucketsCache = new ArrayList<String>();
@@ -169,6 +170,16 @@ public class S3Connection extends Connection {
 			m_bucketsCache.clear();
 		}
 		m_bucketsCache = null;
+	}
+
+	/**
+	 * Returns whether to use server side encryption.
+	 *
+	 * @return Whether to use server side encryption
+	 */
+	public boolean useSSEncryption() {
+        return m_connectionInformation.useSSEncryption();
+
 	}
 
 }

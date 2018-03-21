@@ -105,6 +105,14 @@ public class AWSConnectionInformationView extends JPanel {
 
         buf.append("<strong>Connection timeout in milliseconds:</strong>" + WHITE_SPACE);
         buf.append("<tt>" + cloudConnectioInformation.getTimeout() + "</tt>");
+        buf.append(NEW_LINE);
+
+        buf.append("<strong>Encryption:</strong>" + WHITE_SPACE);
+        if (cloudConnectioInformation.useSSEncryption()) {
+            buf.append("<tt>SSE (Server Side Encryption</tt>)");
+        } else{
+            buf.append("<tt>None</tt>");
+        }
 
         final JTextPane textArea = new JTextPane();
         textArea.setContentType("text/html");

@@ -80,6 +80,7 @@ public class S3ConnectionNodeDialog extends NodeDialogPane {
 	private final AWSConnectionInformationComponents m_awsComp = new AWSConnectionInformationComponents(
 			S3ConnectionNodeModel.createAWSConnectionModel(), S3ConnectionNodeModel.getNameMap());
 
+	/** Constructor	 */
 	public S3ConnectionNodeDialog() {
 		final JPanel panel = new JPanel(new GridBagLayout());
 		final GridBagConstraints gbc = new GridBagConstraints();
@@ -97,6 +98,17 @@ public class S3ConnectionNodeDialog extends NodeDialogPane {
 		testConnectionButton.addActionListener(new TestConnectionListener());
 		panel.add(testConnectionButton, gbc);
 		addTab("Options", panel);
+
+		final JPanel encryptionPanel = new JPanel(new GridBagLayout());
+        final GridBagConstraints gbc2 = new GridBagConstraints();
+        gbc2.insets = new Insets(5, 5, 5, 5);
+        gbc2.anchor = GridBagConstraints.NORTHWEST;
+        gbc2.weightx = 0;
+        gbc2.weighty = 0;
+        gbc2.gridx = 0;
+        gbc2.gridy = 0;
+        encryptionPanel.add(m_awsComp.getEncryptionDialogPanel(), gbc);
+        addTab("Encryption",  encryptionPanel);
 	}
 
 	/**

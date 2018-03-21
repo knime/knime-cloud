@@ -61,6 +61,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.defaultnodesettings.DialogComponentAuthentication;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObjectSpec;
@@ -79,16 +80,19 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 
 	private final DialogComponentStringSelection m_region;
 
+	private final DialogComponentBoolean m_sSEncrpytion;
+
 	/**
 	 * Creates the DialogComponents including the s3 specifig region chooser
-	 * @param settings The correpsonding {@link AWSConnectionInformationSettings}
+	 * @param settings The corresponding {@link AWSConnectionInformationSettings}
 	 * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
 	 */
-	public AWSConnectionInformationComponents(AWSConnectionInformationSettings settings,
-			HashMap<AuthenticationType, Pair<String, String>> nameMap) {
+	public AWSConnectionInformationComponents(final AWSConnectionInformationSettings settings,
+			final HashMap<AuthenticationType, Pair<String, String>> nameMap) {
 		super(settings, nameMap);
 		final ArrayList<String> regions = loadRegions();
 		m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions , false);
+		m_sSEncrpytion = new DialogComponentBoolean(settings.getSSEncryptionModel(), "Use SSE (Server Side Encryption)");
 	}
 
 	private ArrayList<String> loadRegions() {
@@ -102,6 +106,39 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 			}
 		}
 		return regionNames;
+	}
+
+	/**
+     * Get the {@link JPanel} for the Cloud connector dialog
+     *
+     * @return The panel for the cloud connector dialog
+     */
+	@Override
+    public JPanel getDialogPanel() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.weightx = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(super.getDialogPanel(), gbc);
+        return panel;
+    }
+
+	/**
+	 * Get the {@link JPanel} for the cloud connector encryption dialog.
+	 *
+	 * @return The panel for the cloud connector encryption dialog
+	 */
+	public JPanel getEncryptionDialogPanel() {
+	    final JPanel panel = new JPanel(new GridBagLayout());
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.weightx = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(m_sSEncrpytion.getComponentPanel(), gbc);
+        return panel;
 	}
 
 	@Override
@@ -135,11 +172,13 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 	public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp) throws NotConfigurableException {
 		super.loadSettingsFrom(settings, specs, cp);
 		m_region.loadSettingsFrom(settings, specs);
+		m_sSEncrpytion.loadSettingsFrom(settings, specs);
 	}
 
 	@Override
 	public void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
 		super.saveSettingsTo(settings);
 		m_region.saveSettingsTo(settings);
+		m_sSEncrpytion.saveSettingsTo(settings);
 	}
 }

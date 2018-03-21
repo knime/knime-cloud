@@ -324,6 +324,12 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
         try (final InputStream in = file.openInputStream()){
             final String uri = getURI().toString();
             final ObjectMetadata metadata = new ObjectMetadata();
+
+            // Add SSEncryption --> See AP-8823
+            if (getConnection().useSSEncryption()) {
+                metadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+            }
+
             long fileSize = file.getSize();
             metadata.setContentLength(fileSize);
             final PutObjectRequest putRequest = new PutObjectRequest(getContainerName(), getBlobName(), in, metadata);

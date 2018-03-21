@@ -62,7 +62,10 @@
         	In that case browsing in the file handling nodes will not be possible but paths can be entered manually.
         	</p>
         </option>
-               
+        
+        <option name="Use SSE (Server Side Encryption)">
+        	If checked, uploads will use server side encryption.
+        </option>
     </fullDescription>
     
     <ports>        

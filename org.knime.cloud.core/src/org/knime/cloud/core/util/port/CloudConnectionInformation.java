@@ -65,6 +65,9 @@ public class CloudConnectionInformation extends ConnectionInformation {
 
 	private boolean m_useKeyChain;
 
+	private boolean m_useSSEncryption;
+	private final static String SSE_KEY = "ssencryption";
+
 	/**
 	 * Parameterless constructor
 	 */
@@ -77,6 +80,12 @@ public class CloudConnectionInformation extends ConnectionInformation {
 	protected CloudConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
         super(model);
         this.setUseKeyChain(model.getBoolean("keyChain", false));
+        // New Server Side Encryption AP-8823
+        if (model.containsKey(SSE_KEY)) {
+        	this.setUseSSEncryption(model.getBoolean(SSE_KEY));
+        } else {
+        	this.setUseSSEncryption(false);
+        }
 	}
 
 
@@ -96,10 +105,20 @@ public class CloudConnectionInformation extends ConnectionInformation {
 		return m_useKeyChain;
 	}
 
+	public void setUseSSEncryption(final boolean use) {
+		m_useSSEncryption = use;
+	}
+
+	public boolean useSSEncryption() {
+		return m_useSSEncryption;
+	}
+
 	@Override
 	public void save(final ModelContentWO model) {
 		super.save(model);
 		model.addBoolean("keyChain", m_useKeyChain);
+		// New Server Side Encryption AP-8823
+		model.addBoolean("SSE_KEY", m_useSSEncryption);
 	}
 
 	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
