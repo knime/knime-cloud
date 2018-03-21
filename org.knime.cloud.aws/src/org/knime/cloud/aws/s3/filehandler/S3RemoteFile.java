@@ -128,14 +128,18 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean doesContainerExist(final String containerName) throws Exception {
-	    boolean exists = false;
-	    final S3Connection openedConnection = getOpenedConnection();
-	    if (openedConnection.restrictedPermissions()) {
-	        exists = true;
-	    } else {
-	        exists = openedConnection.isOwnBucket(containerName);
-	    }
-		return exists;
+	    try {
+            boolean exists = false;
+            final S3Connection openedConnection = getOpenedConnection();
+            if (openedConnection.restrictedPermissions()) {
+                exists = true;
+            } else {
+                exists = openedConnection.isOwnBucket(containerName);
+            }
+        	return exists;
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
+		}
 	}
 
 	/**
@@ -143,7 +147,11 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean doestBlobExist(final String containerName, final String blobName) throws Exception {
-		return getClient().doesObjectExist(containerName, blobName);
+	    try {
+	        return getClient().doesObjectExist(containerName, blobName);
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
 	/**
@@ -151,19 +159,23 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected S3RemoteFile[] listRootFiles() throws Exception {
-		final List<Bucket> buckets = getClient().listBuckets();
-		if (buckets == null || buckets.isEmpty()) {
-			return new S3RemoteFile[0];
-		}
-		final S3RemoteFile[] files = new S3RemoteFile[buckets.size()];
-		for (int i = 0; i < files.length; i++) {
-			final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
-					getURI().getPort(), createContainerPath(buckets.get(i).getName()), getURI().getQuery(),
-					getURI().getFragment());
-			files[i] = new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
-					getConnectionMonitor());
-		}
-		return files;
+	    try {
+	        final List<Bucket> buckets = getClient().listBuckets();
+	        if (buckets == null || buckets.isEmpty()) {
+	            return new S3RemoteFile[0];
+	        }
+	        final S3RemoteFile[] files = new S3RemoteFile[buckets.size()];
+	        for (int i = 0; i < files.length; i++) {
+	            final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
+	                    getURI().getPort(), createContainerPath(buckets.get(i).getName()), getURI().getQuery(),
+	                    getURI().getFragment());
+	            files[i] = new S3RemoteFile(uri, (CloudConnectionInformation)getConnectionInformation(),
+	                    getConnectionMonitor());
+	        }
+	        return files;
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
     /**
@@ -217,7 +229,11 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected long getBlobSize() throws Exception {
-		return getClient().getObjectMetadata(getContainerName(), getBlobName()).getContentLength();
+	    try {
+	        return getClient().getObjectMetadata(getContainerName(), getBlobName()).getContentLength();
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
 	/**
@@ -225,7 +241,11 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected long getLastModified() throws Exception {
-		return getClient().getObjectMetadata(getContainerName(), getBlobName()).getLastModified().getTime();
+	    try {
+	        return getClient().getObjectMetadata(getContainerName(), getBlobName()).getLastModified().getTime();
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
 	/**
@@ -233,11 +253,15 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean deleteContainer() throws Exception {
-		for (final CloudRemoteFile<S3Connection> file : listFiles()) {
-			((S3RemoteFile) file).delete();
+		try {
+    	    for (final CloudRemoteFile<S3Connection> file : listFiles()) {
+    			((S3RemoteFile) file).delete();
+    		}
+    		getClient().deleteBucket(getContainerName());
+    		return true;
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
 		}
-		getClient().deleteBucket(getContainerName());
-		return true;
 	}
 
 	/**
@@ -245,10 +269,14 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean deleteDirectory() throws Exception {
-		for (final CloudRemoteFile<S3Connection> file : listFiles()) {
-			((S3RemoteFile) file).delete();
+		try {
+    	    for (final CloudRemoteFile<S3Connection> file : listFiles()) {
+    			((S3RemoteFile) file).delete();
+    		}
+    		return deleteBlob();
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
 		}
-		return deleteBlob();
 	}
 
 	/**
@@ -256,8 +284,12 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean deleteBlob() throws Exception {
-		getClient().deleteObject(getContainerName(), getBlobName());
-		return true;
+		try {
+    	    getClient().deleteObject(getContainerName(), getBlobName());
+    		return true;
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
+		}
 	}
 
 	/**
@@ -265,8 +297,12 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean createContainer() throws Exception {
-		getClient().createBucket(getContainerName());
-		return true;
+		try {
+		    getClient().createBucket(getContainerName());
+		    return true;
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
+		}
 	}
 
 	/**
@@ -274,18 +310,22 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean createDirectory(final String dirName) throws Exception {
-		final ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(0);
+		try {
+		    final ObjectMetadata metadata = new ObjectMetadata();
+		    metadata.setContentLength(0);
 
-		// Create empty content
-		final InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
-		// Create a PutObjectRequest passing the folder name
-		// suffixed by the DELIMITER
-		final PutObjectRequest putObjectRequest = new PutObjectRequest(getContainerName(), dirName, emptyContent,
-				metadata);
-		// Send request to S3 to create folder
-		getClient().putObject(putObjectRequest);
-		return true;
+		    // Create empty content
+		    final InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
+		    // Create a PutObjectRequest passing the folder name
+		    // suffixed by the DELIMITER
+		    final PutObjectRequest putObjectRequest = new PutObjectRequest(getContainerName(), dirName, emptyContent,
+		        metadata);
+		    // Send request to S3 to create folder
+		    getClient().putObject(putObjectRequest);
+		    return true;
+		} catch (AmazonS3Exception amazonException) {
+		    throw new KnimeS3Exception(amazonException);
+		}
 	}
 
 	/**
@@ -293,15 +333,19 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	public InputStream openInputStream() throws Exception {
-		final String bucketName = getContainerName();
-		final String key = getBlobName();
+	    try {
+    		final String bucketName = getContainerName();
+    		final String key = getBlobName();
 
-		final GetObjectRequest getRequest = new GetObjectRequest(bucketName, key);
-		// create input stream from the S3Object specified in the getRequest
-		final S3Object object = getClient().getObject(getRequest);
-		final S3ObjectInputStream s3inputStream = object.getObjectContent();
+    		final GetObjectRequest getRequest = new GetObjectRequest(bucketName, key);
+    		// create input stream from the S3Object specified in the getRequest
+    		final S3Object object = getClient().getObject(getRequest);
+    		final S3ObjectInputStream s3inputStream = object.getObjectContent();
 
-		return new BufferedInputStream(s3inputStream);
+    		return new BufferedInputStream(s3inputStream);
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
 	/**
@@ -368,9 +412,10 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
             // check if canceled, otherwise throw exception
             exec.checkCanceled();
             throw e;
+        } catch (AmazonS3Exception amazonException) {
+            throw new KnimeS3Exception(amazonException);
         }
     }
-
 
 	@Override
 	protected void resetCache() throws Exception {
