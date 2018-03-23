@@ -38,6 +38,8 @@ public class S3Connection extends Connection {
 	private List<String> m_bucketsCache;
 
 
+	private boolean m_restrictedPermissions = false;
+
 	public S3Connection(final CloudConnectionInformation connectionInformation) {
 		m_connectionInformation = connectionInformation;
 		m_bucketsCache = new ArrayList<String>();
@@ -73,6 +75,8 @@ public class S3Connection extends Connection {
 				        throw new InvalidSettingsException("Check your Access Key ID / Secret Key.");
 				    } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
 				        // do nothing, see AP-8279
+				        // This means that we do not have access to root level,
+				        m_restrictedPermissions = true;
 				    } else {
 				        throw e;
 				    }
@@ -157,7 +161,7 @@ public class S3Connection extends Connection {
 	public boolean isOwnBucket(final String bucketName) throws Exception {
 		open();
 		if (getBuckets().contains(bucketName)) {
-			return true;
+		    return true;
 		}
 		return false;
 	}
@@ -180,6 +184,16 @@ public class S3Connection extends Connection {
 	public boolean useSSEncryption() {
         return m_connectionInformation.useSSEncryption();
 
+	}
+	
+	/**
+	 * Returns whether or not the connection was created with credentials that have restricted access to S3.
+	 * This could be bucket-specific access without list-buckets permissions.
+	 *
+	 * @return Whether or not the connection was created with credentials that have restricted access to S3.
+	 */
+	protected boolean restrictedPermissions() {
+	    return m_restrictedPermissions;
 	}
 
 }

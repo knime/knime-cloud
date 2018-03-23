@@ -128,7 +128,14 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean doesContainerExist(final String containerName) throws Exception {
-		return getOpenedConnection().isOwnBucket(containerName);
+	    boolean exists = false;
+	    final S3Connection openedConnection = getOpenedConnection();
+	    if (openedConnection.restrictedPermissions()) {
+	        exists = true;
+	    } else {
+	        exists = openedConnection.isOwnBucket(containerName);
+	    }
+		return exists;
 	}
 
 	/**
