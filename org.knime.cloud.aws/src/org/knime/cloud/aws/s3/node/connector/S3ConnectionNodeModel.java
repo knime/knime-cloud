@@ -54,6 +54,7 @@ import java.net.URI;
 import java.util.HashMap;
 
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
+import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.base.filehandling.remote.files.RemoteFileFactory;
 import org.knime.cloud.aws.s3.filehandler.S3Connection;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
@@ -184,7 +185,13 @@ public class S3ConnectionNodeModel extends NodeModel {
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 		URI resolve = connectionInformation.toURI().resolve("/");
 		try {
-		    RemoteFileFactory.createRemoteFile(resolve, connectionInformation, new ConnectionMonitor<S3Connection>());
+		    RemoteFile<S3Connection> s3RemoteFile = RemoteFileFactory.createRemoteFile(resolve, connectionInformation, new ConnectionMonitor<S3Connection>());
+		    S3Connection connection = s3RemoteFile.getConnection();
+		    if (connection.restrictedPermissions()) {
+		        setWarningMessage("The credentials provided have restricted permissions. "
+		            + "File browsing in the Remote File nodes might not work as expected.\n"
+		            + "All buckets will be assumed existing, as they cannot be listed.");
+		    }
 		} catch (InvalidSettingsException ex) {
 		    throw ex;
 		} catch (Exception ex) {

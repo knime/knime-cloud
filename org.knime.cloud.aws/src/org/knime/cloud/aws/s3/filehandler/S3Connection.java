@@ -192,7 +192,7 @@ public class S3Connection extends Connection {
 	 *
 	 * @return Whether or not the connection was created with credentials that have restricted access to S3.
 	 */
-	protected boolean restrictedPermissions() {
+	public boolean restrictedPermissions() {
 	    return m_restrictedPermissions;
 	}
 
