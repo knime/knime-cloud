@@ -184,14 +184,15 @@ public class S3ConnectionNodeModel extends NodeModel {
 		final CloudConnectionInformation connectionInformation = m_model
 				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 		URI resolve = connectionInformation.toURI().resolve("/");
-		try {
-		    RemoteFile<S3Connection> s3RemoteFile = RemoteFileFactory.createRemoteFile(resolve, connectionInformation, new ConnectionMonitor<S3Connection>());
-		    S3Connection connection = s3RemoteFile.getConnection();
-		    if (connection.restrictedPermissions()) {
-		        setWarningMessage("The credentials provided have restricted permissions. "
-		            + "File browsing in the Remote File nodes might not work as expected.\n"
-		            + "All buckets will be assumed existing, as they cannot be listed.");
-		    }
+        try {
+            RemoteFile<S3Connection> s3RemoteFile = RemoteFileFactory.createRemoteFile(resolve, connectionInformation,
+                new ConnectionMonitor<S3Connection>());
+            S3Connection connection = s3RemoteFile.getConnection();
+            if (connection.restrictedPermissions()) {
+                setWarningMessage("The credentials provided have restricted permissions. "
+                    + "File browsing in the Remote File nodes might not work as expected.\n"
+                    + "All buckets will be assumed existing, as they cannot be listed.");
+            }
 		} catch (InvalidSettingsException ex) {
 		    throw ex;
 		} catch (Exception ex) {

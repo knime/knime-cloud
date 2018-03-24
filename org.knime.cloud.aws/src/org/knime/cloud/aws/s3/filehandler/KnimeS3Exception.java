@@ -58,25 +58,25 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 /**
  * Exception to make the {@link AmazonS3Exception}'s more readable
  *
- * @author Ole Ostergaard, KNIME AG, Konstanz, Germany
+ * @author Ole Ostergaard
  */
-public class KnimeS3Exception extends Exception {
+final class KnimeS3Exception extends Exception {
     private static final long serialVersionUID = 1L;
 
-    /**Standard see log message shown in exceptions.*/
-    public static final String SEE_LOG_SNIPPET = " (for details see View > Open KNIME log)";
+    /** Standard see log message shown in exceptions.*/
+    public static final String SEE_LOG_SNIPPET = " (full details are in the KNIME log file)";
 
     /** Optional stack trace of original exception. */
     private final String m_stackTrace;
 
     /**
-     * Constructor taking an {@link AmazonS3Exception} and adding some explanatory error message.
-     * The full Stack and original exception will be logged and will show up in the KNIME log.
+     * Constructor taking an {@link AmazonS3Exception} and adding some explanatory error message. The full Stack and
+     * original exception will be logged and will show up in the KNIME log.
      *
-     * @param amazonException The original exception that caused the error. You can assume that this exception will be logged
-     *            automatically and will show up in the KNIME log.
+     * @param amazonException The original exception that caused the error. You can assume that this exception will be
+     *            logged automatically and will show up in the KNIME log.
      */
-    public KnimeS3Exception(final AmazonS3Exception amazonException) {
+    KnimeS3Exception(final AmazonS3Exception amazonException) {
         super(getExplanation(amazonException) + SEE_LOG_SNIPPET, amazonException);
         m_stackTrace = toStringStackTrace(amazonException);
     }
@@ -88,9 +88,9 @@ public class KnimeS3Exception extends Exception {
         } else {
             try(final StringWriter sw = new StringWriter();
                     final PrintWriter pw = new PrintWriter(sw);) {
-            cause.printStackTrace(pw);
-            pw.close();
-            return sw.toString();
+                cause.printStackTrace(pw);
+                pw.close();
+                return sw.toString();
             } catch (IOException e) {
                 return "Unable to print stack trace for Throwable: " + cause.getClass().getName()
                         + ". Exception: " + e.getMessage();
