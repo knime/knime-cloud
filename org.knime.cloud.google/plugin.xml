@@ -17,8 +17,8 @@
    <extension
          point="org.knime.workbench.repository.nodes">
       <node
-            category-path="/"
-            factory-class="org.knime.cloud.google.drive.node.GoogleDriveConnectionNodeFactory"
+            category-path="/io/filehandling/remote/connections"
+            factory-class="org.knime.cloud.google.drive.node.connector.GoogleDriveConnectionNodeFactory"
             id="org.knime.cloud.google.drive.node.GoogleDriveConnectionNodeFactory"/>
    </extension>
    

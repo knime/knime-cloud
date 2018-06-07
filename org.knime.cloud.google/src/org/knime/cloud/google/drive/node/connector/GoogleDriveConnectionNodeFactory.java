@@ -9,7 +9,7 @@ public class GoogleDriveConnectionNodeFactory extends NodeFactory<GoogleDriveCon
 	@Override
 	public GoogleDriveConnectionNodeModel createNodeModel() {
 		// TODO Auto-generated method stub
-		return null;
+		return new GoogleDriveConnectionNodeModel();
 	}
 
 	@Override
