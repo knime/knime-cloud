@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
-
-   <!-- This is an example for providing an own category 
-      <extension
-         point="org.knime.workbench.repository.categories">
-      <category
-            description="Category containing my nodes"
-            icon="icons/default.png"
-            level-id="myNodes"
-            name="My nodes"
-            path="/"/>
-   </extension>
-   -->
    
    <extension
          point="org.knime.workbench.repository.nodes">
@@ -20,6 +8,27 @@
             category-path="/io/filehandling/remote/connections"
             factory-class="org.knime.cloud.google.drive.node.connector.GoogleDriveConnectionNodeFactory"
             id="org.knime.cloud.google.drive.node.GoogleDriveConnectionNodeFactory"/>
+   </extension>
+   
+   <extension
+         point="org.knime.core.PortType">
+      <portType
+            color="#1eb9dc"
+            hidden="true"
+            name="Google Sheets"
+            objectClass="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject"
+            objectSerializer="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject$Serializer"
+            specClass="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec"
+            specSerializer="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec$Serializer">
+      </portType>
+      <portType
+            hidden="false"
+            name="GoogleDriveConnection"
+            objectClass="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject"
+            objectSerializer="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject$Serializer"
+            specClass="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec"
+            specSerializer="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec$Serializer">
+      </portType>
    </extension>
    
 </plugin>
