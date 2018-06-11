@@ -2,19 +2,13 @@ package org.knime.cloud.google.drive.node.connector;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 
-import org.knime.base.filehandling.remote.files.ConnectionMonitor;
-import org.knime.base.filehandling.remote.files.RemoteFile;
-import org.knime.base.filehandling.remote.files.RemoteFileFactory;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -31,11 +25,6 @@ import org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject;
 */
 public class GoogleDriveConnectionNodeModel extends NodeModel {
 	
-	// the logger instance
-    private static final NodeLogger logger = NodeLogger
-            .getLogger(GoogleDriveConnectionNodeModel.class);
-
-    
     public GoogleDriveConnectionNodeModel() {
     	//super(0, 1);
     	super(new PortType[]{GoogleSheetsConnectionPortObject.TYPE},
@@ -59,6 +48,7 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
         GoogleSheetsConnection connection =
             ((GoogleSheetsConnectionPortObject)inObjects[0]).getGoogleSheetsConnection();
 
+//        getLogger().debug("Jason to fill something reasonable here");
         exec.setMessage("Requesting Google Sheet");
         exec.setMessage(connection.toString());
         return null;
