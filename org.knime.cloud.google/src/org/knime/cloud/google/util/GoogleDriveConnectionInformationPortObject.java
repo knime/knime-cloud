@@ -5,21 +5,23 @@ import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.port.PortType;
 
 /**
-*
-* @author Jason Tyler, KNIME.com
-*/
+ *
+ * @author Jason Tyler, KNIME.com
+ */
 public class GoogleDriveConnectionInformationPortObject extends ConnectionInformationPortObject {
-	
-	/**
-     * @noreference This class is not intended to be referenced by clients.
-     */
-    public static final class Serializer extends AbstractSimplePortObjectSerializer<GoogleDriveConnectionInformationPortObject> {}
 
     /**
-	 * No-argument constructor for framework
-	 */
-	public GoogleDriveConnectionInformationPortObject() {
-	}
+     * @noreference This class is not intended to be referenced by clients.
+     */
+    public static final class Serializer
+        extends AbstractSimplePortObjectSerializer<GoogleDriveConnectionInformationPortObject> {
+    }
+
+    /**
+     * No-argument constructor for framework
+     */
+    public GoogleDriveConnectionInformationPortObject() {
+    }
 
     /**
      * Type of this port.
@@ -34,10 +36,10 @@ public class GoogleDriveConnectionInformationPortObject extends ConnectionInform
     /**
      * Creates a port object with the given connection information.
      *
-     * @param connectionInformationPOS The spec wrapping the connection
-     *            information.
+     * @param connectionInformationPOS The spec wrapping the connection information.
      */
-    public GoogleDriveConnectionInformationPortObject(final CloudConnectionInformationPortObjectSpec connectionInformationPOS) {
+    public GoogleDriveConnectionInformationPortObject(
+        final CloudConnectionInformationPortObjectSpec connectionInformationPOS) {
         super(connectionInformationPOS);
     }
 

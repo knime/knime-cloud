@@ -46,47 +46,48 @@
  * History
  *   Jun 11, 2018 (jtyler): created
  */
-package org.knime.cloud.google.drive.node.connector;
+package org.knime.cloud.google.drive.filehandler;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import org.knime.base.filehandling.remote.files.Connection;
 
 /**
-*
-* @author Jason Tyler, KNIME.com
-*/
-public class GoogleDriveConnectionNodeFactory extends NodeFactory<GoogleDriveConnectionNodeModel> {
+ * 
+ * @author jtyler
+ */
+public class GoogleDriveConnection extends Connection {
 
-    @Override
-    public GoogleDriveConnectionNodeModel createNodeModel() {
-        // TODO Auto-generated method stub
-        return new GoogleDriveConnectionNodeModel();
+    /**
+     * 
+     */
+    public GoogleDriveConnection() {
+        // TODO Auto-generated constructor stub
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected int getNrNodeViews() {
+    public void open() throws Exception {
         // TODO Auto-generated method stub
-        return 0;
+
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public NodeView<GoogleDriveConnectionNodeModel> createNodeView(int viewIndex,
-        GoogleDriveConnectionNodeModel nodeModel) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    protected boolean hasDialog() {
+    public boolean isOpen() {
         // TODO Auto-generated method stub
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected NodeDialogPane createNodeDialogPane() {
+    public void close() throws Exception {
         // TODO Auto-generated method stub
-        return null;
+
     }
 
 }

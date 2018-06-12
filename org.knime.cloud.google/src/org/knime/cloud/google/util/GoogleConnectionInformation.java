@@ -46,47 +46,51 @@
  * History
  *   Jun 11, 2018 (jtyler): created
  */
-package org.knime.cloud.google.drive.node.connector;
+package org.knime.cloud.google.util;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.ModelContentRO;
+import org.knime.google.api.sheets.data.GoogleSheetsConnection;
 
 /**
-*
-* @author Jason Tyler, KNIME.com
-*/
-public class GoogleDriveConnectionNodeFactory extends NodeFactory<GoogleDriveConnectionNodeModel> {
+ * 
+ * @author jtyler
+ */
+public class GoogleConnectionInformation extends CloudConnectionInformation {
+    
+    private static final long serialVersionUID = 1L;
+    
+    private GoogleSheetsConnection m_connection;
 
-    @Override
-    public GoogleDriveConnectionNodeModel createNodeModel() {
-        // TODO Auto-generated method stub
-        return new GoogleDriveConnectionNodeModel();
+    /**
+     * 
+     */
+    public GoogleConnectionInformation() {
+        // TODO Auto-generated constructor stub
     }
 
-    @Override
-    protected int getNrNodeViews() {
-        // TODO Auto-generated method stub
-        return 0;
+    /**
+     * @param model
+     * @throws InvalidSettingsException
+     */
+    public GoogleConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
+        super(model);
+        // TODO Auto-generated constructor stub
     }
 
-    @Override
-    public NodeView<GoogleDriveConnectionNodeModel> createNodeView(int viewIndex,
-        GoogleDriveConnectionNodeModel nodeModel) {
-        // TODO Auto-generated method stub
-        return null;
+    /**
+     * @return the connection
+     */
+    public GoogleSheetsConnection getConnection() {
+        return m_connection;
     }
 
-    @Override
-    protected boolean hasDialog() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    protected NodeDialogPane createNodeDialogPane() {
-        // TODO Auto-generated method stub
-        return null;
+    /**
+     * @param connection the connection to set
+     */
+    public void setConnection(GoogleSheetsConnection connection) {
+        m_connection = connection;
     }
 
 }

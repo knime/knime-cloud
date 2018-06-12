@@ -48,45 +48,24 @@
  */
 package org.knime.cloud.google.drive.node.connector;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.google.api.data.GoogleApiConnection;
+import org.knime.google.api.sheets.data.GoogleSheetsConnection;
 
 /**
-*
-* @author Jason Tyler, KNIME.com
-*/
-public class GoogleDriveConnectionNodeFactory extends NodeFactory<GoogleDriveConnectionNodeModel> {
+ * 
+ * @author jtyler
+ */
+public class GoogleDriveConnectorConfiguration {
 
-    @Override
-    public GoogleDriveConnectionNodeModel createNodeModel() {
-        // TODO Auto-generated method stub
-        return new GoogleDriveConnectionNodeModel();
-    }
-
-    @Override
-    protected int getNrNodeViews() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public NodeView<GoogleDriveConnectionNodeModel> createNodeView(int viewIndex,
-        GoogleDriveConnectionNodeModel nodeModel) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    protected boolean hasDialog() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    protected NodeDialogPane createNodeDialogPane() {
-        // TODO Auto-generated method stub
-        return null;
+    /**
+     * @param googleApiConnection The GoogleApiConnection to use
+     * @return GoogleAnalyticsConnection based on this configuration
+     * @throws InvalidSettingsException If the current configuration is not valid
+     */
+    public GoogleSheetsConnection createGoogleSheetsConnection(final GoogleApiConnection googleApiConnection)
+            throws InvalidSettingsException {
+        return new GoogleSheetsConnection(googleApiConnection);
     }
 
 }
