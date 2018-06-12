@@ -44,73 +44,51 @@
  * ---------------------------------------------------------------------
  * 
  * History
- *   Jun 11, 2018 (jtyler): created
+ *   Jun 12, 2018 (jtyler): created
  */
 package org.knime.cloud.google.drive.filehandler;
 
-import org.knime.base.filehandling.remote.files.Connection;
-import org.knime.cloud.google.util.GoogleConnectionInformation;
-import org.knime.core.node.NodeLogger;
+import java.net.URI;
 
-import com.google.api.services.drive.Drive;
+import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.base.filehandling.remote.files.ConnectionMonitor;
+import org.knime.base.filehandling.remote.files.Protocol;
+import org.knime.base.filehandling.remote.files.RemoteFile;
+import org.knime.base.filehandling.remote.files.RemoteFileHandler;
+import org.knime.cloud.google.util.GoogleConnectionInformation;
+import org.knime.core.node.util.CheckUtils;
 
 /**
  * 
  * @author jtyler
  */
-public class GoogleDriveConnection extends Connection {
+public class GoogleDriveRemoteFileHandler implements RemoteFileHandler<GoogleDriveConnection> {
     
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveConnection.class);
-    
-    private final GoogleConnectionInformation m_connectionInformation;
-    
-    private Drive m_driveService;
+    /** The {@link Protocol} of this {@link RemoteFileHandler}. */
+    public static final Protocol PROTOCOL = new Protocol("drive", -1, false, false, false, true, true,
+            true, false, false);
 
     /**
-     * 
+     * {@inheritDoc}
      */
-    public GoogleDriveConnection(final GoogleConnectionInformation connectionInformation) {
-        m_connectionInformation = connectionInformation;
+    @Override
+    public Protocol[] getSupportedProtocols() {
+        return new Protocol[] { PROTOCOL };
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void open() throws Exception {
-        
-        LOGGER.info("Creating new Google Drive service...");
-        
-        m_driveService = m_connectionInformation.getConnection().getDriveService();
-
+    public RemoteFile<GoogleDriveConnection> createRemoteFile(URI uri, ConnectionInformation connectionInformation,
+        ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
+        CheckUtils.checkArgument(connectionInformation instanceof GoogleConnectionInformation, 
+            "Connection information to be expected of class %s but it is %s", 
+            GoogleConnectionInformation.class.getSimpleName(), 
+            connectionInformation == null ? "<null>" : connectionInformation.getClass().getSimpleName());
+    final GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
+            (GoogleConnectionInformation)connectionInformation, connectionMonitor);
+    return remoteFile;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isOpen() {
-        if (m_driveService != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() throws Exception {
-        m_driveService = null;
-    }
-
-    /**
-     * @return Drive service
-     */
-    public Drive getDriveService() {
-        return m_driveService;
-    }
-    
-    
 }

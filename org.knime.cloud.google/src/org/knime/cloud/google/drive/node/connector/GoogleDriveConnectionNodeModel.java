@@ -55,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
+import org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler;
 import org.knime.cloud.google.util.GoogleConnectionInformation;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject;
 import org.knime.core.node.CanceledExecutionException;
@@ -205,6 +206,10 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
 //        		}
         GoogleConnectionInformation connectionInformation = new GoogleConnectionInformation();
         connectionInformation.setConnection(connection);
+        
+        connectionInformation.setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
+        connectionInformation.setHost("testhost");
+        connectionInformation.setUser("testuser");
         
         return new CloudConnectionInformationPortObjectSpec(connectionInformation);
     }

@@ -10,6 +10,11 @@
             id="org.knime.cloud.google.drive.node.GoogleDriveConnectionNodeFactory"/>
    </extension>
    
+    <extension point="org.knime.base.filehandling.RemoteFileHandler">
+      <RemoteFileHandler RemoteFileHandler="org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler">
+      </RemoteFileHandler>
+   </extension>
+   
    <extension
          point="org.knime.core.PortType">
       <portType
