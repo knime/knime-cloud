@@ -51,12 +51,16 @@ package org.knime.cloud.google.drive.filehandler;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
 import org.knime.cloud.google.util.GoogleConnectionInformation;
 import org.knime.core.node.NodeLogger;
+
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
 
 /**
  * 
@@ -100,7 +104,17 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected CloudRemoteFile<GoogleDriveConnection>[] listRootFiles() throws Exception {
-        // TODO Auto-generated method stub
+        
+        LOGGER.debug("**** Made it to the file handler!!! ****");
+        LOGGER.debug("Root files to list: ");
+        
+        FileList fileList = getConnection().getDriveService().files().list().execute();
+        List<File> files = fileList.getFiles();
+        
+        for (File file : files ) {
+            LOGGER.debug("File: " + file.getName() + " | Id: " + file.getId());
+        }
+        
         return null;
     }
 
@@ -109,7 +123,9 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected CloudRemoteFile<GoogleDriveConnection>[] listDirectoryFiles() throws Exception {
-        // TODO Auto-generated method stub
+        
+        LOGGER.debug("**** Made it to the file handler!!! ****");
+        
         return null;
     }
 
