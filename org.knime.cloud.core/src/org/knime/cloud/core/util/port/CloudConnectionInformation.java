@@ -89,8 +89,10 @@ public class CloudConnectionInformation extends ConnectionInformation {
         } else {
         	this.setUseSSEncryption(false);
         }
-        // Create new connection to Google
-        m_connection = new GoogleSheetsConnection(model);
+        // Create new connection to Google if protocol is "drive"
+        if (model.containsKey("protocol") && model.getString("protocol").equals("drive")) {
+            m_connection = new GoogleSheetsConnection(model);
+        }
 	}
 
 
@@ -125,7 +127,10 @@ public class CloudConnectionInformation extends ConnectionInformation {
 		// New Server Side Encryption AP-8823
 		model.addBoolean("SSE_KEY", m_useSSEncryption);
 		
-		m_connection.save(model);
+		// Save Google Connection if it exists
+		if (m_connection != null) {
+		    m_connection.save(model);
+		}
 	}
 
 	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
