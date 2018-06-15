@@ -52,6 +52,7 @@ import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionI
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
+import org.knime.google.api.sheets.data.GoogleSheetsConnection;
 
 /**
  * Extended {@link ConnectionInformation}. This provides functionality to have information about whether or not to use a
@@ -67,6 +68,8 @@ public class CloudConnectionInformation extends ConnectionInformation {
 
 	private boolean m_useSSEncryption;
 	private final static String SSE_KEY = "ssencryption";
+	
+	private GoogleSheetsConnection m_connection;
 
 	/**
 	 * Parameterless constructor
@@ -86,6 +89,8 @@ public class CloudConnectionInformation extends ConnectionInformation {
         } else {
         	this.setUseSSEncryption(false);
         }
+        // Create new connection to Google
+        m_connection = new GoogleSheetsConnection(model);
 	}
 
 
@@ -119,9 +124,25 @@ public class CloudConnectionInformation extends ConnectionInformation {
 		model.addBoolean("keyChain", m_useKeyChain);
 		// New Server Side Encryption AP-8823
 		model.addBoolean("SSE_KEY", m_useSSEncryption);
+		
+		m_connection.save(model);
 	}
 
 	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
 		return new CloudConnectionInformation(model);
 	}
+
+    /**
+     * @return the connection
+     */
+    public GoogleSheetsConnection getGoogleConnection() {
+        return m_connection;
+    }
+
+    /**
+     * @param connection the connection to set
+     */
+    public void setGoogleConnection(GoogleSheetsConnection connection) {
+        m_connection = connection;
+    }
 }
