@@ -88,6 +88,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
         }
 	}
 
+	
 	/**
 	 * Set whether some key chain should be used when connecting
 	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
@@ -123,5 +124,4 @@ public class CloudConnectionInformation extends ConnectionInformation {
 	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
 		return new CloudConnectionInformation(model);
 	}
-
 }
