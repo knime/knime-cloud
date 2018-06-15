@@ -14,4 +14,3 @@ Require-Bundle: org.knime.workbench.repository;bundle-version="[3.3.0,4.0.0)",
  org.apache.commons.lang3;bundle-version="[3.2.1,4.0.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
-Import-Package: org.knime.google.api.sheets.data

@@ -49,7 +49,7 @@
 package org.knime.cloud.google.drive.filehandler;
 
 import org.knime.base.filehandling.remote.files.Connection;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.core.node.NodeLogger;
 
 import com.google.api.services.drive.Drive;
@@ -62,7 +62,7 @@ public class GoogleDriveConnection extends Connection {
     
     private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveConnection.class);
     
-    private final CloudConnectionInformation m_connectionInformation;
+    private final GoogleDriveConnectionInformation m_connectionInformation;
     
     private Drive m_driveService;
 
@@ -70,7 +70,7 @@ public class GoogleDriveConnection extends Connection {
      * @param connectionInformation 
      * 
      */
-    public GoogleDriveConnection(final CloudConnectionInformation connectionInformation) {
+    public GoogleDriveConnection(final GoogleDriveConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
     }
 
@@ -112,6 +112,5 @@ public class GoogleDriveConnection extends Connection {
     public Drive getDriveService() {
         return m_driveService;
     }
-    
     
 }

@@ -56,7 +56,7 @@ import java.util.List;
 
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.core.node.NodeLogger;
 
 import com.google.api.services.drive.Drive;
@@ -82,7 +82,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * @param connectionInformation
      * @param connectionMonitor
      */
-    protected GoogleDriveRemoteFile(URI uri, CloudConnectionInformation connectionInformation,
+    protected GoogleDriveRemoteFile(URI uri, GoogleDriveConnectionInformation connectionInformation,
         ConnectionMonitor<GoogleDriveConnection> connectionMonitor) {
         super(uri, connectionInformation, connectionMonitor);
     }
@@ -94,7 +94,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * @param connectionMonitor
      * @param fileId
      */
-    protected GoogleDriveRemoteFile(URI uri, CloudConnectionInformation connectionInformation,
+    protected GoogleDriveRemoteFile(URI uri, GoogleDriveConnectionInformation connectionInformation,
         ConnectionMonitor<GoogleDriveConnection> connectionMonitor, String fileId) {
         super(uri, connectionInformation, connectionMonitor);
         m_fileId = fileId;
@@ -135,7 +135,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             
         GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[1];
         remoteFiles[0] = new GoogleDriveRemoteFile(uri, 
-            (CloudConnectionInformation)getConnectionInformation(), getConnectionMonitor(), "root");
+            (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor(), "root");
       
         return remoteFiles;
     }
@@ -183,7 +183,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             
             LOGGER.debug("Google Drive Remote URI: " + uri.toString());
             remoteFileList.add(new GoogleDriveRemoteFile(uri, 
-                (CloudConnectionInformation)getConnectionInformation(), getConnectionMonitor(), file.getId()));
+                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor(), file.getId()));
         }
         
         GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[fileList.size()];
@@ -308,7 +308,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected GoogleDriveConnection createConnection() {
-        return new GoogleDriveConnection((CloudConnectionInformation)getConnectionInformation());
+        return new GoogleDriveConnection((GoogleDriveConnectionInformation)getConnectionInformation());
     }
 
     /**

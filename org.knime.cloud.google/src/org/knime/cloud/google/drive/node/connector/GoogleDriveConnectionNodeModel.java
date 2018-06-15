@@ -54,10 +54,10 @@ import com.google.api.services.drive.model.FileList;
 import java.io.File;
 import java.io.IOException;
 
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler;
+import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject;
+import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -185,34 +185,16 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
      * @return ConnectionInformationPortObjectSpec
      * @throws InvalidSettingsException ...
      */
-     private CloudConnectionInformationPortObjectSpec createSpec(GoogleSheetsConnection connection) throws InvalidSettingsException {
-        //m_model.validateValues();
-//        		final CloudConnectionInformation connectionInformation = m_model
-//        				.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
-//        		URI resolve = connectionInformation.toURI().resolve("/");
-//                try {
-//                    RemoteFile<S3Connection> s3RemoteFile = RemoteFileFactory.createRemoteFile(resolve, connectionInformation,
-//                        new ConnectionMonitor<S3Connection>());
-//                    S3Connection connection = s3RemoteFile.getConnection();
-//                    if (connection.restrictedPermissions()) {
-//                        setWarningMessage("The credentials provided have restricted permissions. "
-//                            + "File browsing in the Remote File nodes might not work as expected.\n"
-//                            + "All buckets will be assumed existing, as they cannot be listed.");
-//                    }
-//        		} catch (InvalidSettingsException ex) {
-//        		    throw ex;
-//        		} catch (Exception ex) {
-//        	        throw new InvalidSettingsException(ex.getMessage());
-//        		}
-        CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
+     private GoogleDriveConnectionInformationPortObjectSpec createSpec(GoogleSheetsConnection connection) throws InvalidSettingsException {
+
+        GoogleDriveConnectionInformation connectionInformation = new GoogleDriveConnectionInformation();
         connectionInformation.setGoogleConnection(connection);
         
         connectionInformation.setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
         connectionInformation.setHost("google-drive-api");
         connectionInformation.setUser("user");
         
-        return new CloudConnectionInformationPortObjectSpec(connectionInformation);
+        return new GoogleDriveConnectionInformationPortObjectSpec(connectionInformation);
     }
     
-
 }
