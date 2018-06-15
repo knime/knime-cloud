@@ -88,7 +88,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
         }
 	}
 
-	
+
 	/**
 	 * Set whether some key chain should be used when connecting
 	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
