@@ -75,7 +75,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     private static final String FOLDER = "application/vnd.google-apps.folder";
     private static final String FIELD_STRING = "files(id, name, kind, mimeType, trashed, parents)";
     
-    private String m_fileId = "root";
+    private String m_fileId;
 
     /**
      * @param uri
@@ -151,6 +151,14 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         LOGGER.debug("Container name: " + getContainerName());
         LOGGER.debug("Blob name: " + getBlobName());
         
+        if (m_fileId == null) {
+            if (m_blobName != null) {
+                m_fileId = getFileId(m_blobName);
+            } else {
+                m_fileId = "root";
+            }
+        }
+        
         final FileList fileList = getService().files().list().setQ("'" + m_fileId + "' in parents")
                 .setFields(FIELD_STRING).execute();
         
@@ -171,17 +179,65 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             }
             
             final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
-                getURI().getPort(), DEFAULT_CONTAINER + file.getName() + folderPostFix, getURI().getQuery(), getURI().getFragment());
+                getURI().getPort(), m_fullPath + file.getName() + folderPostFix, getURI().getQuery(), getURI().getFragment());
             
             LOGGER.debug("Google Drive Remote URI: " + uri.toString());
             remoteFileList.add(new GoogleDriveRemoteFile(uri, 
                 (CloudConnectionInformation)getConnectionInformation(), getConnectionMonitor(), file.getId()));
         }
         
-        LOGGER.debug("Drive filelist size: " + fileList.size() + "\nRemote filelist size: " + remoteFileList.size());
-        
         GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[fileList.size()];
         return remoteFileList.toArray(remoteFiles);
+    }
+    
+    private String getFileId(String blobName) throws Exception {
+        
+        // Get drive's root id
+        String rootId = getService().files().get("root").setFields("id").execute().getId();
+        
+        LOGGER.debug("Blob Name: " + blobName);
+        
+        final String[] pathElementStringArray = blobName.split("/");
+        
+        // Build Q-string (We only want to return relevant files/folders in the path to cut down on total
+        // files returned)
+        String qString = "";
+        for (int i = 0; i < pathElementStringArray.length; i++) {
+            
+            qString += "name = '" + pathElementStringArray[i] + "'";
+            
+            if (i < pathElementStringArray.length - 1) {
+                qString += " or ";
+            }
+        }
+        
+        LOGGER.debug("Q-String: ( " + qString + " )");
+        
+        // Retrieve files that match names in qString
+        // This could return file/folder name duplicates, so the next check the the parent is also in the path
+        final FileList fileList = getService().files().list().setQ(qString)
+                .setFields(FIELD_STRING).execute();
+        
+        // Use file IDs and parent information to find the right file id
+        for (int i = 0; i < pathElementStringArray.length; i++) {
+            
+            String parent = rootId;
+            for (File file : fileList.getFiles()) {
+                // If name matches and has the correct parent
+                if(file.getName().contentEquals(pathElementStringArray[i]) && file.getParents().contains(parent)) {
+                   if (i == pathElementStringArray.length -1) {
+                       // Last element, this it the file ID we want
+                       return file.getId();
+                   } else {
+                       // Haven't made it to end of path yet. Set this file ID as new parent
+                       parent = file.getId();
+                   }
+                }
+            }
+        }
+        
+        // File ID could not be determined. Likely a bad path given
+        throw new Exception("Bad path specified.");
     }
 
     /**
