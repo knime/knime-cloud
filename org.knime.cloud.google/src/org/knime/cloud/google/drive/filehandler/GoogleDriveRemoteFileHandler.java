@@ -55,7 +55,7 @@ import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.base.filehandling.remote.files.Protocol;
 import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.base.filehandling.remote.files.RemoteFileHandler;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 
 /**
@@ -82,12 +82,12 @@ public class GoogleDriveRemoteFileHandler implements RemoteFileHandler<GoogleDri
     @Override
     public RemoteFile<GoogleDriveConnection> createRemoteFile(URI uri, ConnectionInformation connectionInformation,
         ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
-        CheckUtils.checkArgument(connectionInformation instanceof CloudConnectionInformation, 
+        CheckUtils.checkArgument(connectionInformation instanceof GoogleDriveConnectionInformation, 
             "Connection information to be expected of class %s but it is %s", 
-            CloudConnectionInformation.class.getSimpleName(), 
+            GoogleDriveConnectionInformation.class.getSimpleName(), 
             connectionInformation == null ? "<null>" : connectionInformation.getClass().getSimpleName());
     final GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
-            (CloudConnectionInformation)connectionInformation, connectionMonitor);
+            (GoogleDriveConnectionInformation)connectionInformation, connectionMonitor);
     return remoteFile;
     }
 

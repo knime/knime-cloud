@@ -42,86 +42,65 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- *
+ * 
  * History
- *   Aug 30, 2016 (oole): created
+ *   Jun 15, 2018 (jtyler): created
  */
-package org.knime.cloud.core.util.port;
+package org.knime.cloud.google.util;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
+import org.knime.google.api.sheets.data.GoogleSheetsConnection;
 
 /**
- * Extended {@link ConnectionInformation}. This provides functionality to have information about whether or not to use a
- * credentials key chain. This is just a flag. To use of a key chain must be implemented in the cloud storage connection
- *
- * @author Ole Ostergaard, KNIME.com GmbH
+ * 
+ * @author jtyler
  */
-public class CloudConnectionInformation extends ConnectionInformation {
+public class GoogleDriveConnectionInformation extends CloudConnectionInformation {
+    
+    private static final long serialVersionUID = 1L;
+    
+    private GoogleSheetsConnection m_connection;
 
-	private static final long serialVersionUID = 1L;
+    /**
+     * 
+     */
+    public GoogleDriveConnectionInformation() {
+        // TODO Auto-generated constructor stub
+    }
 
-	private boolean m_useKeyChain;
-
-	private boolean m_useSSEncryption;
-	private final static String SSE_KEY = "ssencryption";
-
-	/**
-	 * Parameterless constructor
-	 */
-	public CloudConnectionInformation() { }
-
-	/**
-	 * @param model
-	 * @throws InvalidSettingsException
-	 */
-	protected CloudConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
+    /**
+     * @param model
+     * @throws InvalidSettingsException
+     */
+    public GoogleDriveConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
         super(model);
-        this.setUseKeyChain(model.getBoolean("keyChain", false));
-        // New Server Side Encryption AP-8823
-        if (model.containsKey(SSE_KEY)) {
-        	this.setUseSSEncryption(model.getBoolean(SSE_KEY));
-        } else {
-        	this.setUseSSEncryption(false);
-        }
-	}
+        m_connection = new GoogleSheetsConnection(model);
+    }
+    
+    @Override
+    public void save(final ModelContentWO model) {
+        super.save(model);
+        m_connection.save(model);
+    }
+    
+    public static GoogleDriveConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
+        return new GoogleDriveConnectionInformation(model);
+    }
+    
+    /**
+     * @return the connection
+     */
+    public GoogleSheetsConnection getGoogleConnection() {
+        return m_connection;
+    }
 
-	/**
-	 * Set whether some key chain should be used when connecting
-	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
-	 */
-	public void setUseKeyChain(final boolean use) {
-		m_useKeyChain = use;
-	}
-
-	/**
-	 * Returns whether the key chain should be used or not
-	 * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
-	 */
-	public boolean useKeyChain() {
-		return m_useKeyChain;
-	}
-
-	public void setUseSSEncryption(final boolean use) {
-		m_useSSEncryption = use;
-	}
-
-	public boolean useSSEncryption() {
-		return m_useSSEncryption;
-	}
-
-	@Override
-	public void save(final ModelContentWO model) {
-		super.save(model);
-		model.addBoolean("keyChain", m_useKeyChain);
-		// New Server Side Encryption AP-8823
-		model.addBoolean("SSE_KEY", m_useSSEncryption);
-	}
-
-	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
-		return new CloudConnectionInformation(model);
-	}
-
+    /**
+     * @param connection the connection to set
+     */
+    public void setGoogleConnection(GoogleSheetsConnection connection) {
+        m_connection = connection;
+    }
 }
