@@ -51,14 +51,15 @@ package org.knime.cloud.google.drive.filehandler;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
-import org.knime.cloud.google.util.GoogleConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
 
+import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 
@@ -69,16 +70,38 @@ import com.google.api.services.drive.model.FileList;
 public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection> {
     
     private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveRemoteFile.class);
+    
+    private static final String DEFAULT_CONTAINER = "/MyDrive/";
+    private static final String FOLDER = "application/vnd.google-apps.folder";
+    private static final String FIELD_STRING = "files(id, name, kind, mimeType, trashed, parents)";
+    
+    private String m_fileId = "root";
 
     /**
      * @param uri
      * @param connectionInformation
      * @param connectionMonitor
      */
-    protected GoogleDriveRemoteFile(URI uri, ConnectionInformation connectionInformation,
+    protected GoogleDriveRemoteFile(URI uri, CloudConnectionInformation connectionInformation,
         ConnectionMonitor<GoogleDriveConnection> connectionMonitor) {
         super(uri, connectionInformation, connectionMonitor);
-        // TODO Auto-generated constructor stub
+    }
+    
+    
+    /**
+     * @param uri
+     * @param connectionInformation
+     * @param connectionMonitor
+     * @param fileId
+     */
+    protected GoogleDriveRemoteFile(URI uri, CloudConnectionInformation connectionInformation,
+        ConnectionMonitor<GoogleDriveConnection> connectionMonitor, String fileId) {
+        super(uri, connectionInformation, connectionMonitor);
+        m_fileId = fileId;
+    }
+    
+    private Drive getService() throws Exception {
+        return getOpenedConnection().getDriveService();
     }
 
     /**
@@ -87,7 +110,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     @Override
     protected boolean doesContainerExist(String containerName) throws Exception {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     /**
@@ -96,37 +119,69 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     @Override
     protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected CloudRemoteFile<GoogleDriveConnection>[] listRootFiles() throws Exception {
+    protected GoogleDriveRemoteFile[] listRootFiles() throws Exception {
         
-        LOGGER.debug("**** Made it to the file handler!!! ****");
-        LOGGER.debug("Root files to list: ");
+        LOGGER.info("**** Made it to the file handler : listRootFiles() ****");
         
-        FileList fileList = getConnection().getDriveService().files().list().execute();
-        List<File> files = fileList.getFiles();
+        final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+            getURI().getPort(), DEFAULT_CONTAINER, getURI().getQuery(), getURI().getFragment());
+            
+        GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[1];
+        remoteFiles[0] = new GoogleDriveRemoteFile(uri, 
+            (CloudConnectionInformation)getConnectionInformation(), getConnectionMonitor(), "root");
+      
+        return remoteFiles;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GoogleDriveRemoteFile[] listDirectoryFiles() throws Exception {
         
-        for (File file : files ) {
-            LOGGER.debug("File: " + file.getName() + " | Id: " + file.getId());
+        LOGGER.info("**** Made it to the file handler : listDirectoryFiles() ****");
+
+        LOGGER.debug("Container name: " + getContainerName());
+        LOGGER.debug("Blob name: " + getBlobName());
+        
+        final FileList fileList = getService().files().list().setQ("'" + m_fileId + "' in parents")
+                .setFields(FIELD_STRING).execute();
+        
+        if (fileList == null || fileList.isEmpty()) {
+            return new GoogleDriveRemoteFile[0];
         }
         
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected CloudRemoteFile<GoogleDriveConnection>[] listDirectoryFiles() throws Exception {
+        List<GoogleDriveRemoteFile> remoteFileList = new ArrayList<GoogleDriveRemoteFile>();
+        List<File> driveFiles = fileList.getFiles();
         
-        LOGGER.debug("**** Made it to the file handler!!! ****");
+        for (File file : driveFiles ) {
+            
+            String folderPostFix = "";
+            
+            if (file.getMimeType().equals(FOLDER)) {
+                folderPostFix = "/";
+                LOGGER.debug("File: " + file.getName() + " is a folder");
+            }
+            
+            final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+                getURI().getPort(), DEFAULT_CONTAINER + file.getName() + folderPostFix, getURI().getQuery(), getURI().getFragment());
+            
+            LOGGER.debug("Google Drive Remote URI: " + uri.toString());
+            remoteFileList.add(new GoogleDriveRemoteFile(uri, 
+                (CloudConnectionInformation)getConnectionInformation(), getConnectionMonitor(), file.getId()));
+        }
         
-        return null;
+        LOGGER.debug("Drive filelist size: " + fileList.size() + "\nRemote filelist size: " + remoteFileList.size());
+        
+        GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[fileList.size()];
+        return remoteFileList.toArray(remoteFiles);
     }
 
     /**
@@ -197,7 +252,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected GoogleDriveConnection createConnection() {
-        return new GoogleDriveConnection((GoogleConnectionInformation)getConnectionInformation());
+        return new GoogleDriveConnection((CloudConnectionInformation)getConnectionInformation());
     }
 
     /**
@@ -225,6 +280,20 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     public OutputStream openOutputStream() throws Exception {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /**
+     * @return the fileIdString
+     */
+    public String getFileId() {
+        return m_fileId;
+    }
+
+    /**
+     * @param fileIdString the fileIdString to set
+     */
+    public void setFileId(String fileIdString) {
+        m_fileId = fileIdString;
     }
 
 }

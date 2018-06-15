@@ -18,12 +18,6 @@ public class GoogleDriveConnectionInformationPortObject extends ConnectionInform
     }
 
     /**
-     * No-argument constructor for framework
-     */
-    public GoogleDriveConnectionInformationPortObject() {
-    }
-
-    /**
      * Type of this port.
      */
     public static final PortType TYPE = ConnectionInformationPortObject.TYPE;
@@ -34,6 +28,12 @@ public class GoogleDriveConnectionInformationPortObject extends ConnectionInform
     public static final PortType TYPE_OPTIONAL = ConnectionInformationPortObject.TYPE_OPTIONAL;
 
     /**
+     * No-argument constructor for framework
+     */
+    public GoogleDriveConnectionInformationPortObject() {
+    }
+    
+    /**
      * Creates a port object with the given connection information.
      *
      * @param connectionInformationPOS The spec wrapping the connection information.
@@ -42,5 +42,4 @@ public class GoogleDriveConnectionInformationPortObject extends ConnectionInform
         final CloudConnectionInformationPortObjectSpec connectionInformationPOS) {
         super(connectionInformationPOS);
     }
-
 }

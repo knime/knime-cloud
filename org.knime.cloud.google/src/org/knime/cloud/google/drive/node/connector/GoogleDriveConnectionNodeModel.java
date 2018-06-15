@@ -54,9 +54,9 @@ import com.google.api.services.drive.model.FileList;
 import java.io.File;
 import java.io.IOException;
 
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler;
-import org.knime.cloud.google.util.GoogleConnectionInformation;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -204,12 +204,12 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
 //        		} catch (Exception ex) {
 //        	        throw new InvalidSettingsException(ex.getMessage());
 //        		}
-        GoogleConnectionInformation connectionInformation = new GoogleConnectionInformation();
-        connectionInformation.setConnection(connection);
+        CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
+        connectionInformation.setGoogleConnection(connection);
         
         connectionInformation.setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
-        connectionInformation.setHost("testhost");
-        connectionInformation.setUser("testuser");
+        connectionInformation.setHost("google-drive-api");
+        connectionInformation.setUser("user");
         
         return new CloudConnectionInformationPortObjectSpec(connectionInformation);
     }
