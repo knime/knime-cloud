@@ -476,7 +476,7 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 	 * @return <code>true</code> if this file represents a container, or <code>false</code> if it doesn't
 	 * @throws Exception
 	 */
-	private boolean isContainer() throws Exception {
+	protected boolean isContainer() throws Exception {
 		if (m_isContainer == null) {
 			final String containerName = getContainerName();
 			final String containerPath = createContainerPath(containerName);
