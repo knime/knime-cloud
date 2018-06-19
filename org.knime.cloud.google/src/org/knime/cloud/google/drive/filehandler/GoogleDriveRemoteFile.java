@@ -57,11 +57,13 @@ import java.util.List;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.api.services.drive.model.TeamDrive;
 
 /**
  * 
@@ -72,32 +74,26 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveRemoteFile.class);
     
     private static final String DEFAULT_CONTAINER = "/MyDrive/";
-    private static final String FOLDER = "application/vnd.google-apps.folder";
-    private static final String FIELD_STRING = "files(id, name, kind, mimeType, trashed, parents)";
+    private static final String TEAM_DRIVES_FOLDER = "/TeamDrives/";
+    private static final String GOOGLE_MIME_TYPE = "application/vnd.google-apps";
+    private static final String FOLDER = GOOGLE_MIME_TYPE + ".folder";
+    private static final String FIELD_STRING = "files(id, name, kind, mimeType, modifiedTime, size, trashed, parents)";
     
-    private String m_fileId;
-
-    /**
-     * @param uri
-     * @param connectionInformation
-     * @param connectionMonitor
-     */
-    protected GoogleDriveRemoteFile(URI uri, GoogleDriveConnectionInformation connectionInformation,
-        ConnectionMonitor<GoogleDriveConnection> connectionMonitor) {
-        super(uri, connectionInformation, connectionMonitor);
-    }
-    
+    private GoogleDriveRemoteFileMetadata m_fileMetadata;
     
     /**
      * @param uri
      * @param connectionInformation
      * @param connectionMonitor
-     * @param fileId
+     * @throws Exception 
      */
     protected GoogleDriveRemoteFile(URI uri, GoogleDriveConnectionInformation connectionInformation,
-        ConnectionMonitor<GoogleDriveConnection> connectionMonitor, String fileId) {
+        ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
         super(uri, connectionInformation, connectionMonitor);
-        m_fileId = fileId;
+        m_fileMetadata = new GoogleDriveRemoteFileMetadata(uri);
+        if (m_fileMetadata.getFileId() == null || m_fileMetadata.getFileId().isEmpty()) {
+            m_fileMetadata.setFileId("root");
+        }
     }
     
     private Drive getService() throws Exception {
@@ -109,10 +105,89 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean doesContainerExist(String containerName) throws Exception {
-        // TODO Auto-generated method stub
+        // TODO - clean this up
+        //boolean exists = (getContainers().contains("/" + containerName + "/"))  ? true : false;
+        //return exists;
         return true;
     }
+    
+    private List<String> getContainers() throws Exception {
+        
+        final List<String> validContainerStrings = new ArrayList<String>();
+        validContainerStrings.add(DEFAULT_CONTAINER);
+        
+        final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
+        for (TeamDrive teamDrive : teamDrives) {
+            validContainerStrings.add(TEAM_DRIVES_FOLDER + teamDrive.getName() + "/");
+        }
+        
+        return validContainerStrings;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getContainerName() throws Exception{
+        if (m_containerName == null) {
+            LOGGER.debug("$$$$$$$$$$$ getContainerName() $$$$$$$$$$$");
+            LOGGER.debug("full path: " + m_fullPath);
+            final String path = m_fullPath;
+//            final int idx = path.indexOf(DELIMITER);
+//            if (idx != 0) {
+//                throw new InvalidSettingsException("Invalid path. Path must begin with /");
+//            } {
+//                final int nextDelimiterIdx = path.indexOf(DELIMITER, idx +1);
+//                if (nextDelimiterIdx < 0) {
+//                    m_containerName = path.substring(idx+1);
+//                } else {
+//                    m_containerName = path.substring(idx+1, nextDelimiterIdx);
+//                }
+//            }
+            
+            if (m_fullPath.equals(DEFAULT_CONTAINER)) {
+                m_containerName = "MyDrive";
+            } else {
+                String[] elements = m_fullPath.split("/");
+                if (elements.length < 3 || (elements[0] != null && !elements[0].isEmpty())) {
+                    throw new InvalidSettingsException("Invalid path. Container could not be determined.");
+                }
+                m_containerName = elements[2];
+            }
+        }
+        return m_containerName;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean isContainer() throws Exception {
+        if (m_isContainer == null) {
+//            final String containerName = getContainerName();
+//            final String containerPath = createContainerPath(containerName);
+//            final String path = getFullPath().endsWith(DELIMITER) ? getFullPath() : getFullPath() + DELIMITER;
+//            if (containerPath.equals(path)) {
+//                m_isContainer = true;
+//            } else {
+//                m_isContainer = false;
+//            }
+            
+            if (m_fullPath.equals(DEFAULT_CONTAINER)) {
+                m_isContainer = true;
+            } else {
+                String[] elements = m_fullPath.split("/");
+                if (elements.length == 3 && elements[0].isEmpty() && elements[1].equals("TeamDrives")) {
+                    m_isContainer = true;
+                } else {
+                    m_isContainer = false;
+                }
+            }
 
+        }
+        return m_isContainer;
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -128,16 +203,23 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     @Override
     protected GoogleDriveRemoteFile[] listRootFiles() throws Exception {
         
-        LOGGER.info("**** Made it to the file handler : listRootFiles() ****");
+        GoogleDriveRemoteFile[] rootFiles = new GoogleDriveRemoteFile[2];
         
-        final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+        // Create remote file for My Drive
+        URI uriMyDrive = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
             getURI().getPort(), DEFAULT_CONTAINER, getURI().getQuery(), getURI().getFragment());
-            
-        GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[1];
-        remoteFiles[0] = new GoogleDriveRemoteFile(uri, 
-            (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor(), "root");
-      
-        return remoteFiles;
+        
+        rootFiles[0] = new GoogleDriveRemoteFile(uriMyDrive, 
+            (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
+       
+        // Create remote file for Team Drives
+        URI uriTeamDrive = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+            getURI().getPort(), TEAM_DRIVES_FOLDER, getURI().getQuery(), getURI().getFragment());
+        
+        rootFiles[1] = new GoogleDriveRemoteFile(uriTeamDrive, 
+            (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
+        
+        return rootFiles;
     }
 
     /**
@@ -151,15 +233,21 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         LOGGER.debug("Container name: " + getContainerName());
         LOGGER.debug("Blob name: " + getBlobName());
         
-        if (m_fileId == null) {
-            if (m_blobName != null) {
-                m_fileId = getFileId(m_blobName);
-            } else {
-                m_fileId = "root";
-            }
-        }
+//        final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
+//        for (TeamDrive teamDrive : teamDrives) {
+//            GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+//            metadata.setFileId("root");
+//            metadata.setMimeType(FOLDER);
+//            metadata.setTeamId(teamDrive.getId());
+//            
+//            URI teamURI = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+//                getURI().getPort(), TEAM_PREFIX + teamDrive.getName() + "/", metadata.toQueryString(), getURI().getFragment());
+//        
+//            remoteFiles.add(new GoogleDriveRemoteFile(teamURI, 
+//                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
+//        }
         
-        final FileList fileList = getService().files().list().setQ("'" + m_fileId + "' in parents")
+        final FileList fileList = getService().files().list().setQ("'" + m_fileMetadata.getFileId() + "' in parents")
                 .setFields(FIELD_STRING).execute();
         
         if (fileList == null || fileList.isEmpty()) {
@@ -177,13 +265,23 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 folderPostFix = "/";
                 LOGGER.debug("File: " + file.getName() + " is a folder");
             }
+                     
+            // Set file metadata
+            GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+            metadata.setFileId(file.getId());
+            metadata.setMimeType(file.getMimeType());
             
             final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
-                getURI().getPort(), m_fullPath + file.getName() + folderPostFix, getURI().getQuery(), getURI().getFragment());
+                getURI().getPort(), m_fullPath + file.getName() + folderPostFix, 
+                metadata.toQueryString(), getURI().getFragment());
             
             LOGGER.debug("Google Drive Remote URI: " + uri.toString());
-            remoteFileList.add(new GoogleDriveRemoteFile(uri, 
-                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor(), file.getId()));
+//            remoteFileList.add(new GoogleDriveRemoteFile(uri, 
+//                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
+            GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
+              (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
+            LOGGER.debug("Remote File Size: " + remoteFile.getBlobSize());
+            remoteFileList.add(remoteFile);
         }
         
         GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[fileList.size()];
@@ -245,8 +343,13 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected long getBlobSize() throws Exception {
-        // TODO Auto-generated method stub
-        return 0;
+        File file = getService().files().get(m_fileMetadata.getFileId()).setFields("size, mimeType").execute();
+        if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) && file.getSize() != null) {
+            return file.getSize();
+        } else {
+            // TODO - Should this method be updated in base class to return Long so we can return null?
+            return -1;
+        }
     }
 
     /**
@@ -263,8 +366,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean deleteContainer() throws Exception {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException("Deleting Team Drives not supported.");
     }
 
     /**
@@ -290,8 +392,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean createContainer() throws Exception {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException("Team Drive creation not supported.");
     }
 
     /**
@@ -316,8 +417,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     public URI getHadoopFilesystemURI() throws Exception {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException("Hadoop file system not supported");
     }
 
     /**
@@ -336,20 +436,6 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     public OutputStream openOutputStream() throws Exception {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    /**
-     * @return the fileIdString
-     */
-    public String getFileId() {
-        return m_fileId;
-    }
-
-    /**
-     * @param fileIdString the fileIdString to set
-     */
-    public void setFileId(String fileIdString) {
-        m_fileId = fileIdString;
     }
 
 }

@@ -31,8 +31,8 @@
             name="GoogleDriveConnection"
             objectClass="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject"
             objectSerializer="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject$Serializer"
-            specClass="org.knime.cloud.core.util.port.GoogleDriveConnectionInformationPortObjectSpec"
-            specSerializer="org.knime.cloud.core.util.port.GoogleDriveConnectionInformationPortObjectSpec$Serializer">
+            specClass="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObjectSpec"
+            specSerializer="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObjectSpec$Serializer">
       </portType>
    </extension>
    
