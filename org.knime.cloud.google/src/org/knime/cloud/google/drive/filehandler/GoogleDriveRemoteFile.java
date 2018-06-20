@@ -130,23 +130,10 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     @Override
     public String getContainerName() throws Exception{
         if (m_containerName == null) {
-            LOGGER.debug("$$$$$$$$$$$ getContainerName() $$$$$$$$$$$");
-            LOGGER.debug("full path: " + m_fullPath);
-            final String path = m_fullPath;
-//            final int idx = path.indexOf(DELIMITER);
-//            if (idx != 0) {
-//                throw new InvalidSettingsException("Invalid path. Path must begin with /");
-//            } {
-//                final int nextDelimiterIdx = path.indexOf(DELIMITER, idx +1);
-//                if (nextDelimiterIdx < 0) {
-//                    m_containerName = path.substring(idx+1);
-//                } else {
-//                    m_containerName = path.substring(idx+1, nextDelimiterIdx);
-//                }
-//            }
-            
             if (m_fullPath.equals(DEFAULT_CONTAINER)) {
                 m_containerName = "MyDrive";
+            } else if (m_fullPath.contentEquals(TEAM_DRIVES_FOLDER)) {
+                m_containerName = "TeamDrives";
             } else {
                 String[] elements = m_fullPath.split("/");
                 if (elements.length < 3 || (elements[0] != null && !elements[0].isEmpty())) {
@@ -164,15 +151,6 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     @Override
     protected boolean isContainer() throws Exception {
         if (m_isContainer == null) {
-//            final String containerName = getContainerName();
-//            final String containerPath = createContainerPath(containerName);
-//            final String path = getFullPath().endsWith(DELIMITER) ? getFullPath() : getFullPath() + DELIMITER;
-//            if (containerPath.equals(path)) {
-//                m_isContainer = true;
-//            } else {
-//                m_isContainer = false;
-//            }
-            
             if (m_fullPath.equals(DEFAULT_CONTAINER)) {
                 m_isContainer = true;
             } else {
@@ -183,7 +161,6 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                     m_isContainer = false;
                 }
             }
-
         }
         return m_isContainer;
     }
@@ -232,23 +209,48 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
 
         LOGGER.debug("Container name: " + getContainerName());
         LOGGER.debug("Blob name: " + getBlobName());
+        if (getURI() != null) {
+            LOGGER.debug("Current File URI: " + getURI());
+        }
         
-//        final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
-//        for (TeamDrive teamDrive : teamDrives) {
-//            GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
-//            metadata.setFileId("root");
-//            metadata.setMimeType(FOLDER);
-//            metadata.setTeamId(teamDrive.getId());
-//            
-//            URI teamURI = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
-//                getURI().getPort(), TEAM_PREFIX + teamDrive.getName() + "/", metadata.toQueryString(), getURI().getFragment());
-//        
-//            remoteFiles.add(new GoogleDriveRemoteFile(teamURI, 
-//                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
-//        }
+        // List the team drives if current file is /TeamDrives/
+        if (m_fullPath.equals(TEAM_DRIVES_FOLDER)) {
+            final List<GoogleDriveRemoteFile> remoteFiles = new ArrayList<GoogleDriveRemoteFile>();
+            final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
+            for (TeamDrive teamDrive : teamDrives) {
+                final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+                metadata.setFileId("root");
+                metadata.setMimeType(FOLDER);
+                metadata.setTeamId(teamDrive.getId());
+                
+                final URI teamURI = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+                    getURI().getPort(), TEAM_DRIVES_FOLDER + teamDrive.getName() + "/", metadata.toQueryString(), getURI().getFragment());
+                LOGGER.debug("Team drive URI: " + teamURI);
+                remoteFiles.add(new GoogleDriveRemoteFile(teamURI, 
+                    (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
+            }
+            return remoteFiles.toArray(new GoogleDriveRemoteFile[remoteFiles.size()]);
+        }
         
-        final FileList fileList = getService().files().list().setQ("'" + m_fileMetadata.getFileId() + "' in parents")
-                .setFields(FIELD_STRING).execute();
+        
+        // Build File list (with support for team drives if one is set)
+        FileList fileList;
+        
+//        com.google.api.services.drive.Drive.Files.List request = getService().files().list().setQ("'" + m_fileMetadata.getFileId() + "' in parents")
+//                .setFields(FIELD_STRING);
+        
+        if (m_fileMetadata.getTeamId() != null) {
+//            request = request.setCorpora("teamDrive").setSupportsTeamDrives(true)
+//                    .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId());
+            fileList = getService().files().list().setCorpora("teamDrive").setSupportsTeamDrives(true)
+            .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId())//.setQ("'" + m_fileMetadata.getFileId() + "' in parents")
+            .setFields(FIELD_STRING).execute();
+        } else {
+            fileList = getService().files().list().setQ("'" + m_fileMetadata.getFileId() + "' in parents")
+                    .setFields(FIELD_STRING).execute();
+        }
+        
+//        FileList fileList = request.execute();
         
         if (fileList == null || fileList.isEmpty()) {
             return new GoogleDriveRemoteFile[0];
@@ -271,21 +273,23 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             metadata.setFileId(file.getId());
             metadata.setMimeType(file.getMimeType());
             
+            if (m_fileMetadata.getTeamId() != null) {
+                metadata.setTeamId(m_fileMetadata.getTeamId());
+                LOGGER.debug("Team id from file: " + file.getTeamDriveId());
+            }
+            
             final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
                 getURI().getPort(), m_fullPath + file.getName() + folderPostFix, 
                 metadata.toQueryString(), getURI().getFragment());
             
             LOGGER.debug("Google Drive Remote URI: " + uri.toString());
-//            remoteFileList.add(new GoogleDriveRemoteFile(uri, 
-//                (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
             GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
               (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
             LOGGER.debug("Remote File Size: " + remoteFile.getBlobSize());
             remoteFileList.add(remoteFile);
         }
         
-        GoogleDriveRemoteFile[] remoteFiles = new GoogleDriveRemoteFile[fileList.size()];
-        return remoteFileList.toArray(remoteFiles);
+        return remoteFileList.toArray(new GoogleDriveRemoteFile[remoteFileList.size()]);
     }
     
     private String getFileId(String blobName) throws Exception {
@@ -343,13 +347,14 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected long getBlobSize() throws Exception {
-        File file = getService().files().get(m_fileMetadata.getFileId()).setFields("size, mimeType").execute();
-        if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) && file.getSize() != null) {
-            return file.getSize();
-        } else {
-            // TODO - Should this method be updated in base class to return Long so we can return null?
-            return -1;
-        }
+//        File file = getService().files().get(m_fileMetadata.getFileId()).setFields("size, mimeType").execute();
+//        if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) && file.getSize() != null) {
+//            return file.getSize();
+//        } else {
+//            // TODO - Should this method be updated in base class to return Long so we can return null?
+//            return -1;
+//        }
+        return 0;
     }
 
     /**
