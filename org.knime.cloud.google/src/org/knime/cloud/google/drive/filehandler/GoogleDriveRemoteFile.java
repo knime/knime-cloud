@@ -242,9 +242,14 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         if (m_fileMetadata.getTeamId() != null) {
 //            request = request.setCorpora("teamDrive").setSupportsTeamDrives(true)
 //                    .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId());
-            fileList = getService().files().list().setCorpora("teamDrive").setSupportsTeamDrives(true)
-            .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId())//.setQ("'" + m_fileMetadata.getFileId() + "' in parents")
-            .setFields(FIELD_STRING).execute();
+            com.google.api.services.drive.Drive.Files.List request = getService().files().list()
+                    .setCorpora("teamDrive").setSupportsTeamDrives(true)
+                    .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId())
+                    .setFields(FIELD_STRING);  
+            if (!m_fileMetadata.getFileId().equals("root")) {
+                request = request.setQ("'" + m_fileMetadata.getFileId() + "' in parents");
+            }
+            fileList = request.execute();
         } else {
             fileList = getService().files().list().setQ("'" + m_fileMetadata.getFileId() + "' in parents")
                     .setFields(FIELD_STRING).execute();
