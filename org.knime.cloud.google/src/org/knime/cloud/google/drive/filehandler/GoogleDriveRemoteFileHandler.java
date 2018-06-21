@@ -65,7 +65,7 @@ import org.knime.core.node.util.CheckUtils;
 public class GoogleDriveRemoteFileHandler implements RemoteFileHandler<GoogleDriveConnection> {
     
     /** The {@link Protocol} of this {@link RemoteFileHandler}. */
-    public static final Protocol PROTOCOL = new Protocol("drive", -1, false, false, false, true, true,
+    public static final Protocol PROTOCOL = new Protocol("gdrive", -1, false, false, false, true, true,
             true, false, false);
 
     /**
