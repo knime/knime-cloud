@@ -463,7 +463,7 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 	 * Get this file's full path
 	 * @return this file's full path
 	 */
-	private String getFullPath() {
+	protected String getFullPath() {
 		if (m_fullPath == null) {
 			m_fullPath = getURI().getPath();
 		}
