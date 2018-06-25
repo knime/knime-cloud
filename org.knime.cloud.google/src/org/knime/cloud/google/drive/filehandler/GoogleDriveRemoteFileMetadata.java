@@ -64,6 +64,8 @@ public class GoogleDriveRemoteFileMetadata {
     private String m_fileId;
     private String m_mimeType;
     private String m_teamId;
+    private long m_fileSize;
+    private long m_lastModified;
     private List<String> m_parents = new ArrayList<String>();
 
     /**
@@ -205,6 +207,34 @@ public class GoogleDriveRemoteFileMetadata {
      */
     public void addParentId(String parentId) {
         m_parents.add(parentId);
+    }
+
+    /**
+     * @return the fileSize
+     */
+    public long getFileSize() {
+        return m_fileSize;
+    }
+
+    /**
+     * @param fileSize the fileSize to set
+     */
+    public void setFileSize(long fileSize) {
+        m_fileSize = fileSize;
+    }
+
+    /**
+     * @return the lastModified
+     */
+    public long getLastModified() {
+        return m_lastModified;
+    }
+
+    /**
+     * @param lastModified the lastModified to set
+     */
+    public void setLastModified(long lastModified) {
+        m_lastModified = lastModified;
     }
 
 }
