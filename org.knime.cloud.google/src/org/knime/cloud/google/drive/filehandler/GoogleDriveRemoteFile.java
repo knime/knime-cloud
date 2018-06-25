@@ -289,14 +289,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected long getBlobSize() throws Exception {
-//        File file = getService().files().get(m_fileMetadata.getFileId()).setFields("size, mimeType").execute();
-//        if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) && file.getSize() != null) {
-//            return file.getSize();
-//        } else {
-//            // TODO - Should this method be updated in base class to return Long so we can return null?
-//            return -1;
-//        }
-        return 0;
+        return m_fileMetadata.getFileSize();
     }
 
     /**
@@ -304,8 +297,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected long getLastModified() throws Exception {
-        // TODO Auto-generated method stub
-        return 0;
+        return m_fileMetadata.getLastModified();
     }
 
     /**
@@ -380,7 +372,6 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     public OutputStream openOutputStream() throws Exception {  
-        //return new GoogleDriveRemoteFileOutputStream(getBlobName(), getService());
         throw new UnsupportedOperationException("Output Streams not supported for writing to Google Drive.");
     }
     
@@ -395,6 +386,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             final File fileMetadata = new File();   
             fileMetadata.setName(getName());
             fileMetadata.setParents(m_fileMetadata.getParents());
+            
+            // Media type is null. Google will determine the type based on file
             InputStreamContent content = new InputStreamContent(null, in);
             
             File driveFile = getService().files().create(fileMetadata, content)
