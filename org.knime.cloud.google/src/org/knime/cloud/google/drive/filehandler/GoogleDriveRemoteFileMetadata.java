@@ -49,8 +49,9 @@
 package org.knime.cloud.google.drive.filehandler;
 
 import java.net.URI;
-import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -60,12 +61,10 @@ import java.util.Map;
  */
 public class GoogleDriveRemoteFileMetadata {
     
-    private static final String TEAM_DRIVES = "/TeamDrives/";
-    
     private String m_fileId;
     private String m_mimeType;
     private String m_teamId;
-    //private String m_container;
+    private List<String> m_parents = new ArrayList<String>();
 
     /**
      * 
@@ -118,11 +117,6 @@ public class GoogleDriveRemoteFileMetadata {
             if (parameterMap.containsKey("teamid")) {
                 m_teamId = parameterMap.get("teamid");
             }
-            
-//            // Container prefix
-//            if (parameterMap.containsKey("container")) {
-//                m_container = parameterMap.get("container");
-//            }
         }
     }
 
@@ -150,7 +144,7 @@ public class GoogleDriveRemoteFileMetadata {
         }
         
         if (fromTeamDrive()) {
-            queryString += "&teamid=" + m_teamId; // + "&container=" + m_container;
+            queryString += "&teamid=" + m_teamId;
         }
         
         return queryString;
@@ -199,18 +193,18 @@ public class GoogleDriveRemoteFileMetadata {
         m_teamId = teamId;
     }
 
-//    /**
-//     * @return the container
-//     */
-//    public String getContainer() {
-//        return m_container;
-//    }
-//
-//    /**
-//     * @param container the container to set
-//     * @throws Exception 
-//     */
-//    public void setContainer(String container) throws Exception {
-//        m_container = TEAM_DRIVES + URLEncoder.encode(container, "UTF-8");
-//    }
+    /**
+     * @return List of parent ids
+     */
+    public List<String> getParents() {
+        return m_parents;
+    }
+
+    /**
+     * @param parentId Add a parent ID to the list of parents
+     */
+    public void addParentId(String parentId) {
+        m_parents.add(parentId);
+    }
+
 }

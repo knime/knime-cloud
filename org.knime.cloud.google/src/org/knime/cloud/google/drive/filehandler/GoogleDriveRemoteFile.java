@@ -57,11 +57,14 @@ import java.util.NoSuchElementException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
+import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.cloud.core.file.CloudRemoteFile;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
+import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 
+import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.TeamDrive;
@@ -202,7 +205,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 metadata.setTeamId(teamDrive.getId());
                 
                 final URI teamURI = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
-                    getURI().getPort(), TEAM_DRIVES_FOLDER + teamDrive.getName() + "/", metadata.toQueryString(), getURI().getFragment());
+                    getURI().getPort(), TEAM_DRIVES_FOLDER + teamDrive.getName() + "/", 
+                    metadata.toQueryString(), getURI().getFragment());
                 LOGGER.debug("Team drive URI: " + teamURI);
                 remoteFiles.add(new GoogleDriveRemoteFile(teamURI, 
                     (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor()));
@@ -228,25 +232,31 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         }
         
         for (File file : driveFiles ) {
-            String folderPostFix = (file.getMimeType().equals(FOLDER)) ? "/" : "";
-                     
-            // Set file metadata
-            GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
-            metadata.setFileId(file.getId());
-            metadata.setMimeType(file.getMimeType());
             
-            if (m_fileMetadata.getTeamId() != null) {
-                metadata.setTeamId(m_fileMetadata.getTeamId());
+            // Google Drive API only allows downloading of non Google file types.
+            // (meaning native Google Docs, Spreadsheets, etc. can not be directly downloaded via
+            // the API). Let's filter those files out, but keep folder references.
+            if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) || file.getMimeType().equals(FOLDER)) {
+                String folderPostFix = (file.getMimeType().equals(FOLDER)) ? "/" : "";
+                
+                // Set file metadata
+                GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+                metadata.setFileId(file.getId());
+                metadata.setMimeType(file.getMimeType());
+                
+                if (m_fileMetadata.getTeamId() != null) {
+                    metadata.setTeamId(m_fileMetadata.getTeamId());
+                }
+                
+                final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
+                    getURI().getPort(), m_fullPath + file.getName() + folderPostFix, 
+                    metadata.toQueryString(), getURI().getFragment());
+                
+                LOGGER.debug("Google Drive Remote URI: " + uri.toString());
+                GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
+                  (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
+                remoteFileList.add(remoteFile);
             }
-            
-            final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), 
-                getURI().getPort(), m_fullPath + file.getName() + folderPostFix, 
-                metadata.toQueryString(), getURI().getFragment());
-            
-            LOGGER.debug("Google Drive Remote URI: " + uri.toString());
-            GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
-              (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
-            remoteFileList.add(remoteFile);
         }
         return remoteFileList.toArray(new GoogleDriveRemoteFile[remoteFileList.size()]);
     }
@@ -369,11 +379,33 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * {@inheritDoc}
      */
     @Override
-    public OutputStream openOutputStream() throws Exception {
-        
-        
-        
-        return null;
+    public OutputStream openOutputStream() throws Exception {  
+        //return new GoogleDriveRemoteFileOutputStream(getBlobName(), getService());
+        throw new UnsupportedOperationException("Output Streams not supported for writing to Google Drive.");
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("rawtypes")
+    @Override
+    public void write(final RemoteFile file, final ExecutionContext exec) throws Exception {
+        try (final InputStream in = file.openInputStream()){
+            
+            final File fileMetadata = new File();   
+            fileMetadata.setName(getName());
+            fileMetadata.setParents(m_fileMetadata.getParents());
+            InputStreamContent content = new InputStreamContent(null, in);
+            
+            File driveFile = getService().files().create(fileMetadata, content)
+                .setFields("id, parents")
+                .execute();
+            
+            LOGGER.debug("Creating new file: " + getBlobName() + " , file id: " + driveFile.getId());
+            
+        } catch (Exception e) {
+            throw e;
+        }
     }
     
     private String getTeamId(String teamDriveName) throws Exception {
@@ -462,6 +494,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                        // Last element, this it the file we want
                        metadata.setFileId(file.getId());
                        metadata.setMimeType(file.getMimeType());
+                       metadata.addParentId(parent);
                        return metadata;
                    } else {
                        // Haven't made it to end of path yet. Set this file ID as new parent
@@ -471,8 +504,10 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             }
         }
         
-        // File ID could not be determined. Likely a bad path given
-        throw new Exception("Bad path specified.");
+        // Set the last found location in the path as the parent.
+        // This is needed when a Google Drive file is first created. 
+        metadata.addParentId(parent);
+        return metadata;
     }
     
     private Drive getService() throws Exception {
