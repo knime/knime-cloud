@@ -54,7 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * 
  * @author jtyler
@@ -66,14 +65,12 @@ public class GoogleDriveRemoteFileMetadata {
     private String m_teamId;
     private long m_fileSize;
     private long m_lastModified;
-    private List<String> m_parents = new ArrayList<String>();
+    private List<String> m_parents;
 
     /**
-     * 
+     * Default constructor
      */
-    public GoogleDriveRemoteFileMetadata() {
-        // TODO Auto-generated constructor stub
-    }
+    public GoogleDriveRemoteFileMetadata() {}
     
     /**
      * Parse Google Drive file metadata from the query parameters set in a URI resource
@@ -119,6 +116,24 @@ public class GoogleDriveRemoteFileMetadata {
             if (parameterMap.containsKey("teamid")) {
                 m_teamId = parameterMap.get("teamid");
             }
+            
+            // File size
+            if (parameterMap.containsKey("size")) {
+                m_lastModified = Long.parseLong(parameterMap.get("size"));
+            }
+            
+            // Last modified
+            if (parameterMap.containsKey("modified")) {
+                m_lastModified = Long.parseLong(parameterMap.get("modified"));
+            }
+            
+            // Parents
+            if (parameterMap.containsKey("parents")) {
+                m_parents = new ArrayList<String>();
+                for (String parent : parameterMap.get("parents").split(",")) {
+                    m_parents.add(parent);
+                }
+            }
         }
     }
 
@@ -143,15 +158,26 @@ public class GoogleDriveRemoteFileMetadata {
         
         if (m_mimeType != null && !m_mimeType.isEmpty()) {
             queryString += "&mimetype=" + m_mimeType;
-        }
+        } 
         
         if (fromTeamDrive()) {
             queryString += "&teamid=" + m_teamId;
         }
         
+        if (m_fileSize != 0l) {
+            queryString += "&size=" + m_fileSize;
+        }
+        
+        if (m_lastModified != 0l) {
+            queryString += "&modified=" + m_lastModified;
+        }
+        
+        if (m_parents != null && m_parents.size() > 0) {
+            queryString += "&parents=" + String.join(",", m_parents);
+        }
+        
         return queryString;
     }
-    
 
     /**
      * @return the fileId
@@ -206,7 +232,18 @@ public class GoogleDriveRemoteFileMetadata {
      * @param parentId Add a parent ID to the list of parents
      */
     public void addParentId(String parentId) {
+        // Initialize parent list if it has not been.
+        if (m_parents == null) {
+            m_parents = new ArrayList<String>();
+        }
         m_parents.add(parentId);
+    }
+    
+    /**
+     * @param parents Set all parents via String List
+     */
+    public void setParents(List<String> parents) {
+        m_parents = parents;
     }
 
     /**
