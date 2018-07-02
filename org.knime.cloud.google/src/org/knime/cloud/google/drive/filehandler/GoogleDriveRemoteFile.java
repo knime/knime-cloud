@@ -64,6 +64,7 @@ import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
@@ -125,10 +126,17 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean doesContainerExist(String containerName) throws Exception {
-        // TODO - clean this up
-        //boolean exists = (getContainers().contains("/" + containerName + "/"))  ? true : false;
-        //return exists;
-        return true;
+        if (containerName.equals("MyDrive") || containerName.equals("TeamDrives")) {
+            return true;
+        } else {
+            try {
+                // Return true if this is a valid Team Drive
+                getTeamId(containerName);
+                return true;
+            } catch (NoSuchElementException ex) {
+                return false;
+            }
+        }
     }
     
     /**
@@ -156,8 +164,11 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
-        // TODO Auto-generated method stub
-        return true;
+        if (m_fileMetadata.getFileId() != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -219,7 +230,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 .setQ("'" + m_fileMetadata.getFileId() + "' in parents and trashed = false")
                 .setFields(FIELD_STRING);
         
-        if (m_fileMetadata.getTeamId() != null) {
+        if (m_fileMetadata.fromTeamDrive()) {
             request = request.setCorpora("teamDrive").setSupportsTeamDrives(true)
                     .setIncludeTeamDriveItems(true).setTeamDriveId(m_fileMetadata.getTeamId());
         } 
@@ -243,8 +254,13 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
                 metadata.setFileId(file.getId());
                 metadata.setMimeType(file.getMimeType());
+                if (!file.getMimeType().equals(FOLDER)) {
+                    metadata.setFileSize(file.getSize());
+                }
+                metadata.setLastModified(file.getModifiedTime().getValue() / 1000);
+                metadata.setParents(file.getParents());
                 
-                if (m_fileMetadata.getTeamId() != null) {
+                if (m_fileMetadata.fromTeamDrive()) {
                     metadata.setTeamId(m_fileMetadata.getTeamId());
                 }
                 
@@ -313,8 +329,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean deleteDirectory() throws Exception {
-        // TODO Auto-generated method stub
-        return false;
+        // Google Drive API will delete a folder and any subfolders or files by default
+        return deleteBlob();
     }
 
     /**
@@ -322,8 +338,12 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean deleteBlob() throws Exception {
-        // TODO Auto-generated method stub
-        return false;
+        if (isContainer()) {
+            return false;
+        } else {
+            getService().files().delete(m_fileMetadata.getFileId()).setSupportsTeamDrives(true).execute();
+            return true;
+        }
     }
 
     /**
@@ -339,8 +359,27 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean createDirectory(String dirName) throws Exception {
-        // TODO Auto-generated method stub
-        return false;
+        
+        final File fileMetadata = new File();   
+        fileMetadata.setName(getName());
+        fileMetadata.setParents(m_fileMetadata.getParents());
+        fileMetadata.setMimeType(FOLDER);
+     
+        try {
+            File driveFile = getService().files().create(fileMetadata)
+                    .setFields("id").setSupportsTeamDrives(true).execute();
+            
+            LOGGER.debug("Creating new folder: " + getBlobName() + " , file id: " + driveFile.getId());
+            
+            // Set updated metadata (Parents and team ID have already been set)
+            m_fileMetadata.setFileId(driveFile.getId());
+            m_fileMetadata.setMimeType(FOLDER);
+            
+            return true;
+        } catch (GoogleJsonResponseException ex) {
+            LOGGER.debug(ex.getMessage());
+            throw new Exception(ex.getStatusMessage());
+        }
     }
 
     /**
@@ -391,10 +430,16 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             InputStreamContent content = new InputStreamContent(null, in);
             
             File driveFile = getService().files().create(fileMetadata, content)
-                .setFields("id, parents")
+                .setFields("id, parents").setSupportsTeamDrives(true)
                 .execute();
             
             LOGGER.debug("Creating new file: " + getBlobName() + " , file id: " + driveFile.getId());
+            
+            // Set updated metadata (Parents and team ID have already been set)
+            m_fileMetadata.setFileId(driveFile.getId());
+            m_fileMetadata.setMimeType(driveFile.getMimeType());
+            m_fileMetadata.setFileSize(driveFile.getSize());
+            m_fileMetadata.setLastModified(driveFile.getModifiedTime().getValue() / 1000 );
             
         } catch (Exception e) {
             throw e;
@@ -411,7 +456,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 return teamDrive.getId();
             }
         }
-        throw new NoSuchElementException("Team Drive: " + teamDriveName + " could not be found.");
+        throw new NoSuchElementException("Team Drive: '" + teamDriveName + "' could not be found.");
     }
     
     private GoogleDriveRemoteFileMetadata getMetadata() throws Exception {
@@ -465,7 +510,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         
         // Handle My Drive and Team Drive files/folders
         com.google.api.services.drive.Drive.Files.List request = getService().files().list();
-        if (teamId != null) {
+        if (metadata.fromTeamDrive()) {
             request = request.setCorpora("teamDrive").setSupportsTeamDrives(true)
                     .setIncludeTeamDriveItems(true).setTeamDriveId(metadata.getTeamId());
         }
@@ -478,15 +523,23 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         // Use file IDs and parent information to find the right file id by
         // iterating through each element in the path
         String parent = rootId;
+        boolean parentsValidated = false;
         for (int i = 0; i < pathElementStringArray.length; i++) {
+            
+            boolean fileFound = false;
             
             for (File file : files) {
                 // If name matches and has the correct parent
                 if(file.getName().equals(pathElementStringArray[i]) && file.getParents().contains(parent)) {
-                   if (i == pathElementStringArray.length -1) {
+                    fileFound = true;
+                    if (i == pathElementStringArray.length -1) {
                        // Last element, this it the file we want
                        metadata.setFileId(file.getId());
                        metadata.setMimeType(file.getMimeType());
+                       if (!file.getMimeType().equals(FOLDER)) {
+                           metadata.setFileSize(file.getSize());
+                       }
+                       metadata.setLastModified(file.getModifiedTime().getValue() / 1000);
                        metadata.addParentId(parent);
                        return metadata;
                    } else {
@@ -495,12 +548,25 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                    }
                 }
             }
+            
+            // If we get to last execution of the path traversal loop and fileFound is true, 
+            // or if the length of elements in the path is one (meaning the only possible parents are 
+            // MyDrive of TeamDrive containers), then we know all the parent folders/drives exist
+            if (i == pathElementStringArray.length - 1 && (fileFound || pathElementStringArray.length == 1)) {
+                parentsValidated = true;
+            }
         }
         
         // Set the last found location in the path as the parent.
-        // This is needed when a Google Drive file is first created. 
-        metadata.addParentId(parent);
-        return metadata;
+        // This is needed during Google Drive file creation to ensure
+        // the file is placed in the correct folder (i.e. its parent)
+        if (parentsValidated) {
+            metadata.addParentId(parent);
+            return metadata; 
+        } else {
+            // Not all parent directories found, bad path was specified
+            throw new NoSuchElementException("Could not resolve all parent locations for path: " + getFullPath());
+        }
     }
     
     private Drive getService() throws Exception {
