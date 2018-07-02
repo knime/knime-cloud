@@ -164,6 +164,9 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
+        // This can get called to verify a file was deleted successfully.
+        // So lets reset the metadata
+        m_fileMetadata = getMetadata();
         if (m_fileMetadata.getFileId() != null) {
             return true;
         } else {
@@ -236,7 +239,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         } 
         
         List<GoogleDriveRemoteFile> remoteFileList = new ArrayList<GoogleDriveRemoteFile>();
-        List<File> driveFiles = request.execute().getFiles();
+        List<File> driveFiles = request.setOrderBy("name").execute().getFiles();
         
         if (driveFiles == null || driveFiles.isEmpty()) {
             return new GoogleDriveRemoteFile[0];
@@ -338,12 +341,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean deleteBlob() throws Exception {
-        if (isContainer()) {
-            return false;
-        } else {
-            getService().files().delete(m_fileMetadata.getFileId()).setSupportsTeamDrives(true).execute();
-            return true;
-        }
+        getService().files().delete(m_fileMetadata.getFileId()).setSupportsTeamDrives(true).execute();
+        return true;
     }
 
     /**
@@ -367,13 +366,14 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      
         try {
             File driveFile = getService().files().create(fileMetadata)
-                    .setFields("id").setSupportsTeamDrives(true).execute();
+                    .setFields("id, parents, modifiedTime").setSupportsTeamDrives(true).execute();
             
             LOGGER.debug("Creating new folder: " + getBlobName() + " , file id: " + driveFile.getId());
             
             // Set updated metadata (Parents and team ID have already been set)
             m_fileMetadata.setFileId(driveFile.getId());
             m_fileMetadata.setMimeType(FOLDER);
+            m_fileMetadata.setLastModified(driveFile.getModifiedTime().getValue() / 1000);
             
             return true;
         } catch (GoogleJsonResponseException ex) {
@@ -430,7 +430,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             InputStreamContent content = new InputStreamContent(null, in);
             
             File driveFile = getService().files().create(fileMetadata, content)
-                .setFields("id, parents").setSupportsTeamDrives(true)
+                .setFields("id, parents, size, mimeType, modifiedTime").setSupportsTeamDrives(true)
                 .execute();
             
             LOGGER.debug("Creating new file: " + getBlobName() + " , file id: " + driveFile.getId());
@@ -549,12 +549,22 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 }
             }
             
-            // If we get to last execution of the path traversal loop and fileFound is true, 
-            // or if the length of elements in the path is one (meaning the only possible parents are 
-            // MyDrive of TeamDrive containers), then we know all the parent folders/drives exist
-            if (i == pathElementStringArray.length - 1 && (fileFound || pathElementStringArray.length == 1)) {
+            // If the current file was found and we aren't to the end of the blob path,
+            // then the parents are still validated.
+            // We don't check this for the last file in the array because it could be a 
+            // new file being created
+            if (fileFound) {
                 parentsValidated = true;
+            } else if (i < pathElementStringArray.length - 1) {
+                parentsValidated = false;
+                break;
             }
+        }
+        
+        // In the case that the blob path only has a length of one, the parents are containers and have
+        // already been validated. Override parentsValidated to true
+        if (pathElementStringArray.length == 1) {
+            parentsValidated = true;
         }
         
         // Set the last found location in the path as the parent.
