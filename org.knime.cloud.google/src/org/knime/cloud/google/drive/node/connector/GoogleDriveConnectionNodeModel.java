@@ -89,15 +89,6 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
             new PortType[]{GoogleDriveConnectionInformationPortObject.TYPE});
     }
 
-    //	public GoogleDriveConnectionNodeModel(int nrInDataPorts, int nrOutDataPorts) {
-    //		super(nrInDataPorts, nrOutDataPorts);
-    //		// TODO Auto-generated constructor stub
-    //	}
-    //
-    //	public GoogleDriveConnectionNodeModel(PortType[] inPortTypes, PortType[] outPortTypes) {
-    //		super(inPortTypes, outPortTypes);
-    //	}
-
     /**
      * {@inheritDoc}
      */
@@ -105,29 +96,6 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         GoogleSheetsConnection connection =
             ((GoogleSheetsConnectionPortObject)inObjects[0]).getGoogleSheetsConnection();
-
-        Drive driveConnection = connection.getDriveService();
-        
-        getLogger().debug("************");
-        getLogger().debug(connection.toString());
-        getLogger().debug("***** Drive ******");
-        getLogger().debug(driveConnection.toString());
-        
-        
-        FileList fileList = driveConnection.files().list().execute();
-        
-        getLogger().debug("***** Files found: ******");
-        for (com.google.api.services.drive.model.File file: fileList.getFiles()) {
-            getLogger().debug("Name:");
-            getLogger().debug(file.getName());
-            getLogger().debug("Id:");
-            getLogger().debug(file.getId());
-        }
-        
-        exec.setMessage("Requesting Google Sheet");
-        exec.setMessage(connection.toString());
-        //return new PortObject[] {null};
-        
         return new PortObject[] { new GoogleDriveConnectionInformationPortObject(createSpec(connection)) };
     }
 
