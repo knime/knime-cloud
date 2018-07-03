@@ -3,31 +3,29 @@
     <name>Google Drive Connection</name>   
     
     <shortDescription>
-        This is an example node provided by KNIME.
+        Create a connection to Google Drive
     </shortDescription>
     
     <fullDescription>
-        <intro>Insert long description here...</intro>
-        
-        
-        <option name="short name of first option (like in the dialog)">description of first option</option>
-        <option name="short name of second option (like in the dialog)">description of second option</option>
-        <!-- possibly more options that can also be grouped by tabs -->
-        <!--
-        <tab name="Standard Options">
-            <option name="short name of first option (like in the dialog)">description of first option</option>
-            <option name="short name of second option (like in the dialog)">description of second option</option>
-        </tab>
-        <tab name="Advanced Options">
-            <option name="short name of first advanced option (like in the dialog)">description of first advanced option</option>
-        </tab>
-        -->
+        <intro>
+        This node provides a connection to the Google Drive service. 
+        <p>
+        There is no configuration. This node supports a user's "My Drive" and "Team Drives".
+        </p>
+        <p>
+        Currently, the Google Sheets Service Provider and Google Sheets Interactive Service Provider nodes 
+        can be used for the input port. This node will use that incoming connection to broker a connection to Google Drive. 
+        </p>
+        <p>
+        Only non-native Google file types are supported (i.e. Google Docs, Google Sheets, etc. are not supported due to API restrictions).
+        </p>
+        </intro>
     </fullDescription>
     
     <ports>
-        <inPort index="0" name="In-Port name">Description of first input port...</inPort>
+        <inPort index="0" name="In-Port name">A port object containing the Google API connection information</inPort>
         <!-- possibly more input ports here-->
-        <outPort index="0" name="Out-Port name">Description of first output port...</outPort>
+        <outPort index="0" name="Out-Port name">A port object connection that can be used to access Google Drive</outPort>
         <!-- possibly more output ports here-->
     </ports> 
      
