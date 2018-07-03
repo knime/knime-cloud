@@ -48,9 +48,6 @@
  */
 package org.knime.cloud.google.drive.node.connector;
 
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.model.FileList;
-
 import java.io.File;
 import java.io.IOException;
 
