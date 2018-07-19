@@ -55,6 +55,7 @@ import org.knime.core.node.NodeLogger;
 import com.google.api.services.drive.Drive;
 
 /**
+ * Google Drive Connection 
  * 
  * @author jtyler
  */
@@ -79,11 +80,8 @@ public class GoogleDriveConnection extends Connection {
      */
     @Override
     public void open() throws Exception {
-        
-        LOGGER.info("Creating new Google Drive service...");
-        
+        LOGGER.info("Creating new Google Drive service");
         m_driveService = m_connectionInformation.getGoogleConnection().getDriveService();
-
     }
 
     /**

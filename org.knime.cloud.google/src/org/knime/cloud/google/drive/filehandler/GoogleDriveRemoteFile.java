@@ -71,6 +71,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.TeamDrive;
 
 /**
+ * Implementation of {@link CloudRemoteFile} for Google Drive
  * 
  * @author jtyler
  */
@@ -78,8 +79,10 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     
     private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveRemoteFile.class);
     
-    private static final String DEFAULT_CONTAINER = "/MyDrive/";
-    private static final String TEAM_DRIVES_FOLDER = "/TeamDrives/";
+    private static final String MY_DRIVE = "MyDrive";
+    private static final String TEAM_DRIVES = "TeamDrives";
+    private static final String DEFAULT_CONTAINER = "/" + MY_DRIVE + "/";
+    private static final String TEAM_DRIVES_FOLDER = "/" + TEAM_DRIVES + "/";
     private static final String GOOGLE_MIME_TYPE = "application/vnd.google-apps";
     private static final String FOLDER = GOOGLE_MIME_TYPE + ".folder";
     private static final String FIELD_STRING = "files(id, name, kind, mimeType, modifiedTime, size, trashed, parents)";
@@ -111,7 +114,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             if (isContainer()) {
                 return null; 
             }
-            if (getContainerName().equals("MyDrive")) {
+            if (getContainerName().equals(MY_DRIVE)) {
                 m_blobName = getFullPath().substring(DEFAULT_CONTAINER.length());
             } else {
                 int idx = StringUtils.ordinalIndexOf(getFullPath(), "/", 3);
@@ -126,7 +129,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      */
     @Override
     protected boolean doesContainerExist(String containerName) throws Exception {
-        if (containerName.equals("MyDrive") || containerName.equals("TeamDrives")) {
+        if (containerName.equals(MY_DRIVE) || containerName.equals(TEAM_DRIVES)) {
             return true;
         } else {
             try {
@@ -149,7 +152,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 m_isContainer = true;
             } else {
                 final String[] elements = m_fullPath.split("/");
-                if (elements.length == 3 && elements[0].isEmpty() && elements[1].equals("TeamDrives")) {
+                if (elements.length == 3 && elements[0].isEmpty() && elements[1].equals(TEAM_DRIVES)) {
                     m_isContainer = true;
                 } else {
                     m_isContainer = false;
@@ -289,9 +292,9 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             if (getFullPath().equals("/")) {
                 m_containerName = null;
             } else if (getFullPath().substring(0, DEFAULT_CONTAINER.length()).equals(DEFAULT_CONTAINER)) {
-                m_containerName = "MyDrive";
+                m_containerName = MY_DRIVE;
             } else if (getFullPath().equals(TEAM_DRIVES_FOLDER)) {
-                m_containerName = "TeamDrives";
+                m_containerName = TEAM_DRIVES;
             } else {
                 String[] elements = getFullPath().split("/");
                 if (elements.length < 3 || (elements[0] != null && !elements[0].isEmpty())) {
@@ -447,7 +450,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
     }
     
     private String getTeamId(String teamDriveName) throws Exception {
-        if (teamDriveName.equals("MyDrive")) {
+        if (teamDriveName.equals(MY_DRIVE)) {
             return null;
         }
         final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
@@ -550,7 +553,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             }
             
             // If the current file was found and we aren't to the end of the blob path,
-            // then the parents are still validated.
+            // then the parents are still valid.
             // We don't check this for the last file in the array because it could be a 
             // new file being created
             if (fileFound) {
