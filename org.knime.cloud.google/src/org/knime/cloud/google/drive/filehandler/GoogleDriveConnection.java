@@ -71,7 +71,7 @@ public class GoogleDriveConnection extends Connection {
      * @param connectionInformation 
      * 
      */
-    public GoogleDriveConnection(final GoogleDriveConnectionInformation connectionInformation) {
+    GoogleDriveConnection(final GoogleDriveConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
     }
 
@@ -80,7 +80,7 @@ public class GoogleDriveConnection extends Connection {
      */
     @Override
     public void open() throws Exception {
-        LOGGER.info("Creating new Google Drive service");
+        LOGGER.debug("Creating new Google Drive service");
         m_driveService = m_connectionInformation.getGoogleConnection().getDriveService();
     }
 

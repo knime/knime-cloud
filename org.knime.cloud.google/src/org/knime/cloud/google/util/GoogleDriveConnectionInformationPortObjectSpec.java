@@ -48,28 +48,36 @@
  */
 package org.knime.cloud.google.util;
 
+import java.util.Objects;
+
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
+import org.knime.core.node.util.CheckUtils;
 
 /**
  * 
  * @author jtyler
  */
 public class GoogleDriveConnectionInformationPortObjectSpec extends CloudConnectionInformationPortObjectSpec {
-    
+
+    /**
+     * Serializer for the framework (see plugin.xml)
+     * 
+     * @noreference This class is not intended to be referenced by clients.
+     */
     public static final class Serializer
-    extends AbstractSimplePortObjectSpecSerializer<GoogleDriveConnectionInformationPortObjectSpec> { }
-    
+        extends AbstractSimplePortObjectSpecSerializer<GoogleDriveConnectionInformationPortObjectSpec> {
+    }
+
     private GoogleDriveConnectionInformation m_connectionInformation;
 
     /**
      * 
      */
     public GoogleDriveConnectionInformationPortObjectSpec() {
-        m_connectionInformation = null;
     }
 
     /**
@@ -78,11 +86,9 @@ public class GoogleDriveConnectionInformationPortObjectSpec extends CloudConnect
      *
      * @param connectionInformation The content of this port object
      */
-    public GoogleDriveConnectionInformationPortObjectSpec(final GoogleDriveConnectionInformation connectionInformation) {
-        if (connectionInformation == null) {
-            throw new NullPointerException("List argument must not be null");
-        }
-        m_connectionInformation = connectionInformation;
+    public GoogleDriveConnectionInformationPortObjectSpec(
+        final GoogleDriveConnectionInformation connectionInformation) {
+        m_connectionInformation = CheckUtils.checkArgumentNotNull(connectionInformation);
     }
 
     /**
@@ -96,41 +102,29 @@ public class GoogleDriveConnectionInformationPortObjectSpec extends CloudConnect
         return m_connectionInformation;
     }
 
- 
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @Override
-//    public boolean equals(final Object ospec) {
-//        if (ospec == this) {
-//            return true;
-//        }
-//        if (!(ospec instanceof ConnectionInformationPortObjectSpec)) {
-//            return false;
-//        }
-//        final CloudConnectionInformationPortObjectSpec oCIPOS = (CloudConnectionInformationPortObjectSpec)ospec;
-//        return Objects.equals(m_connectionInformation, oCIPOS.m_connectionInformation);
-//    }
-//
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @Override
-//    public int hashCode() {
-//        return m_connectionInformation == null ? 0 : m_connectionInformation.hashCode();
-//    }
+    @Override
+    public boolean equals(final Object ospec) {
+        if (ospec == this) {
+            return true;
+        }
+        if (!(ospec instanceof GoogleDriveConnectionInformationPortObjectSpec)) {
+            return false;
+        }
+        final GoogleDriveConnectionInformationPortObjectSpec oGDPOS =
+            (GoogleDriveConnectionInformationPortObjectSpec)ospec;
+        return Objects.equals(m_connectionInformation, oGDPOS.m_connectionInformation);
+    }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
+    public int hashCode() {
+        return m_connectionInformation == null ? 0 : m_connectionInformation.hashCode();
+    }
+
     @Override
     protected void save(final ModelContentWO model) {
         m_connectionInformation.save(model);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void load(final ModelContentRO model) throws InvalidSettingsException {
         m_connectionInformation = GoogleDriveConnectionInformation.load(model);

@@ -6,8 +6,7 @@
          point="org.knime.workbench.repository.nodes">
       <node
             category-path="/io/filehandling/remote/connections"
-            factory-class="org.knime.cloud.google.drive.node.connector.GoogleDriveConnectionNodeFactory"
-            id="org.knime.cloud.google.drive.node.GoogleDriveConnectionNodeFactory"/>
+            factory-class="org.knime.cloud.google.drive.node.connector.GoogleDriveConnectionNodeFactory"/>
    </extension>
    
     <extension point="org.knime.base.filehandling.RemoteFileHandler">
@@ -17,15 +16,6 @@
    
    <extension
          point="org.knime.core.PortType">
-      <portType
-            color="#1eb9dc"
-            hidden="true"
-            name="Google Sheets"
-            objectClass="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject"
-            objectSerializer="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject$Serializer"
-            specClass="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec"
-            specSerializer="org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec$Serializer">
-      </portType>
       <portType
             hidden="false"
             name="GoogleDriveConnection"

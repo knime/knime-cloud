@@ -48,27 +48,35 @@
  */
 package org.knime.cloud.google.util;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
+import org.knime.core.node.util.CheckUtils;
 import org.knime.google.api.sheets.data.GoogleSheetsConnection;
 
 /**
- * 
+ * TODO (short) javadoc comment
  * @author jtyler
  */
 public class GoogleDriveConnectionInformation extends CloudConnectionInformation {
     
     private static final long serialVersionUID = 1L;
     
-    private GoogleSheetsConnection m_connection;
+    private final GoogleSheetsConnection m_connection;
 
     /**
+     * @param connection non-null connection object.
      * 
      */
-    public GoogleDriveConnectionInformation() {
-        // TODO Auto-generated constructor stub
+    public GoogleDriveConnectionInformation(GoogleSheetsConnection connection) {
+        m_connection = CheckUtils.checkArgumentNotNull(connection);
+        setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
+        setHost("google-drive-api");
+        setUser("user");
     }
 
     /**
@@ -96,11 +104,26 @@ public class GoogleDriveConnectionInformation extends CloudConnectionInformation
     public GoogleSheetsConnection getGoogleConnection() {
         return m_connection;
     }
-
-    /**
-     * @param connection the connection to set
-     */
-    public void setGoogleConnection(GoogleSheetsConnection connection) {
-        m_connection = connection;
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+        GoogleDriveConnectionInformation rhs = (GoogleDriveConnectionInformation)obj;
+        
+        return new EqualsBuilder().appendSuper(super.equals(obj)).append(m_connection, rhs.m_connection).isEquals();
+    }
+    
+    @Override
+    public int hashCode() {
+        HashCodeBuilder hashBuilder = new HashCodeBuilder();
+        return hashBuilder.appendSuper(super.hashCode()).append(m_connection).toHashCode();
     }
 }

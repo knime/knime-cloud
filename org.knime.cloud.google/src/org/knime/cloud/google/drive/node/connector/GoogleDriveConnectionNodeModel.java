@@ -51,7 +51,6 @@ package org.knime.cloud.google.drive.node.connector;
 import java.io.File;
 import java.io.IOException;
 
-import org.knime.cloud.google.drive.filehandler.GoogleDriveRemoteFileHandler;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObject;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObjectSpec;
@@ -73,17 +72,14 @@ import org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec;
  *
  * @author Jason Tyler, KNIME.com
  */
-public class GoogleDriveConnectionNodeModel extends NodeModel {
-    
-    private GoogleDriveConnectorConfiguration m_config = new GoogleDriveConnectorConfiguration();
+final class GoogleDriveConnectionNodeModel extends NodeModel {
 
     /**
      * 
      */
-    public GoogleDriveConnectionNodeModel() {
-        //super(0, 1);
+    GoogleDriveConnectionNodeModel() {
         super(new PortType[]{GoogleSheetsConnectionPortObject.TYPE},
-            new PortType[]{GoogleDriveConnectionInformationPortObject.TYPE});
+            new PortType[]{GoogleDriveConnectionInformationPortObject.G_TYPE});
     }
 
     /**
@@ -93,7 +89,7 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         GoogleSheetsConnection connection =
             ((GoogleSheetsConnectionPortObject)inObjects[0]).getGoogleSheetsConnection();
-        return new PortObject[] { new GoogleDriveConnectionInformationPortObject(createSpec(connection)) };
+        return new PortObject[]{new GoogleDriveConnectionInformationPortObject(createSpec(connection))};
     }
 
     /**
@@ -101,47 +97,35 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
      */
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
-        GoogleSheetsConnection connection = 
-                ((GoogleSheetsConnectionPortObjectSpec)inSpecs[0]).getGoogleSheetsConnection();
-        return new PortObjectSpec[] { createSpec(connection)};
+        GoogleSheetsConnection connection =
+            ((GoogleSheetsConnectionPortObjectSpec)inSpecs[0]).getGoogleSheetsConnection();
+        return new PortObjectSpec[]{createSpec(connection)};
     }
 
     @Override
     protected void loadInternals(File nodeInternDir, ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void saveInternals(File nodeInternDir, ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void saveSettingsTo(NodeSettingsWO settings) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void validateSettings(NodeSettingsRO settings) throws InvalidSettingsException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void loadValidatedSettingsFrom(NodeSettingsRO settings) throws InvalidSettingsException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     /**
@@ -150,16 +134,12 @@ public class GoogleDriveConnectionNodeModel extends NodeModel {
      * @return ConnectionInformationPortObjectSpec
      * @throws InvalidSettingsException ...
      */
-     private GoogleDriveConnectionInformationPortObjectSpec createSpec(GoogleSheetsConnection connection) throws InvalidSettingsException {
+    private static GoogleDriveConnectionInformationPortObjectSpec createSpec(GoogleSheetsConnection connection)
+        throws InvalidSettingsException {
 
-        GoogleDriveConnectionInformation connectionInformation = new GoogleDriveConnectionInformation();
-        connectionInformation.setGoogleConnection(connection);
-        
-        connectionInformation.setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
-        connectionInformation.setHost("google-drive-api");
-        connectionInformation.setUser("user");
-        
+        GoogleDriveConnectionInformation connectionInformation = new GoogleDriveConnectionInformation(connection);
+
         return new GoogleDriveConnectionInformationPortObjectSpec(connectionInformation);
     }
-    
+
 }

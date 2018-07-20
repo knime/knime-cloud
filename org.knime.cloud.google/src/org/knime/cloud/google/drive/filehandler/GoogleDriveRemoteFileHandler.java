@@ -63,17 +63,17 @@ import org.knime.core.node.util.CheckUtils;
  * @author jtyler
  */
 public class GoogleDriveRemoteFileHandler implements RemoteFileHandler<GoogleDriveConnection> {
-    
+
     /** The {@link Protocol} of this {@link RemoteFileHandler}. */
-    public static final Protocol PROTOCOL = new Protocol("gdrive", -1, false, false, false, true, true,
-            true, false, false);
+    public static final Protocol PROTOCOL =
+        new Protocol("gdrive", -1, false, false, false, true, true, true, false, false);
 
     /**
      * {@inheritDoc}
      */
     @Override
     public Protocol[] getSupportedProtocols() {
-        return new Protocol[] { PROTOCOL };
+        return new Protocol[]{PROTOCOL};
     }
 
     /**
@@ -82,13 +82,13 @@ public class GoogleDriveRemoteFileHandler implements RemoteFileHandler<GoogleDri
     @Override
     public RemoteFile<GoogleDriveConnection> createRemoteFile(URI uri, ConnectionInformation connectionInformation,
         ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
-        CheckUtils.checkArgument(connectionInformation instanceof GoogleDriveConnectionInformation, 
-            "Connection information to be expected of class %s but it is %s", 
-            GoogleDriveConnectionInformation.class.getSimpleName(), 
+        CheckUtils.checkArgument(connectionInformation instanceof GoogleDriveConnectionInformation,
+            "Connection information to be expected of class %s but it is %s",
+            GoogleDriveConnectionInformation.class.getSimpleName(),
             connectionInformation == null ? "<null>" : connectionInformation.getClass().getSimpleName());
-    final GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri, 
-            (GoogleDriveConnectionInformation)connectionInformation, connectionMonitor);
-    return remoteFile;
+        final GoogleDriveRemoteFile remoteFile =
+            new GoogleDriveRemoteFile(uri, (GoogleDriveConnectionInformation)connectionInformation, connectionMonitor);
+        return remoteFile;
     }
 
 }

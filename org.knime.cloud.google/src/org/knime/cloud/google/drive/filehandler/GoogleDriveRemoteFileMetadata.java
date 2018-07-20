@@ -54,50 +54,58 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 
  * @author jtyler
  */
-public class GoogleDriveRemoteFileMetadata {
-    
+final class GoogleDriveRemoteFileMetadata {
+
     private String m_fileId;
+
     private String m_mimeType;
+
     private String m_teamId;
+
     private long m_fileSize;
+
     private long m_lastModified;
+
     private List<String> m_parents;
 
     /**
      * Default constructor
      */
-    public GoogleDriveRemoteFileMetadata() {}
-    
+    GoogleDriveRemoteFileMetadata() {
+    }
+
     /**
      * Parse Google Drive file metadata from the query parameters set in a URI resource
      * 
      * @param uri
-     * @throws Exception 
+     * @throws Exception
      */
-    public GoogleDriveRemoteFileMetadata(URI uri) throws Exception {
-        if (uri.getQuery() != null && !uri.getQuery().isEmpty()) {
+    GoogleDriveRemoteFileMetadata(URI uri) throws Exception {
+        if (StringUtils.isNotEmpty(uri.getQuery())) {
             loadFromQueryString(uri.getQuery());
         }
     }
-    
+
     private void loadFromQueryString(String queryString) throws Exception {
-        
+
         Map<String, String> parameterMap = new HashMap<String, String>();
         String[] parameterList = queryString.split("&");
-        
+
         for (String parameter : parameterList) {
             String[] nameValueList = parameter.split("=");
-            
+
             if (nameValueList.length != 2) {
                 throw new Exception("Cannot parse query string. Unexpected parameter: " + parameter);
             }
-            
+
             parameterMap.put(nameValueList[0], nameValueList[1]);
-            
+
             // Set required fields
             // File ID
             if (parameterMap.containsKey("fileid")) {
@@ -105,28 +113,28 @@ public class GoogleDriveRemoteFileMetadata {
             } else {
                 throw new Exception("Cannot parse query string. fileid not present.");
             }
-            
+
             // Set optional fields
             // MIME Type
             if (parameterMap.containsKey("fileid")) {
                 m_fileId = parameterMap.get("fileid");
-            } 
-            
+            }
+
             // Team Drive ID
             if (parameterMap.containsKey("teamid")) {
                 m_teamId = parameterMap.get("teamid");
             }
-            
+
             // File size
             if (parameterMap.containsKey("size")) {
                 m_lastModified = Long.parseLong(parameterMap.get("size"));
             }
-            
+
             // Last modified
             if (parameterMap.containsKey("modified")) {
                 m_lastModified = Long.parseLong(parameterMap.get("modified"));
             }
-            
+
             // Parents
             if (parameterMap.containsKey("parents")) {
                 m_parents = new ArrayList<String>();
@@ -140,137 +148,137 @@ public class GoogleDriveRemoteFileMetadata {
     /**
      * @return boolean indicating if file is from a team drive
      */
-    public boolean fromTeamDrive() {
+    boolean fromTeamDrive() {
         return (m_teamId != null) ? true : false;
     }
-    
+
     /**
      * @return fields serialized to a query string
      * @throws Exception
      */
-    public String toQueryString() throws Exception {
-        
+    String toQueryString() throws Exception {
+
         if (m_fileId == null) {
             throw new Exception("Cannot create query string. fileid not set.");
         }
-        
+
         String queryString = "fileid=" + m_fileId;
-        
+
         if (m_mimeType != null && !m_mimeType.isEmpty()) {
             queryString += "&mimetype=" + m_mimeType;
-        } 
-        
+        }
+
         if (fromTeamDrive()) {
             queryString += "&teamid=" + m_teamId;
         }
-        
+
         if (m_fileSize != 0l) {
             queryString += "&size=" + m_fileSize;
         }
-        
+
         if (m_lastModified != 0l) {
             queryString += "&modified=" + m_lastModified;
         }
-        
+
         if (m_parents != null && m_parents.size() > 0) {
             queryString += "&parents=" + String.join(",", m_parents);
         }
-        
+
         return queryString;
     }
 
     /**
      * @return the fileId
      */
-    public String getFileId() {
+    String getFileId() {
         return m_fileId;
     }
 
     /**
      * @param fileId the fileId to set
      */
-    public void setFileId(String fileId) {
+    void setFileId(String fileId) {
         m_fileId = fileId;
     }
 
     /**
      * @return the mimeType
      */
-    public String getMimeType() {
+    String getMimeType() {
         return m_mimeType;
     }
 
     /**
      * @param mimeType the mimeType to set
      */
-    public void setMimeType(String mimeType) {
+    void setMimeType(String mimeType) {
         m_mimeType = mimeType;
     }
 
     /**
      * @return the teamId
      */
-    public String getTeamId() {
+    String getTeamId() {
         return m_teamId;
     }
 
     /**
      * @param teamId the teamId to set
      */
-    public void setTeamId(String teamId) {
+    void setTeamId(String teamId) {
         m_teamId = teamId;
     }
 
     /**
      * @return List of parent ids
      */
-    public List<String> getParents() {
+    List<String> getParents() {
         return m_parents;
     }
 
     /**
      * @param parentId Add a parent ID to the list of parents
      */
-    public void addParentId(String parentId) {
+    void addParentId(String parentId) {
         // Initialize parent list if it has not been.
         if (m_parents == null) {
             m_parents = new ArrayList<String>();
         }
         m_parents.add(parentId);
     }
-    
+
     /**
      * @param parents Set all parents via String List
      */
-    public void setParents(List<String> parents) {
+    void setParents(List<String> parents) {
         m_parents = parents;
     }
 
     /**
      * @return the fileSize
      */
-    public long getFileSize() {
+    long getFileSize() {
         return m_fileSize;
     }
 
     /**
      * @param fileSize the fileSize to set
      */
-    public void setFileSize(long fileSize) {
+    void setFileSize(long fileSize) {
         m_fileSize = fileSize;
     }
 
     /**
      * @return the lastModified
      */
-    public long getLastModified() {
+    long getLastModified() {
         return m_lastModified;
     }
 
     /**
      * @param lastModified the lastModified to set
      */
-    public void setLastModified(long lastModified) {
+    void setLastModified(long lastModified) {
         m_lastModified = lastModified;
     }
 
