@@ -52,6 +52,7 @@ import java.net.URI;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.core.runtime.URIUtil;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
@@ -86,8 +87,8 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 	 * @param connectionInformation
 	 * @param connectionMonitor
 	 */
-	protected CloudRemoteFile(URI uri, ConnectionInformation connectionInformation,
-			ConnectionMonitor<C> connectionMonitor) {
+	protected CloudRemoteFile(final URI uri, final ConnectionInformation connectionInformation,
+			final ConnectionMonitor<C> connectionMonitor) {
 		super(uri, connectionInformation, connectionMonitor);
 	}
 
@@ -248,7 +249,7 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 	 * @param containerName the container's name
 	 * @return the container path
 	 */
-	protected String createContainerPath(String containerName) {
+	protected String createContainerPath(final String containerName) {
 		return DELIMITER + containerName + DELIMITER;
 	}
 
@@ -416,7 +417,7 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 					result = createContainer();
 			} else {
 				String dirName = getBlobName();
-				dirName = (dirName.endsWith(DELIMITER)) ? dirName : dirName + DELIMITER;
+				dirName = dirName.endsWith(DELIMITER) ? dirName : dirName + DELIMITER;
 				if (!doestBlobExist(containerName, dirName)) {
 					LOGGER.info("Create a new directory \"" + dirName + "\" in the container \"" + containerName + "\"");
 					result = createDirectory(dirName);
@@ -425,7 +426,7 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 
 			resetCache();
 			m_isDir = true;
-			m_fullPath = (path.endsWith(DELIMITER)) ? path : path + DELIMITER;
+			m_fullPath = path.endsWith(DELIMITER) ? path : path + DELIMITER;
 
 		} catch (final Exception e) {
 			LOGGER.debug(e.getMessage());
@@ -527,4 +528,18 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 	 * @return Hadoop Filesystem URI
 	 */
 	public abstract URI getHadoopFilesystemURI() throws Exception;
+
+    /**
+     * Creates an Hadoop Filesystem URI to access the given file via the Hadoop Filesystem APIs and returns it as
+     * unencoded String. Implementations of this method may throw java.lang.UnsupportedOperationException to indicate
+     * that the creation of such an URI is not supported.
+     *
+     * @return Hadoop Filesystem URI as unencoded String
+     * @throws Exception java.lang.UnsupportedOperationException if creation of such an URI is not supported.
+     *
+     * @since 3.7
+     */
+    public String getHadoopFilesystemString() throws Exception {
+        return URIUtil.toUnencodedString(getHadoopFilesystemURI());
+    }
 }
