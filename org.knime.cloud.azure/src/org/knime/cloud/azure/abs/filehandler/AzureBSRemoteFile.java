@@ -85,8 +85,8 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * @param connectionMonitor
 	 * @throws Exception
 	 */
-	public AzureBSRemoteFile(URI uri, final CloudConnectionInformation connectionInformation,
-			ConnectionMonitor<AzureBSConnection> connectionMonitor) throws Exception {
+	public AzureBSRemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
+			final ConnectionMonitor<AzureBSConnection> connectionMonitor) throws Exception {
 		this(uri, connectionInformation, connectionMonitor, null);
 	}
 
@@ -97,8 +97,8 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * @param blob
 	 * @throws Exception
 	 */
-	public AzureBSRemoteFile(URI uri, final CloudConnectionInformation connectionInformation,
-			ConnectionMonitor<AzureBSConnection> connectionMonitor, CloudBlockBlob blob) throws Exception {
+	public AzureBSRemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
+			final ConnectionMonitor<AzureBSConnection> connectionMonitor, final CloudBlockBlob blob) throws Exception {
 		super(uri, connectionInformation, connectionMonitor);
 		CheckUtils.checkArgumentNotNull(connectionInformation, "Connection Information mus not be null");
 		if (blob != null) {
@@ -129,7 +129,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected boolean doesContainerExist(String containerName) throws Exception {
+	protected boolean doesContainerExist(final String containerName) throws Exception {
 		return getClient().getContainerReference(containerName).exists();
 	}
 
@@ -137,7 +137,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
+	protected boolean doestBlobExist(final String containerName, final String blobName) throws Exception {
 		return getClient().getContainerReference(containerName).getBlockBlobReference(blobName).exists();
 	}
 
