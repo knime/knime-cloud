@@ -56,6 +56,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
 import org.knime.cloud.core.file.CloudRemoteFile;
@@ -283,6 +284,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
         final String account = connectionInfo.getUser();
         final String container = getContainerName();
         final String host = account + ".blob.core.windows.net";
-        return new URI(scheme, container, host, -1, DELIMITER + getBlobName(), null, null);
+        final String blobName = Optional.ofNullable(getBlobName()).orElseGet(() -> "");
+        return new URI(scheme, container, host, -1, DELIMITER + blobName, null, null);
     }
 }

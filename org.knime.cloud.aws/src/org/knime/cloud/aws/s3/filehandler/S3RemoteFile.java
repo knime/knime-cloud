@@ -56,6 +56,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.knime.base.filehandling.remote.files.ConnectionMonitor;
@@ -426,6 +427,13 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
     @Override
     public URI getHadoopFilesystemURI() throws Exception {
         // s3://<containername>/<path>
-        return new URI("s3", null, getContainerName(), -1, DELIMITER + getBlobName(), null, null);
+        final String blobName = Optional.ofNullable(getBlobName()).orElseGet(() -> "");
+        return new URI("s3",
+            null,
+            getContainerName(),
+            -1,
+            DELIMITER + blobName,
+            null,
+            null);
     }
 }
