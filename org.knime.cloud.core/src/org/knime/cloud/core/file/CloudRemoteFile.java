@@ -396,7 +396,6 @@ public abstract class CloudRemoteFile<C extends Connection> extends RemoteFile<C
 			} catch (final Exception ex) {
 				result = false;
 				LOGGER.debug(ex.getMessage());
-				throw ex;
 			}
 		}
 		return result;
