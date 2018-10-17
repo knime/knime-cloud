@@ -42,7 +42,7 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- * 
+ *
  * History
  *   Jun 11, 2018 (jtyler): created
  */
@@ -64,9 +64,8 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.google.api.sheets.data.GoogleSheetsConnection;
-import org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObject;
-import org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec;
+import org.knime.google.api.data.GoogleApiConnectionPortObject;
+import org.knime.google.api.data.GoogleApiConnectionPortObjectSpec;
 
 /**
  *
@@ -75,10 +74,10 @@ import org.knime.google.api.sheets.data.GoogleSheetsConnectionPortObjectSpec;
 final class GoogleDriveConnectionNodeModel extends NodeModel {
 
     /**
-     * 
+     *
      */
     GoogleDriveConnectionNodeModel() {
-        super(new PortType[]{GoogleSheetsConnectionPortObject.TYPE},
+        super(new PortType[]{GoogleApiConnectionPortObject.TYPE},
             new PortType[]{GoogleDriveConnectionInformationPortObject.G_TYPE});
     }
 
@@ -87,9 +86,7 @@ final class GoogleDriveConnectionNodeModel extends NodeModel {
      */
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        GoogleSheetsConnection connection =
-            ((GoogleSheetsConnectionPortObject)inObjects[0]).getGoogleSheetsConnection();
-        return new PortObject[]{new GoogleDriveConnectionInformationPortObject(createSpec(connection))};
+        return new PortObject[]{new GoogleDriveConnectionInformationPortObject(createSpec(inObjects[0].getSpec()))};
     }
 
     /**
@@ -97,31 +94,29 @@ final class GoogleDriveConnectionNodeModel extends NodeModel {
      */
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
-        GoogleSheetsConnection connection =
-            ((GoogleSheetsConnectionPortObjectSpec)inSpecs[0]).getGoogleSheetsConnection();
-        return new PortObjectSpec[]{createSpec(connection)};
+        return new PortObjectSpec[]{createSpec(inSpecs[0])};
     }
 
     @Override
-    protected void loadInternals(File nodeInternDir, ExecutionMonitor exec)
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
     }
 
     @Override
-    protected void saveInternals(File nodeInternDir, ExecutionMonitor exec)
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
     }
 
     @Override
-    protected void saveSettingsTo(NodeSettingsWO settings) {
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
     }
 
     @Override
-    protected void validateSettings(NodeSettingsRO settings) throws InvalidSettingsException {
+    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
     }
 
     @Override
-    protected void loadValidatedSettingsFrom(NodeSettingsRO settings) throws InvalidSettingsException {
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
     }
 
     @Override
@@ -134,10 +129,11 @@ final class GoogleDriveConnectionNodeModel extends NodeModel {
      * @return ConnectionInformationPortObjectSpec
      * @throws InvalidSettingsException ...
      */
-    private static GoogleDriveConnectionInformationPortObjectSpec createSpec(GoogleSheetsConnection connection)
+    private static GoogleDriveConnectionInformationPortObjectSpec createSpec(final PortObjectSpec connection)
         throws InvalidSettingsException {
 
-        GoogleDriveConnectionInformation connectionInformation = new GoogleDriveConnectionInformation(connection);
+        final GoogleDriveConnectionInformation connectionInformation =
+                new GoogleDriveConnectionInformation(((GoogleApiConnectionPortObjectSpec)connection).getGoogleApiConnection());
 
         return new GoogleDriveConnectionInformationPortObjectSpec(connectionInformation);
     }

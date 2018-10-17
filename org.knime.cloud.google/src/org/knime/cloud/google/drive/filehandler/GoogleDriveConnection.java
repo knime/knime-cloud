@@ -42,7 +42,7 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- * 
+ *
  * History
  *   Jun 11, 2018 (jtyler): created
  */
@@ -51,25 +51,28 @@ package org.knime.cloud.google.drive.filehandler;
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.cloud.google.util.GoogleDriveConnectionInformation;
 import org.knime.core.node.NodeLogger;
+import org.knime.google.api.data.GoogleApiConnection;
 
 import com.google.api.services.drive.Drive;
 
 /**
- * Google Drive Connection 
- * 
+ * Google Drive Connection
+ *
  * @author jtyler
  */
 public class GoogleDriveConnection extends Connection {
-    
+
     private static final NodeLogger LOGGER = NodeLogger.getLogger(GoogleDriveConnection.class);
-    
+
+    private static final String APP_NAME = "knimeGoogleDriveNodes";
+
     private final GoogleDriveConnectionInformation m_connectionInformation;
-    
+
     private Drive m_driveService;
 
     /**
-     * @param connectionInformation 
-     * 
+     * @param connectionInformation
+     *
      */
     GoogleDriveConnection(final GoogleDriveConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
@@ -81,7 +84,11 @@ public class GoogleDriveConnection extends Connection {
     @Override
     public void open() throws Exception {
         LOGGER.debug("Creating new Google Drive service");
-        m_driveService = m_connectionInformation.getGoogleConnection().getDriveService();
+        m_connectionInformation.getGoogleConnection();
+        m_connectionInformation.getGoogleConnection();
+        m_driveService = new Drive.Builder(GoogleApiConnection.getHttpTransport(),
+            GoogleApiConnection.getJsonFactory(),
+            m_connectionInformation.getGoogleConnection().getCredential()).setApplicationName(APP_NAME).build();
     }
 
     /**
@@ -110,5 +117,5 @@ public class GoogleDriveConnection extends Connection {
     public Drive getDriveService() {
         return m_driveService;
     }
-    
+
 }

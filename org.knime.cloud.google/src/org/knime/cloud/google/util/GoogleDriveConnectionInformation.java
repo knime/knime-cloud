@@ -42,11 +42,14 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- * 
+ *
  * History
  *   Jun 15, 2018 (jtyler): created
  */
 package org.knime.cloud.google.util;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -56,23 +59,23 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
 import org.knime.core.node.util.CheckUtils;
-import org.knime.google.api.sheets.data.GoogleSheetsConnection;
+import org.knime.google.api.data.GoogleApiConnection;
 
 /**
  * TODO (short) javadoc comment
  * @author jtyler
  */
 public class GoogleDriveConnectionInformation extends CloudConnectionInformation {
-    
+
     private static final long serialVersionUID = 1L;
-    
-    private final GoogleSheetsConnection m_connection;
+
+    private final GoogleApiConnection m_connection;
 
     /**
      * @param connection non-null connection object.
-     * 
+     *
      */
-    public GoogleDriveConnectionInformation(GoogleSheetsConnection connection) {
+    public GoogleDriveConnectionInformation(final GoogleApiConnection connection) {
         m_connection = CheckUtils.checkArgumentNotNull(connection);
         setProtocol(GoogleDriveRemoteFileHandler.PROTOCOL.getName());
         setHost("google-drive-api");
@@ -82,31 +85,37 @@ public class GoogleDriveConnectionInformation extends CloudConnectionInformation
     /**
      * @param model
      * @throws InvalidSettingsException
+     * @throws IOException
+     * @throws GeneralSecurityException
      */
-    public GoogleDriveConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
+    public GoogleDriveConnectionInformation(final ModelContentRO model) throws InvalidSettingsException, GeneralSecurityException, IOException {
         super(model);
-        m_connection = new GoogleSheetsConnection(model);
+        m_connection = new GoogleApiConnection(model);
     }
-    
+
     @Override
     public void save(final ModelContentWO model) {
         super.save(model);
         m_connection.save(model);
     }
-    
-    public static GoogleDriveConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
-        return new GoogleDriveConnectionInformation(model);
+
+    public static GoogleDriveConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
+        try {
+            return new GoogleDriveConnectionInformation(model);
+        } catch (GeneralSecurityException | IOException e) {
+            throw new InvalidSettingsException(e.getLocalizedMessage());
+        }
     }
-    
+
     /**
      * @return the connection
      */
-    public GoogleSheetsConnection getGoogleConnection() {
+    public GoogleApiConnection getGoogleConnection() {
         return m_connection;
     }
-    
+
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj == null) {
             return false;
         }
@@ -116,14 +125,14 @@ public class GoogleDriveConnectionInformation extends CloudConnectionInformation
         if (obj.getClass() != getClass()) {
             return false;
         }
-        GoogleDriveConnectionInformation rhs = (GoogleDriveConnectionInformation)obj;
-        
+        final GoogleDriveConnectionInformation rhs = (GoogleDriveConnectionInformation)obj;
+
         return new EqualsBuilder().appendSuper(super.equals(obj)).append(m_connection, rhs.m_connection).isEquals();
     }
-    
+
     @Override
     public int hashCode() {
-        HashCodeBuilder hashBuilder = new HashCodeBuilder();
+        final HashCodeBuilder hashBuilder = new HashCodeBuilder();
         return hashBuilder.appendSuper(super.hashCode()).append(m_connection).toHashCode();
     }
 }
