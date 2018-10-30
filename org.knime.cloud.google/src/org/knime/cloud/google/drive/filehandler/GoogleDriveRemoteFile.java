@@ -223,14 +223,9 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             final List<GoogleDriveRemoteFile> remoteFiles = new ArrayList<GoogleDriveRemoteFile>();
             final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
             for (final TeamDrive teamDrive : teamDrives) {
-                final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
-                // Use TeamDriveID as File ID for top drive roots
-                metadata.setFileId(teamDrive.getId());
-                metadata.setMimeType(FOLDER);
-                metadata.setTeamId(teamDrive.getId());
 
                 final URI teamURI = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
-                    getURI().getPort(), TEAM_DRIVES_FOLDER + teamDrive.getName() + "/", metadata.toQueryString(),
+                    getURI().getPort(), TEAM_DRIVES_FOLDER + teamDrive.getName() + "/", getURI().getQuery(),
                     getURI().getFragment());
                 LOGGER.debug("Team drive URI: " + teamURI);
                 remoteFiles.add(new GoogleDriveRemoteFile(teamURI,
@@ -263,23 +258,10 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) || file.getMimeType().equals(FOLDER)) {
                 final String folderPostFix = (file.getMimeType().equals(FOLDER)) ? "/" : "";
 
-                // Set file metadata
-                final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
-                metadata.setFileId(file.getId());
-                metadata.setMimeType(file.getMimeType());
-                if (!file.getMimeType().equals(FOLDER)) {
-                    metadata.setFileSize(file.getSize());
-                }
-                metadata.setLastModified(file.getModifiedTime().getValue() / 1000);
-                metadata.setParents(file.getParents());
 
-                if (m_fileMetadata.fromTeamDrive()) {
-                    metadata.setTeamId(m_fileMetadata.getTeamId());
-                }
+                final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), getURI().getPort(),
+                    m_fullPath + file.getName() + folderPostFix, getURI().getQuery(), getURI().getFragment());
 
-                final URI uri =
-                    new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(), getURI().getPort(),
-                        m_fullPath + file.getName() + folderPostFix, metadata.toQueryString(), getURI().getFragment());
 
                 LOGGER.debug("Google Drive Remote URI: " + uri.toString());
                 final GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri,
