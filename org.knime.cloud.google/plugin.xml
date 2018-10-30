@@ -25,5 +25,14 @@
             specSerializer="org.knime.cloud.google.util.GoogleDriveConnectionInformationPortObjectSpec$Serializer">
       </portType>
    </extension>
+   <extension
+         point="org.knime.google.api.knimeGoogleAuthScope">
+      <KnimeGoogleAuthScope
+            KnimeGoogleAuthScope="org.knime.cloud.google.drive.scope.KnimeDriveReadAuthScope">
+      </KnimeGoogleAuthScope>
+      <KnimeGoogleAuthScope
+            KnimeGoogleAuthScope="org.knime.cloud.google.drive.scope.KnimeDriveReadWriteAuthScope">
+      </KnimeGoogleAuthScope>
+   </extension>
    
 </plugin>
