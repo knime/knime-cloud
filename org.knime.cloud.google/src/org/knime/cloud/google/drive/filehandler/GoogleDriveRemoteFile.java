@@ -42,7 +42,7 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- * 
+ *
  * History
  *   Jun 12, 2018 (jtyler): created
  */
@@ -74,7 +74,7 @@ import com.google.api.services.drive.model.TeamDrive;
 
 /**
  * Implementation of {@link CloudRemoteFile} for Google Drive
- * 
+ *
  * @author jtyler
  */
 public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection> {
@@ -103,8 +103,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * @param connectionMonitor
      * @throws Exception
      */
-    protected GoogleDriveRemoteFile(URI uri, GoogleDriveConnectionInformation connectionInformation,
-        ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
+    protected GoogleDriveRemoteFile(final URI uri, final GoogleDriveConnectionInformation connectionInformation,
+        final ConnectionMonitor<GoogleDriveConnection> connectionMonitor) throws Exception {
         super(uri, connectionInformation, connectionMonitor);
         m_fileMetadata = new GoogleDriveRemoteFileMetadata(uri);
         if (m_fileMetadata.getFileId() == null || m_fileMetadata.getFileId().isEmpty()) {
@@ -125,7 +125,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             if (getContainerName().equals(MY_DRIVE)) {
                 m_blobName = getFullPath().substring(DEFAULT_CONTAINER.length());
             } else {
-                int idx = StringUtils.ordinalIndexOf(getFullPath(), "/", 3);
+                final int idx = StringUtils.ordinalIndexOf(getFullPath(), "/", 3);
                 m_blobName = getFullPath().substring(idx + 1);
             }
         }
@@ -136,7 +136,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * {@inheritDoc}
      */
     @Override
-    protected boolean doesContainerExist(String containerName) throws Exception {
+    protected boolean doesContainerExist(final String containerName) throws Exception {
         if (containerName.equals(MY_DRIVE) || containerName.equals(TEAM_DRIVES)) {
             return true;
         } else {
@@ -144,7 +144,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 // Return true if this is a valid Team Drive
                 getTeamId(containerName);
                 return true;
-            } catch (NoSuchElementException ex) {
+            } catch (final NoSuchElementException ex) {
                 return false;
             }
         }
@@ -174,7 +174,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * {@inheritDoc}
      */
     @Override
-    protected boolean doestBlobExist(String containerName, String blobName) throws Exception {
+    protected boolean doestBlobExist(final String containerName, final String blobName) throws Exception {
         // This can get called to verify a file was deleted successfully.
         // So lets reset the metadata
         m_fileMetadata = getMetadata();
@@ -222,7 +222,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         if (m_fullPath.equals(TEAM_DRIVES_FOLDER)) {
             final List<GoogleDriveRemoteFile> remoteFiles = new ArrayList<GoogleDriveRemoteFile>();
             final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
-            for (TeamDrive teamDrive : teamDrives) {
+            for (final TeamDrive teamDrive : teamDrives) {
                 final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
                 // Use TeamDriveID as File ID for top drive roots
                 metadata.setFileId(teamDrive.getId());
@@ -248,23 +248,23 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 .setTeamDriveId(m_fileMetadata.getTeamId());
         }
 
-        List<GoogleDriveRemoteFile> remoteFileList = new ArrayList<GoogleDriveRemoteFile>();
-        List<File> driveFiles = request.setOrderBy("name").execute().getFiles();
+        final List<GoogleDriveRemoteFile> remoteFileList = new ArrayList<GoogleDriveRemoteFile>();
+        final List<File> driveFiles = request.setOrderBy("name").execute().getFiles();
 
         if (driveFiles == null || driveFiles.isEmpty()) {
             return new GoogleDriveRemoteFile[0];
         }
 
-        for (File file : driveFiles) {
+        for (final File file : driveFiles) {
 
             // Google Drive API only allows downloading of non Google file types.
             // (meaning native Google Docs, Spreadsheets, etc. can not be directly downloaded via
             // the API). Let's filter those files out, but keep folder references.
             if (!file.getMimeType().contains(GOOGLE_MIME_TYPE) || file.getMimeType().equals(FOLDER)) {
-                String folderPostFix = (file.getMimeType().equals(FOLDER)) ? "/" : "";
+                final String folderPostFix = (file.getMimeType().equals(FOLDER)) ? "/" : "";
 
                 // Set file metadata
-                GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+                final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
                 metadata.setFileId(file.getId());
                 metadata.setMimeType(file.getMimeType());
                 if (!file.getMimeType().equals(FOLDER)) {
@@ -282,7 +282,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                         m_fullPath + file.getName() + folderPostFix, metadata.toQueryString(), getURI().getFragment());
 
                 LOGGER.debug("Google Drive Remote URI: " + uri.toString());
-                GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri,
+                final GoogleDriveRemoteFile remoteFile = new GoogleDriveRemoteFile(uri,
                     (GoogleDriveConnectionInformation)getConnectionInformation(), getConnectionMonitor());
                 remoteFileList.add(remoteFile);
             }
@@ -304,7 +304,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 m_containerName = TEAM_DRIVES;
             } else {
                 // TODO document notion of "container" for teamdrives in class javadoc and reference it here
-                String[] elements = getFullPath().split("/");
+                final String[] elements = getFullPath().split("/");
                 if (elements.length < 3 || (elements[0] != null && !elements[0].isEmpty())) {
                     throw new InvalidSettingsException("Invalid path. Container could not be determined.");
                 }
@@ -370,7 +370,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
      * {@inheritDoc}
      */
     @Override
-    protected boolean createDirectory(String dirName) throws Exception {
+    protected boolean createDirectory(final String dirName) throws Exception {
 
         final File fileMetadata = new File();
         fileMetadata.setName(getName());
@@ -378,7 +378,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         fileMetadata.setMimeType(FOLDER);
 
         try {
-            File driveFile = getService().files().create(fileMetadata).setFields("id, parents, modifiedTime")
+            final File driveFile = getService().files().create(fileMetadata).setFields("id, parents, modifiedTime")
                 .setSupportsTeamDrives(true).execute();
 
             LOGGER.debug("Creating new folder: " + getBlobName() + " , file id: " + driveFile.getId());
@@ -389,8 +389,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             m_fileMetadata.setLastModified(driveFile.getModifiedTime().getValue() / 1000);
 
             return true;
-        } catch (GoogleJsonResponseException ex) {
-            // TODO double check that the stacktrace is in the log (understand what the framework does the 
+        } catch (final GoogleJsonResponseException ex) {
+            // TODO double check that the stacktrace is in the log (understand what the framework does the
             throw new Exception(ex.getStatusMessage(), ex);
         }
     }
@@ -440,9 +440,9 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
             fileMetadata.setParents(m_fileMetadata.getParents());
 
             // Media type is null. Google will determine the type based on file
-            InputStreamContent content = new InputStreamContent(null, in);
+            final InputStreamContent content = new InputStreamContent(null, in);
 
-            File driveFile = getService().files().create(fileMetadata, content)
+            final File driveFile = getService().files().create(fileMetadata, content)
                 .setFields("id, parents, size, mimeType, modifiedTime").setSupportsTeamDrives(true).execute();
 
             LOGGER.debug("Creating new file: " + getBlobName() + " , file id: " + driveFile.getId());
@@ -455,12 +455,12 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
         }
     }
 
-    private String getTeamId(String teamDriveName) throws Exception {
+    private String getTeamId(final String teamDriveName) throws Exception {
         if (teamDriveName.equals(MY_DRIVE)) {
             return null;
         }
         final List<TeamDrive> teamDrives = getService().teamdrives().list().execute().getTeamDrives();
-        for (TeamDrive teamDrive : teamDrives) {
+        for (final TeamDrive teamDrive : teamDrives) {
             if (teamDrive.getName().equals(teamDriveName)) {
                 return teamDrive.getId();
             }
@@ -470,7 +470,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
 
     private GoogleDriveRemoteFileMetadata getMetadata() throws Exception {
 
-        GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
+        final GoogleDriveRemoteFileMetadata metadata = new GoogleDriveRemoteFileMetadata();
         String teamId;
 
         // Handle top level folders (MyDrive and TeamDrives)
@@ -528,7 +528,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
 
         // Retrieve files that match names in qString
         // This could return file/folder name duplicates, so the next check the the parent is also in the path
-        List<File> files = request.setFields(FIELD_STRING).setQ(qString).execute().getFiles();
+        final List<File> files = request.setFields(FIELD_STRING).setQ(qString).execute().getFiles();
 
         // Use file IDs and parent information to find the right file id by
         // iterating through each element in the path
@@ -538,7 +538,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
 
             boolean fileFound = false;
 
-            for (File file : files) {
+            for (final File file : files) {
                 // If name matches and has the correct parent
                 if (file.getName().equals(pathElementStringArray[i]) && file.getParents().contains(parent)) {
                     fileFound = true;
@@ -561,7 +561,7 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
 
             // If the current file was found and we aren't to the end of the blob path,
             // then the parents are still valid.
-            // We don't check this for the last file in the array because it could be a 
+            // We don't check this for the last file in the array because it could be a
             // new file being created
             if (fileFound) {
                 parentsValidated = true;
