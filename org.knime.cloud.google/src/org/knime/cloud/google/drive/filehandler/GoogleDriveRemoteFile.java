@@ -51,6 +51,7 @@ package org.knime.cloud.google.drive.filehandler;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -123,7 +124,8 @@ public class GoogleDriveRemoteFile extends CloudRemoteFile<GoogleDriveConnection
                 return null;
             }
             if (getContainerName().equals(MY_DRIVE)) {
-                m_blobName = getFullPath().substring(DEFAULT_CONTAINER.length());
+                // Fix filenames with spaces in them.
+                m_blobName = URLDecoder.decode(getFullPath().substring(DEFAULT_CONTAINER.length()), "UTF-8");
             } else {
                 final int idx = StringUtils.ordinalIndexOf(getFullPath(), "/", 3);
                 m_blobName = getFullPath().substring(idx + 1);
