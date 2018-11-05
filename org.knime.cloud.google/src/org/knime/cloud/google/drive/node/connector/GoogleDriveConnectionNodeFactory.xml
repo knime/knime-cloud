@@ -3,7 +3,7 @@
     <name>Google Drive Connection</name>   
     
     <shortDescription>
-        Create a connection to Google Drive
+        Create a connection to Google Drive, given a Google API connection.
     </shortDescription>
     
     <fullDescription>
@@ -23,10 +23,8 @@
     </fullDescription>
     
     <ports>
-        <inPort index="0" name="In-Port name">A port object containing the Google API connection information</inPort>
-        <!-- possibly more input ports here-->
-        <outPort index="0" name="Out-Port name">A port object connection that can be used to access Google Drive</outPort>
-        <!-- possibly more output ports here-->
+        <inPort index="0" name="Google API Connection">The Google API connection that will be used.</inPort>
+        <outPort index="0" name="Connection Information ort">Port object containing the Google Drive connection information.</outPort>
     </ports> 
      
 </knimeNode>
