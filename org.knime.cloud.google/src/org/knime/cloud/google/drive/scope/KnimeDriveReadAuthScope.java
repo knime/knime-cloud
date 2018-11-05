@@ -62,6 +62,8 @@ import com.google.api.services.drive.DriveScopes;
  */
 public class KnimeDriveReadAuthScope implements KnimeGoogleAuthScope {
 
+    private static final String SCOPE_ID = "GoogleDriveRead";
+
     private static final String SCOPE_NAME = "Google Drive connection (Read)";
 
     private static final List<String> SCOPE_LIST = Arrays.asList(
@@ -69,7 +71,7 @@ public class KnimeDriveReadAuthScope implements KnimeGoogleAuthScope {
 
     private static final String DESC = "Scopes required for the Google Drive Connection.";
 
-    private static volatile KnimeDriveReadAuthScope instance;
+    private static volatile KnimeDriveReadAuthScope instance = new KnimeDriveReadAuthScope();
 
     /**
      * Returns the only instance of this class.
@@ -77,16 +79,16 @@ public class KnimeDriveReadAuthScope implements KnimeGoogleAuthScope {
      * @return the only instance
      */
     public static KnimeDriveReadAuthScope getInstance() {
-        if (instance == null) {
-            synchronized (KnimeDriveReadAuthScope.class) {
-                if (instance == null) {
-                    instance = new KnimeDriveReadAuthScope();
-                }
-            }
-        }
         return instance;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getScopeID() {
+        return SCOPE_ID;
+    }
 
     /**
      * {@inheritDoc}
