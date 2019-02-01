@@ -70,20 +70,38 @@ import com.amazonaws.regions.Regions;
  * Model representing AWS connection information
  *
  * @author Budi Yanto, KNIME.com
+ * @author Ole Ostergaard, KNIME GmbH, Konstanz, Germany
  */
 public class AWSConnectionInformationSettings extends ConnectionInformationCloudSettings {
 
 	private final SettingsModelString m_region = createRegionModel();
 	private final SettingsModelBoolean m_sSEncryption = createSSEncrpyionModel();
+	private final SettingsModelBoolean m_switchRole = createSwitchRoleModel();
+	private final SettingsModelString m_switchRoleAccount = createSwitchRoleAccountModel();
+	private final SettingsModelString m_switchRoleName = createSwitchRoleNameModel();
 
-	private final static String SSE_KEY = "ssencryption";
+	private static final  String SSE_KEY = "ssencryption";
+	private static final String SWITCH_ROLE_KEY = "switchRole";
+	private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
+	private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
 
-	private SettingsModelString createRegionModel() {
+	private static SettingsModelString createRegionModel() {
 		return new SettingsModelString("region", "us-east-1");
 	}
 
-	private SettingsModelBoolean createSSEncrpyionModel() {
+	private static SettingsModelBoolean createSSEncrpyionModel() {
 	    return new SettingsModelBoolean(SSE_KEY, false);
+	}
+
+	private static SettingsModelBoolean createSwitchRoleModel() {
+	    return new SettingsModelBoolean(SWITCH_ROLE_KEY, false);
+	}
+	private static SettingsModelString createSwitchRoleAccountModel() {
+	    return new SettingsModelString(SWITCH_ROLE_ACCOUNT_KEY, "");
+	}
+
+	private static SettingsModelString createSwitchRoleNameModel() {
+	    return new SettingsModelString(SWITCH_ROLE_NAME_KEY, "");
 	}
 
 
@@ -164,6 +182,9 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 
 		connectionInformation.setUseSSEncryption(getSSEncryptionModel().getBooleanValue());
 
+		connectionInformation.setSwitchRole(getSwitchRoleModel().getBooleanValue());
+		connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
+		connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
 		return connectionInformation;
 	}
 
@@ -173,6 +194,9 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 		m_region.saveSettingsTo(settings);
 		// New Server Side Encryption AP-8823
 		m_sSEncryption.saveSettingsTo(settings);
+		m_switchRole.saveSettingsTo(settings);
+		m_switchRoleAccount.saveSettingsTo(settings);
+		m_switchRoleName.saveSettingsTo(settings);
 	}
 
 	@Override
@@ -182,6 +206,11 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 		// New Server Side Encryption AP-8823
 		if (settings.containsKey(SSE_KEY)) {
 		    m_sSEncryption.loadSettingsFrom(settings);
+		}
+		if (settings.containsKey(SWITCH_ROLE_KEY)) {
+		    m_switchRole.loadSettingsFrom(settings);
+		    m_switchRoleAccount.loadSettingsFrom(settings);
+		    m_switchRoleName.loadSettingsFrom(settings);
 		}
 	}
 
@@ -193,6 +222,11 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 		if (settings.containsKey(SSE_KEY)) {
 		    m_sSEncryption.validateSettings(settings);
 		}
+		if (settings.containsKey(SWITCH_ROLE_KEY)) {
+            m_switchRole.validateSettings(settings);
+            m_switchRoleAccount.validateSettings(settings);
+            m_switchRoleName.validateSettings(settings);
+        }
 	}
 
 	/**
@@ -210,6 +244,30 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 	public SettingsModelBoolean getSSEncryptionModel() {
 	    return m_sSEncryption;
 	}
+
+    /**
+     * Get the {@link SettingsModelBoolean} for the Switch Role option.
+     * @return The {@link SettingsModelBoolean} for the Switch Role option
+     */
+    public SettingsModelBoolean getSwitchRoleModel() {
+        return m_switchRole;
+    }
+
+    /**
+     * Get the {@link SettingsModelString} for the Switch Role account.
+     * @return The {@link SettingsModelString} for the Switch Role account
+     */
+    public SettingsModelString getSwitchRoleAccountModel() {
+        return m_switchRoleAccount;
+    }
+
+    /**
+     * Get the {@link SettingsModelString} for the Switch Role name.
+     * @return The {@link SettingsModelString} for the Switch Role name
+     */
+    public SettingsModelString getSwitchRoleNameModel() {
+        return m_switchRoleName;
+    }
 
 
 }

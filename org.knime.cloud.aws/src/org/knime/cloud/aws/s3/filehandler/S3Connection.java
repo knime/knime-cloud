@@ -12,17 +12,25 @@ import org.knime.core.util.KnimeEncryption;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
+import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 
 /**
  * S3 Connection
  *
  * @author Budi Yanto, KNIME.com, Berlin, Germany
+ * @author Ole Ostergaard, KNIME GmbH, Konstanz, Germany
  *
  */
 public class S3Connection extends Connection {
@@ -31,7 +39,7 @@ public class S3Connection extends Connection {
 
 	private final CloudConnectionInformation m_connectionInformation;
 
-	private AmazonS3Client m_client;
+	private AmazonS3 m_client;
 
 	private TransferManager m_transferManager;
 
@@ -53,23 +61,15 @@ public class S3Connection extends Connection {
 	@Override
 	public void open() throws Exception {
 		if (!isOpen()) {
-			final String accessKeyId = m_connectionInformation.getUser();
-			final String secretAccessKey = KnimeEncryption.decrypt(m_connectionInformation.getPassword());
-
 			LOGGER.info("Create a new AmazonS3Client in Region \"" + m_connectionInformation.getHost()
 					+ "\" with connection timeout " + m_connectionInformation.getTimeout() + " milliseconds");
 
 			try {
-			    final ClientConfiguration clientConfig = new ClientConfiguration().withConnectionTimeout(
-			        m_connectionInformation.getTimeout());
-			    if(m_connectionInformation.useKeyChain()) {
-			        m_client = new AmazonS3Client(clientConfig).withRegion(
-			            Regions.fromName(m_connectionInformation.getHost()));
-			    } else {
-			        final AWSCredentials credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-			        m_client = new AmazonS3Client(credentials, clientConfig).withRegion(
-			            Regions.fromName(m_connectionInformation.getHost()));
-			    }
+		        if (m_connectionInformation.switchRole()) {
+		            m_client = getRoleAssumedS3Client(m_connectionInformation);
+		        } else {
+                    m_client = getS3Client(m_connectionInformation);
+		        }
 
 				resetCache();
 				try {
@@ -86,12 +86,68 @@ public class S3Connection extends Connection {
 				        throw e;
 				    }
 				}
-				m_transferManager = new TransferManager(m_client);
+				m_transferManager = TransferManagerBuilder.standard().withS3Client(m_client).build();
 			} catch (final AmazonS3Exception ex) {
 				close();
 				throw ex;
 			}
 		}
+	}
+
+	private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation) throws Exception {
+	    final ClientConfiguration clientConfig = new ClientConfiguration().withConnectionTimeout(
+            connectionInformation.getTimeout());
+
+	    AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
+	            .withClientConfiguration(clientConfig)
+	            .withRegion(connectionInformation.getHost());
+
+	    if (!connectionInformation.useKeyChain()) {
+	        AWSCredentials credentials = getCredentials(connectionInformation);
+	        builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
+	    }
+
+
+	    return builder.build();
+	}
+
+	private static AmazonS3 getRoleAssumedS3Client(final CloudConnectionInformation connectionInformation) throws Exception {
+	    AWSSecurityTokenServiceClientBuilder builder = AWSSecurityTokenServiceClientBuilder.standard().
+	            withRegion(connectionInformation.getHost());
+	    if (!connectionInformation.useKeyChain()) {
+	        AWSCredentials credentials = getCredentials(connectionInformation);
+            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
+	    }
+
+	    AWSSecurityTokenService stsClient = builder.build();
+
+        final AssumeRoleRequest assumeRoleRequest = new AssumeRoleRequest()
+                .withRoleArn(buildARN(connectionInformation))
+                .withDurationSeconds(3600)
+                .withRoleSessionName("KNIME_S3_Connection");
+
+        final AssumeRoleResult assumeResult = stsClient.assumeRole(assumeRoleRequest);
+
+        final BasicSessionCredentials tempCredentials =
+                new BasicSessionCredentials(
+                        assumeResult.getCredentials().getAccessKeyId(),
+                        assumeResult.getCredentials().getSecretAccessKey(),
+                        assumeResult.getCredentials().getSessionToken());
+
+         return AmazonS3ClientBuilder.standard().withCredentials(
+            new AWSStaticCredentialsProvider(tempCredentials))
+                .withRegion(connectionInformation.getHost()).build();
+	}
+
+	private static String buildARN(final CloudConnectionInformation connectionInformation) {
+	    return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/" + connectionInformation.getSwitchRoleName();
+	}
+
+	private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation) throws Exception {
+	    final String accessKeyId = connectionInformation.getUser();
+        final String secretAccessKey = KnimeEncryption.decrypt(connectionInformation.getPassword());
+        return new BasicAWSCredentials(accessKeyId, secretAccessKey);
+
 	}
 
 	@Override
@@ -115,7 +171,7 @@ public class S3Connection extends Connection {
 	 *
 	 * @return the connection's client
 	 */
-	public AmazonS3Client getClient() {
+	public AmazonS3 getClient() {
 		return m_client;
 	}
 
@@ -184,7 +240,7 @@ public class S3Connection extends Connection {
         return m_connectionInformation.useSSEncryption();
 
 	}
-	
+
 	/**
 	 * Returns whether or not the connection was created with credentials that have restricted access to S3.
 	 * This could be bucket-specific access without list-buckets permissions.

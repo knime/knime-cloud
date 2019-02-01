@@ -94,8 +94,17 @@ public class AWSConnectionInformationView extends JPanel {
         buf.append(NEW_LINE);
 
         if(!cloudConnectioInformation.useKeyChain()) {
-            buf.append("<strong>Access key ID:</strong>" + WHITE_SPACE);
+            buf.append("&emsp; Access key ID:" + WHITE_SPACE);
             buf.append("<tt>" + cloudConnectioInformation.getUser() + "</tt>");
+            buf.append(NEW_LINE);
+        }
+
+        if(cloudConnectioInformation.switchRole()) {
+            buf.append("<strong>Switch Role:</strong>" + WHITE_SPACE);
+            buf.append(NEW_LINE);
+            buf.append("&emsp; Account:" + WHITE_SPACE +"<tt>" + cloudConnectioInformation.getSwitchRoleAccount()+ "</tt>");
+            buf.append(NEW_LINE);
+            buf.append("&emsp; Role Name:" + WHITE_SPACE+ "<tt>" + cloudConnectioInformation.getSwitchRoleName()+ "</tt>");
             buf.append(NEW_LINE);
         }
 

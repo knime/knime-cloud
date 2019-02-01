@@ -13,7 +13,6 @@ import org.knime.cloud.core.node.filepicker.AbstractFilePickerNodeModel;
 import org.knime.core.node.NodeLogger;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 
 /**
@@ -49,7 +48,7 @@ public class S3FilePickerNodeModel extends AbstractFilePickerNodeModel{
 				connectionInformation, monitor);
 
 		remoteFile.open();
-		final AmazonS3Client s3Client = remoteFile.getConnection().getClient();
+		final AmazonS3 s3Client = remoteFile.getConnection().getClient();
 		final String bucketName = remoteFile.getContainerName();
 		final String key = remoteFile.getBlobName();
 

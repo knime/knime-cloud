@@ -68,6 +68,13 @@ public class CloudConnectionInformation extends ConnectionInformation {
 	private boolean m_useSSEncryption;
 	private static final  String SSE_KEY = "ssencryption";
 
+	private boolean m_switchRole;
+	private String m_switchRoleAccount;
+	private String m_switchRoleName;
+	private static final  String SWITCH_ROLE_KEY = "switchRole";
+	private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
+	private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+
 	/**
 	 * Parameterless constructor
 	 */
@@ -77,7 +84,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
 	 * @param model
 	 * @throws InvalidSettingsException
 	 */
-	protected CloudConnectionInformation(ModelContentRO model) throws InvalidSettingsException {
+	protected CloudConnectionInformation(final ModelContentRO model) throws InvalidSettingsException {
         super(model);
         this.setUseKeyChain(model.getBoolean("keyChain", false));
         // New Server Side Encryption AP-8823
@@ -86,10 +93,47 @@ public class CloudConnectionInformation extends ConnectionInformation {
         } else {
         	this.setUseSSEncryption(false);
         }
+        if (model.containsKey(SWITCH_ROLE_KEY)) {
+            this.setSwitchRole(model.getBoolean(SWITCH_ROLE_KEY));
+            this.setSwitchRoleAccount(model.getString(SWITCH_ROLE_ACCOUNT_KEY));
+            this.setSwitchRoleName(model.getString(SWITCH_ROLE_NAME_KEY));
+        } else {
+            this.setSwitchRole(false);
+            this.setSwitchRoleAccount("");
+            this.setSwitchRoleName("");
+        }
 	}
 
 
+    /**
+     * Set whether Switch Role should be used.
+     *
+     * @param switchRole Whether Switch Role should be used
+     */
+    public void setSwitchRole(final boolean switchRole) {
+        m_switchRole = switchRole;
+    }
+
 	/**
+	 * Set the Switch Role account that should be used.
+	 *
+     * @param switchRoleAccount The Switch Role account that should be used
+     */
+    public void setSwitchRoleAccount(final String switchRoleAccount) {
+        m_switchRoleAccount = switchRoleAccount;
+    }
+
+    /**
+     * Set the Switch Role name that should be used.
+     *
+     * @param switchRoleName The Switch Role name that should be used
+     */
+    public void setSwitchRoleName(final String switchRoleName) {
+        m_switchRoleName = switchRoleName;
+    }
+
+
+    /**
 	 * Set whether some key chain should be used when connecting
 	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
 	 */
@@ -130,9 +174,41 @@ public class CloudConnectionInformation extends ConnectionInformation {
 		// New Server Side Encryption AP-8823
 		model.addBoolean(SSE_KEY, m_useSSEncryption);
 
+		// New Switch Role AP-11221
+		model.addBoolean(SWITCH_ROLE_KEY, m_switchRole);
+		model.addString(SWITCH_ROLE_ACCOUNT_KEY, m_switchRoleAccount);
+		model.addString(SWITCH_ROLE_NAME_KEY, m_switchRoleName);
 	}
 
-	public static CloudConnectionInformation load(ModelContentRO model) throws InvalidSettingsException {
+	public static CloudConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
 		return new CloudConnectionInformation(model);
 	}
+
+    /**
+     * Returns whether a Switch Role should be used.
+     *
+     * @return Whether a Switch Role should be used
+     */
+	public boolean switchRole() {
+	    return m_switchRole;
+	}
+
+
+	/**
+	 * Returns the Switch Role account that should be used.
+	 *
+	 * @return The Switch Role account that should be used
+	 */
+    public String getSwitchRoleAccount() {
+        return m_switchRoleAccount;
+    }
+
+    /**
+     * Returns the Switch Role name that should be used.
+     *
+     * @return The Switch Role name that should be used
+     */
+    public String getSwitchRoleName() {
+        return m_switchRoleName;
+    }
 }

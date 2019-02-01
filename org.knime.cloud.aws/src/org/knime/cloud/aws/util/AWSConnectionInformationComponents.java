@@ -50,9 +50,11 @@ package org.knime.cloud.aws.util;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 import org.knime.cloud.core.util.ConnectionInformationCloudComponents;
@@ -62,6 +64,7 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.defaultnodesettings.DialogComponentAuthentication;
 import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
+import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObjectSpec;
@@ -75,6 +78,7 @@ import com.amazonaws.regions.Regions;
  * Dialog component that allow users to enter information needed to connect to AWS
  *
  * @author Budi Yanto, KNIME.com
+ * @author Ole Ostergaard, KNIME GmbH, Konstanz, Germany
  */
 public final class AWSConnectionInformationComponents extends ConnectionInformationCloudComponents<AWSConnectionInformationSettings> {
 
@@ -82,8 +86,12 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 
 	private final DialogComponentBoolean m_sSEncrpytion;
 
+	private final DialogComponentBoolean m_switchRole;
+	private final DialogComponentString m_switchRoleAccount;
+	private final DialogComponentString m_switchRoleName;
+
 	/**
-	 * Creates the DialogComponents including the s3 specifig region chooser
+	 * Creates the DialogComponents including the s3 specific region chooser
 	 * @param settings The corresponding {@link AWSConnectionInformationSettings}
 	 * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
 	 */
@@ -93,11 +101,14 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 		final ArrayList<String> regions = loadRegions();
 		m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions , false);
 		m_sSEncrpytion = new DialogComponentBoolean(settings.getSSEncryptionModel(), "Use SSE (Server Side Encryption)");
+		m_switchRole = new DialogComponentBoolean(settings.getSwitchRoleModel(), "Switch Role");
+		m_switchRoleAccount = new DialogComponentString(settings.getSwitchRoleAccountModel(), "Account: ", false,  20);
+		m_switchRoleName = new DialogComponentString(settings.getSwitchRoleNameModel(), "Role:       ", false, 20);
 	}
 
 	private ArrayList<String> loadRegions() {
 		final AWSConnectionInformationSettings model = getSettings();
-		final ArrayList<String> regionNames = new ArrayList<String>();
+		final ArrayList<String> regionNames = new ArrayList<>();
 		for (final Regions regions : Regions.values()) {
 			final Region region = Region.getRegion(regions);
 			if (region.isServiceSupported(model.getPrefix())) {
@@ -151,10 +162,36 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 		gbc.fill =  GridBagConstraints.BOTH;
 		auth.add(getAuthenticationComponent().getComponentPanel());
 		gbc.gridy++;
+		auth.add(getSwitchRolePanel(), gbc);
 		gbc.fill = GridBagConstraints.NONE;
+		gbc.gridy++;
 		auth.add(m_region.getComponentPanel(), gbc);
 		return auth;
 	}
+
+	private JPanel getSwitchRolePanel() {
+	    final JPanel rolePanel = new JPanel(new GridBagLayout());
+	    rolePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " Switch Role "));
+	    final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.weightx = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        rolePanel.add(m_switchRole.getComponentPanel(), gbc);
+        m_switchRole.getModel().addChangeListener(e -> updateEnabledStatus());
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 30, 0, 0);
+        rolePanel.add(m_switchRoleAccount.getComponentPanel(), gbc);
+        gbc.gridy++;
+        rolePanel.add(m_switchRoleName.getComponentPanel(), gbc);
+        return rolePanel;
+	}
+
+	private void updateEnabledStatus() {
+	    m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected());
+        m_switchRoleName.getModel().setEnabled(m_switchRole.isSelected());
+	}
+
 
 	/**
 	 * {@inheritDoc}
@@ -173,6 +210,11 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 		super.loadSettingsFrom(settings, specs, cp);
 		m_region.loadSettingsFrom(settings, specs);
 		m_sSEncrpytion.loadSettingsFrom(settings, specs);
+		m_switchRole.loadSettingsFrom(settings, specs);
+		m_switchRoleAccount.loadSettingsFrom(settings, specs);
+		m_switchRoleName.loadSettingsFrom(settings, specs);
+
+		updateEnabledStatus();
 	}
 
 	@Override
@@ -180,5 +222,8 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
 		super.saveSettingsTo(settings);
 		m_region.saveSettingsTo(settings);
 		m_sSEncrpytion.saveSettingsTo(settings);
+		m_switchRole.saveSettingsTo(settings);
+		m_switchRoleAccount.saveSettingsTo(settings);
+		m_switchRoleName.saveSettingsTo(settings);
 	}
 }

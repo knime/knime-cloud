@@ -67,7 +67,7 @@ import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.util.CheckUtils;
 
 import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -131,7 +131,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 		return new S3Connection((CloudConnectionInformation)getConnectionInformation());
 	}
 
-	private AmazonS3Client getClient() throws Exception {
+	private AmazonS3 getClient() throws Exception {
 		return getOpenedConnection().getClient();
 	}
 
