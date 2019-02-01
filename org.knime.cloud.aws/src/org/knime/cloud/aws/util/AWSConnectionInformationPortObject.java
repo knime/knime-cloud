@@ -76,11 +76,13 @@ public class AWSConnectionInformationPortObject extends ConnectionInformationPor
     /**
      * Type of this port.
      */
+    @SuppressWarnings("hiding")
     public static final PortType TYPE = ConnectionInformationPortObject.TYPE;
 
     /**
      * Type of this optional port.
      */
+    @SuppressWarnings("hiding")
     public static final PortType TYPE_OPTIONAL = ConnectionInformationPortObject.TYPE_OPTIONAL;
 
     /**

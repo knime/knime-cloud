@@ -125,8 +125,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	@Override
 	protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
 			throws IOException, CanceledExecutionException {
-		// TODO Auto-generated method stub
-
+	    // Nothing to do.
 	}
 
 	/**
@@ -135,8 +134,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	@Override
 	protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
 			throws IOException, CanceledExecutionException {
-		// TODO Auto-generated method stub
-
+	    // Nothing to do.
 	}
 
 	/**
@@ -168,8 +166,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 	 */
 	@Override
 	protected void reset() {
-		// TODO Auto-generated method stub
-
+	    // Nothing to do.
 	}
 
 	/**

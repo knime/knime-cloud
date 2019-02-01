@@ -40,9 +40,14 @@ public class S3Connection extends Connection {
 
 	private boolean m_restrictedPermissions = false;
 
+	/**
+	 * Creates an S3 connection, given the connection information.
+	 *
+	 * @param connectionInformation The connection information for this S3 connection
+	 */
 	public S3Connection(final CloudConnectionInformation connectionInformation) {
 		m_connectionInformation = connectionInformation;
-		m_bucketsCache = new ArrayList<String>();
+		m_bucketsCache = new ArrayList<>();
 	}
 
 	@Override
@@ -91,10 +96,7 @@ public class S3Connection extends Connection {
 
 	@Override
 	public boolean isOpen() {
-		if (m_client != null && m_transferManager != null) {
-			return true;
-		}
-		return false;
+		return m_client != null && m_transferManager != null;
 	}
 
 	@Override
@@ -160,10 +162,7 @@ public class S3Connection extends Connection {
 	 */
 	public boolean isOwnBucket(final String bucketName) throws Exception {
 		open();
-		if (getBuckets().contains(bucketName)) {
-		    return true;
-		}
-		return false;
+		return getBuckets().contains(bucketName);
 	}
 
 	/**

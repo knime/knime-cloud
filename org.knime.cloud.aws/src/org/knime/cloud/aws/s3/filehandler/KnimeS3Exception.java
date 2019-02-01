@@ -82,14 +82,13 @@ final class KnimeS3Exception extends Exception {
     }
 
     /** @return Stack trace of given cause as string. */
-    private String toStringStackTrace(final Throwable cause) {
+    private static String toStringStackTrace(final Throwable cause) {
         if (cause == null) {
             return null;
         } else {
             try(final StringWriter sw = new StringWriter();
                     final PrintWriter pw = new PrintWriter(sw);) {
                 cause.printStackTrace(pw);
-                pw.close();
                 return sw.toString();
             } catch (IOException e) {
                 return "Unable to print stack trace for Throwable: " + cause.getClass().getName()

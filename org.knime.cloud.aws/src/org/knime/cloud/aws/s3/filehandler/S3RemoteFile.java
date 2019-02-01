@@ -91,11 +91,26 @@ import com.amazonaws.services.s3.transfer.internal.S3ProgressListener;
  */
 public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 
+	/**
+	 * Create an S3 RemoteFile for the given URI, connection information and connection monitor.
+	 *
+	 * @param uri The RemoteFile's URI
+	 * @param connectionInformation The RemoteFile's connection information
+	 * @param connectionMonitor The RemotFile's connection monitor
+	 */
 	protected S3RemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor) {
 		this(uri, connectionInformation, connectionMonitor, null);
 	}
 
+	/**
+	 * Creates an S3 RemoteFile for the given URI, connection information, connection monitor and S3ObjectSummary.
+	 *
+	 * @param uri The RemoteFile's URI
+	 * @param connectionInformation The RemoteFile's connection information
+	 * @param connectionMonitor The RemoteFile's connection monitor
+	 * @param summary The RemoteFile's S3ObjectSummary
+	 */
 	protected S3RemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
 			final ConnectionMonitor<S3Connection> connectionMonitor, final S3ObjectSummary summary) {
 		super(uri, connectionInformation, connectionMonitor);
@@ -191,7 +206,7 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
             final ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(bucketName)
                     .withPrefix(prefix).withDelimiter(DELIMITER);
             ListObjectsV2Result result;
-            final List<S3RemoteFile> fileList = new ArrayList<S3RemoteFile>();
+            final List<S3RemoteFile> fileList = new ArrayList<>();
             do {
                 result = getClient().listObjectsV2(request);
                 for (final S3ObjectSummary summary : result.getObjectSummaries()) {
@@ -216,7 +231,6 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
             } while (result.isTruncated());
 
             files = fileList.toArray(new S3RemoteFile[fileList.size()]);
-            // Arrays.sort(files);
 
         } catch (AmazonS3Exception e){
             // Listing does not work, when bucket is in wrong region, return empty array of files -- see AP-6662
@@ -332,7 +346,8 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
+	@SuppressWarnings("resource")
+    @Override
 	public InputStream openInputStream() throws Exception {
 	    try {
     		final String bucketName = getContainerName();
