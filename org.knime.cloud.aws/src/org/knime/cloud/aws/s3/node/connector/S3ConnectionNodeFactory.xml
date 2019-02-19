@@ -49,6 +49,17 @@
         	<br/>
         	When selected the default credential provider chain is used for authentication. Default location is "~/.aws/credentials" on most platforms. 
        	</option>
+       	<option name="Switch Role">
+			Switch your IAM role. For more information see: <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-console.html">Switching to a Role</a>
+        	<br/>
+        	<b>Account</b>
+        	<br/>
+			The 12-digit account ID for which the role should be assumed.
+        	<br/>
+        	<b>Role</b>
+        	<br/>
+        	The name of the role that should be assumed.
+       	</option>
         <option name="Region">
         	The Amazon S3 geographical region to store the buckets that the user creates.
         </option>
