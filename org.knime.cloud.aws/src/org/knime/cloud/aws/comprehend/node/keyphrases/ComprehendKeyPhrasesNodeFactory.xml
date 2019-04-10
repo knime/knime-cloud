@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="./default.png" type="Manipulator" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Amazon Comprehend (Key Phrases)</name>
+    
+    <shortDescription>
+        Utilizes the Amazon Comprehend service to split text into key phrases.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>Insert long description here...</intro>
+        <option name="Text Column to Analyze">description of first option</option>
+        <option name="Source Language">description of second option</option>
+    </fullDescription>
+    
+    <ports>
+        <inPort index="0" name="AWS Connection">AWS Connection</inPort>
+        <inPort index="1" name="Input Data">Input data containing a text column to analyze</inPort>
+        <outPort index="0" name="Key Phrases">Output data containing the input text column and the discovered key phrases.</outPort>
+    </ports>    
+</knimeNode>

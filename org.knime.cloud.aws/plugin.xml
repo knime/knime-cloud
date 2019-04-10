@@ -12,16 +12,23 @@
       </category>
    </extension>
    <extension point="org.knime.workbench.repository.nodes">
-      <node category-path="/io/filehandling/remote/connections" factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory" id="org.knime.cloud.aws.s3.S3ConnectionNodeFactory"/>
+      <node 
+        category-path="/io/filehandling/remote/connections" 
+        factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory" 
+        id="org.knime.cloud.aws.s3.S3ConnectionNodeFactory"/>
       <node category-path="/io/filehandling/remote" factory-class="org.knime.cloud.aws.s3.node.filepicker.S3FilePickerNodeFactory" id="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
       	factory-class="org.knime.cloud.aws.comprehend.node.syntax.ComprehendSyntaxNodeFactory" 
-      	id="org.knime.cloud.aws.s3.node.ComprehendSyntaxNodeFactory"/>
+      	id="org.knime.cloud.aws.comprehend.node.syntax.ComprehendSyntaxNodeFactory"/>
      <node 
       	category-path="/labs/aws" 
       	factory-class="org.knime.cloud.aws.comprehend.node.entities.ComprehendEntitiesNodeFactory" 
-      	id="org.knime.cloud.aws.s3.node.ComprehendEntitiesNodeFactory"/>
+      	id="org.knime.cloud.aws.comprehend.node.entities.ComprehendEntitiesNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.comprehend.node.keyphrases.ComprehendKeyPhrasesNodeFactory" 
+      	id="org.knime.cloud.aws.comprehend.node.keyphrases.ComprehendKeyPhrasesNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
       	factory-class="org.knime.cloud.aws.translate.node.TranslateNodeFactory" 
