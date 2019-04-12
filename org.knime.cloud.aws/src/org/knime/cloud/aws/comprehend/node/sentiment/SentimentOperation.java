@@ -77,11 +77,8 @@ import com.amazonaws.services.comprehend.model.SentimentScore;
  */
 class SentimentOperation extends BaseComprehendOperation {
 
-    private final String m_sourceLanguage;
-
     SentimentOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        super(cxnInfo, textColumnName);
-        this.m_sourceLanguage = sourceLanguage;
+        super(cxnInfo, textColumnName, sourceLanguage);
     }
 
     @Override

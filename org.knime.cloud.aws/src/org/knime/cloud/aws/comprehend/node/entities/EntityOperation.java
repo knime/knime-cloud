@@ -78,11 +78,8 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
  */
 /* protected */ class EntityOperation extends BaseComprehendOperation {
 
-    private final String m_sourceLanguage;
-
     EntityOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        super(cxnInfo, textColumnName);
-        this.m_sourceLanguage = sourceLanguage;
+        super(cxnInfo, textColumnName, sourceLanguage);
     }
 
     @Override
