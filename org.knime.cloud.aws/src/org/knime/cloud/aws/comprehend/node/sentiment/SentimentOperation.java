@@ -49,6 +49,7 @@
 package org.knime.cloud.aws.comprehend.node.sentiment;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
@@ -60,12 +61,8 @@ import org.knime.core.data.StringValue;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
-import org.knime.core.node.BufferedDataContainer;
-import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
-import org.knime.core.node.streamable.BufferedDataTableRowOutput;
-import org.knime.core.node.streamable.DataTableRowInput;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 
@@ -78,43 +75,17 @@ import com.amazonaws.services.comprehend.model.SentimentScore;
  *
  * @author jfalgout
  */
-/* protected */ class SentimentOperation {
+class SentimentOperation extends BaseComprehendOperation {
 
-    private final ConnectionInformation m_cxnInfo;
-    private final String m_textColumnName;
     private final String m_sourceLanguage;
 
     SentimentOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        this.m_cxnInfo = cxnInfo;
-        this.m_textColumnName = textColumnName;
+        super(cxnInfo, textColumnName);
         this.m_sourceLanguage = sourceLanguage;
     }
 
-    BufferedDataTable compute(final ExecutionContext exec, final BufferedDataTable data) throws CanceledExecutionException, InterruptedException {
-        final BufferedDataContainer dc = exec.createDataContainer(SentimentOperation.createDataTableSpec(m_textColumnName));
-        if (data.size() == 0) {
-            dc.close();
-            return dc.getTable();
-        }
-
-        // Create stream enabled input and output ports wrapping the input data table and output table.
-        DataTableRowInput in = new DataTableRowInput(data);
-        BufferedDataTableRowOutput out = new BufferedDataTableRowOutput(dc);
-
-        // Invoke computation on the stream enabled ports
-        try {
-            compute(in, out, exec, in.getRowCount());
-        }
-        finally {
-            in.close();
-            out.close();
-        }
-
-        return out.getDataTable();
-    }
-
-
-    void compute(final RowInput in, final RowOutput out, final ExecutionContext exec, final long rowCount) throws CanceledExecutionException, InterruptedException {
+    @Override
+    public void compute(final RowInput in, final RowOutput out, final ExecutionContext exec, final long rowCount) throws CanceledExecutionException, InterruptedException {
 
         // Create a connection to the Comprehend service in the provided region
         AmazonComprehend comprehendClient = ComprehendUtils.getClient(m_cxnInfo);
@@ -168,7 +139,8 @@ import com.amazonaws.services.comprehend.model.SentimentScore;
         return;
     }
 
-    static DataTableSpec createDataTableSpec(final String textColumnName) {
+    @Override
+    public DataTableSpec createDataTableSpec(final String textColumnName) {
         DataColumnSpec[] allColSpecs = new DataColumnSpec[6];
         allColSpecs[0] = new DataColumnSpecCreator(textColumnName, StringCell.TYPE).createSpec();
         allColSpecs[1] = new DataColumnSpecCreator("Sentiment", StringCell.TYPE).createSpec();

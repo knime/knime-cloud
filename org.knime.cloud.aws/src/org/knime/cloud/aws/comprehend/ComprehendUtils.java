@@ -69,6 +69,12 @@ import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
  */
 public class ComprehendUtils {
 
+    /** Settings name for the input column name with text to analyze */
+    public static final String CFGKEY_COLUMN_NAME = "TextColumnName";
+
+    /** Settings name for the input column name with text to analyze */
+    public static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
+
     /**
      * Given a region name, determine if the region supports the Comprehend service.
      *

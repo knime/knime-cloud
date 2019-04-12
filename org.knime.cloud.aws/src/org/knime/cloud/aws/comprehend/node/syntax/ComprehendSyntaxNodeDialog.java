@@ -25,7 +25,7 @@ public class ComprehendSyntaxNodeDialog extends DefaultNodeSettingsPane {
 
         addDialogComponent(
             new DialogComponentColumnNameSelection(
-                new SettingsModelString(ComprehendSyntaxNodeModel.CFGKEY_COLUMN_NAME, "text"),
+                new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
                 "Text column to analyze:",
                 1,
                 StringValue.class)
@@ -33,7 +33,7 @@ public class ComprehendSyntaxNodeDialog extends DefaultNodeSettingsPane {
 
         addDialogComponent(
             new DialogComponentStringSelection(
-                new SettingsModelString(ComprehendSyntaxNodeModel.CFGKEY_SOURCE_LANG, "English"),
+                new SettingsModelString(ComprehendUtils.CFGKEY_SOURCE_LANG, "English"),
                 "Source language:",
                 ComprehendUtils.LANG_MAP.keySet()
                 )
