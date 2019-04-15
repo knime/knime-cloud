@@ -38,6 +38,10 @@
       	id="org.knime.cloud.aws.comprehend.node.sentiment.ComprehendSentimentNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.comprehend.node.language.ComprehendLanguageNodeFactory" 
+      	id="org.knime.cloud.aws.comprehend.node.language.ComprehendLanguageNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
       	factory-class="org.knime.cloud.aws.translate.node.TranslateNodeFactory" 
       	id="org.knime.cloud.aws.translate.node.TranslateNodeFactory"/>
    </extension>

@@ -44,9 +44,11 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Mar 16, 2019 (jfalgout): created
+ *   Apr 8, 2019 (jfalgout): created
  */
-package org.knime.cloud.aws.comprehend.node.entities;
+package org.knime.cloud.aws.comprehend.node.language;
+
+import java.util.Locale;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
@@ -60,7 +62,6 @@ import org.knime.core.data.RowKey;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
-import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -68,22 +69,18 @@ import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.KeyPhrase;
+import com.amazonaws.services.comprehend.model.DetectDominantLanguageRequest;
+import com.amazonaws.services.comprehend.model.DetectDominantLanguageResult;
+import com.amazonaws.services.comprehend.model.DominantLanguage;
 
 /**
  *
- * Support streaming the entity discovery computation.
+ * @author jfalgout
  */
-/* protected */ class EntityOperation extends BaseComprehendOperation {
+class LanguageOperation extends BaseComprehendOperation {
 
-    // Language of the source text to be analyzed
-    private final String m_sourceLanguage;
-
-    EntityOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
+    LanguageOperation(final ConnectionInformation cxnInfo, final String textColumnName) {
         super(cxnInfo, textColumnName);
-        this.m_sourceLanguage = sourceLanguage;
     }
 
     @Override
@@ -97,11 +94,9 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
         long inputRowIndex = 0;
         long rowCounter = 0;
 
-        // For each input row, grab the text column, make the call to Comprehend
-        // and push each of the syntax elements to the output.
+        // For each input row, grab the text column, make the call to Comprehend to detect the languages.
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
-
             // Check for cancel and update the row progress
             ++rowCounter;
             exec.checkCanceled();
@@ -112,30 +107,26 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
             // Grab the text to evaluate
             String textValue = ((StringValue) inputRow.getCell(textColumnIdx)).getStringValue();
 
-            DetectKeyPhrasesRequest detectKeyPhrasesRequest =
-                    new DetectKeyPhrasesRequest()
-                        .withText(textValue)
-                        .withLanguageCode(ComprehendUtils.LANG_MAP.getOrDefault(m_sourceLanguage, "en"));
+            DetectDominantLanguageRequest detectDominantLanguageRequest =
+                    new DetectDominantLanguageRequest()
+                        .withText(textValue);
 
-            DetectKeyPhrasesResult detectKeyPhrasesResult =
+            DetectDominantLanguageResult detectDominantLanguageResult =
                 comprehendClient
-                    .detectKeyPhrases(detectKeyPhrasesRequest);
+                    .detectDominantLanguage(detectDominantLanguageRequest);
 
-            // Process the results
             long outputRowIndex = 0;
-            for (KeyPhrase phrase : detectKeyPhrasesResult.getKeyPhrases()) {
+            for (DominantLanguage dominantLang : detectDominantLanguageResult.getLanguages()) {
 
+                // Create cells containing the output data
+                DataCell[] cells = new DataCell[4];
+                cells[0] = new StringCell(textValue);
+                cells[1] = new StringCell(code2Name(dominantLang.getLanguageCode()));
+                cells[2] = new StringCell(dominantLang.getLanguageCode());
+                cells[3] = new DoubleCell(dominantLang.getScore());
 
                 // Make row key unique with the input row number and the sequence number of each token
                 RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
-
-                // Create cells containing the output data
-                DataCell[] cells = new DataCell[5];
-                cells[0] = new StringCell(textValue);
-                cells[1] = new StringCell(phrase.getText());
-                cells[2] = new DoubleCell(phrase.getScore());
-                cells[3] = new IntCell(phrase.getBeginOffset());
-                cells[4] = new IntCell(phrase.getEndOffset());
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);
@@ -150,15 +141,27 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
 
     @Override
     public DataTableSpec createDataTableSpec(final String textColumnName) {
-        // Repeat the input text column adding in 5 columns of data returned from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[4];
         allColSpecs[0] = new DataColumnSpecCreator(textColumnName, StringCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Entity", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+        allColSpecs[1] = new DataColumnSpecCreator("Language", StringCell.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Language Code", StringCell.TYPE).createSpec();
+        allColSpecs[3] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
 
         return new DataTableSpec(allColSpecs);
+    }
+
+    private static String code2Name(final String langCode) {
+        String[] codes = langCode.split("-");
+        if (codes.length == 1) {
+            Locale loc = new Locale(codes[0]);
+            return loc.getDisplayLanguage();
+        }
+        else if (codes.length > 1){
+            Locale loc = new Locale(codes[0], codes[1]);
+            return loc.getDisplayLanguage();
+        }
+
+        return "<unknown>";
     }
 
 }

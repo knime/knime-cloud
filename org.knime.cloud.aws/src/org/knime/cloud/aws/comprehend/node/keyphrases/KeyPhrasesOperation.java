@@ -78,8 +78,12 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
  */
 class KeyPhrasesOperation extends BaseComprehendOperation {
 
+    // Language of the source text to be analyzed
+    private final String m_sourceLanguage;
+
     KeyPhrasesOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        super(cxnInfo, textColumnName, sourceLanguage);
+        super(cxnInfo, textColumnName);
+        this.m_sourceLanguage = sourceLanguage;
     }
 
     @Override
@@ -119,7 +123,7 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
 
             long outputRowIndex = 0;
             for (KeyPhrase keyPhrase : detectKeyPhrasesResult.getKeyPhrases()) {
-             // Make row key unique with the input row number and the sequence number of each token
+                // Make row key unique with the input row number and the sequence number of each token
                 RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
 
                 // Create cells containing the output data

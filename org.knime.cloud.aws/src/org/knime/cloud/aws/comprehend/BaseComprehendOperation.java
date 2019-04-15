@@ -68,19 +68,14 @@ public abstract class BaseComprehendOperation implements ComprehendOperation {
     /** Name of the input text column to analyze. */
     protected final String m_textColumnName;
 
-    /** Language of the source text to be analyzed */
-    protected final String m_sourceLanguage;
-
     /**
      * Create a new operation instance.
      * @param cxnInfo AWS connection information
      * @param textColumnName Name of the input text column.
-     * @param sourceLanguage the source language of text to be analyzed
      */
-    public BaseComprehendOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
+    public BaseComprehendOperation(final ConnectionInformation cxnInfo, final String textColumnName) {
         this.m_cxnInfo = cxnInfo;
         this.m_textColumnName = textColumnName;
-        this.m_sourceLanguage = sourceLanguage;
     }
 
     @Override
