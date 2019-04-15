@@ -4,7 +4,6 @@ import org.knime.cloud.aws.comprehend.ComprehendUtils;
 import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
-import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
 /**
@@ -30,14 +29,6 @@ public class ComprehendLanguageNodeDialog extends DefaultNodeSettingsPane {
                 1,
                 StringValue.class)
         );
-
-        addDialogComponent(
-            new DialogComponentStringSelection(
-                new SettingsModelString(ComprehendUtils.CFGKEY_SOURCE_LANG, "English"),
-                "Source language:",
-                ComprehendUtils.LANG_MAP.keySet()
-                )
-            );
 
     }
 }
