@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend.node.language;
+package org.knime.cloud.aws.comprehend.keyphrases.node;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendLanguageNodeFactory
-        extends NodeFactory<ComprehendLanguageNodeModel> {
+public class ComprehendKeyPhrasesNodeFactory
+        extends NodeFactory<ComprehendKeyPhrasesNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ComprehendLanguageNodeModel createNodeModel() {
-        return new ComprehendLanguageNodeModel();
+    public ComprehendKeyPhrasesNodeModel createNodeModel() {
+        return new ComprehendKeyPhrasesNodeModel();
     }
 
     /**
@@ -33,8 +33,8 @@ public class ComprehendLanguageNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<ComprehendLanguageNodeModel> createNodeView(final int viewIndex,
-            final ComprehendLanguageNodeModel nodeModel) {
+    public NodeView<ComprehendKeyPhrasesNodeModel> createNodeView(final int viewIndex,
+            final ComprehendKeyPhrasesNodeModel nodeModel) {
         return null;
     }
 
@@ -51,7 +51,7 @@ public class ComprehendLanguageNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new ComprehendLanguageNodeDialog();
+        return new ComprehendKeyPhrasesNodeDialog();
     }
 
 }

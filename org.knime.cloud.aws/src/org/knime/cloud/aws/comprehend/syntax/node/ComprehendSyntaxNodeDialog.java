@@ -1,24 +1,26 @@
-package org.knime.cloud.aws.comprehend.node.keyphrases;
+package org.knime.cloud.aws.comprehend.syntax.node;
 
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
-import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.ext.textprocessing.data.DocumentValue;
 
 /**
  *
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendKeyPhrasesNodeDialog extends DefaultNodeSettingsPane {
+public class ComprehendSyntaxNodeDialog extends DefaultNodeSettingsPane {
 
     /**
-     * Create a basic dialog with column selection and selection for the source language.
+     * New pane for configuring MyExampleNode node dialog.
+     * This is just a suggestion to demonstrate possible default dialog
+     * components.
      */
     @SuppressWarnings("unchecked")
-    protected ComprehendKeyPhrasesNodeDialog() {
+    protected ComprehendSyntaxNodeDialog() {
         super();
 
         addDialogComponent(
@@ -26,7 +28,7 @@ public class ComprehendKeyPhrasesNodeDialog extends DefaultNodeSettingsPane {
                 new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
                 "Text column to analyze:",
                 1,
-                StringValue.class)
+                DocumentValue.class)
         );
 
         addDialogComponent(

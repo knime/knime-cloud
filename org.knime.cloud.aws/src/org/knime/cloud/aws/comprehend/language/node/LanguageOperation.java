@@ -44,46 +44,43 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Mar 16, 2019 (jfalgout): created
+ *   Apr 8, 2019 (jfalgout): created
  */
-package org.knime.cloud.aws.comprehend.node.keyphrases;
+package org.knime.cloud.aws.comprehend.language.node;
+
+import java.util.Locale;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
 import org.knime.core.data.DataCell;
-import org.knime.core.data.DataColumnSpec;
-import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.RowKey;
-import org.knime.core.data.StringValue;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
-import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
+import org.knime.ext.textprocessing.data.Document;
+import org.knime.ext.textprocessing.data.DocumentCell;
+import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.KeyPhrase;
+import com.amazonaws.services.comprehend.model.DetectDominantLanguageRequest;
+import com.amazonaws.services.comprehend.model.DetectDominantLanguageResult;
+import com.amazonaws.services.comprehend.model.DominantLanguage;
 
 /**
  *
- * Support streaming the key phases discovery computation.
+ * @author jfalgout
  */
-class KeyPhrasesOperation extends BaseComprehendOperation {
+class LanguageOperation extends BaseComprehendOperation {
 
-    // Language of the source text to be analyzed
-    private final String m_sourceLanguage;
-
-    KeyPhrasesOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        super(cxnInfo, textColumnName);
-        this.m_sourceLanguage = sourceLanguage;
+    LanguageOperation(final ConnectionInformation cxnInfo, final String textColumnName, final DataTableSpec outputSpec) {
+        super(cxnInfo, textColumnName, outputSpec);
     }
 
     @Override
@@ -97,11 +94,9 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
         long inputRowIndex = 0;
         long rowCounter = 0;
 
-        // For each input row, grab the text column, make the call to Comprehend
-        // and push each of the syntax elements to the output.
+        // For each input row, grab the text column, make the call to Comprehend to detect the languages.
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
-
             // Check for cancel and update the row progress
             ++rowCounter;
             exec.checkCanceled();
@@ -110,35 +105,41 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
             }
 
             // Grab the text to evaluate
-            String textValue = ((StringValue) inputRow.getCell(textColumnIdx)).getStringValue();
+            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
+            String textValue = inputDoc.getDocumentBodyText();
 
-            DetectKeyPhrasesRequest detectKeyPhrasesRequest =
-                new DetectKeyPhrasesRequest()
-                    .withText(textValue)
-                    .withLanguageCode(ComprehendUtils.LANG_MAP.getOrDefault(m_sourceLanguage, "en"));
+            DetectDominantLanguageRequest detectDominantLanguageRequest =
+                    new DetectDominantLanguageRequest()
+                        .withText(textValue);
 
-            DetectKeyPhrasesResult detectKeyPhrasesResult =
+            DetectDominantLanguageResult detectDominantLanguageResult =
                 comprehendClient
-                    .detectKeyPhrases(detectKeyPhrasesRequest);
+                    .detectDominantLanguage(detectDominantLanguageRequest);
 
             long outputRowIndex = 0;
-            for (KeyPhrase keyPhrase : detectKeyPhrasesResult.getKeyPhrases()) {
+            for (DominantLanguage dominantLang : detectDominantLanguageResult.getLanguages()) {
+
+                // Create cells containing the output data.
+                // Copy the input field values to the output.
+                int numInputColumns = m_outputTableSpec.getNumColumns();
+                DataCell[] cells = new DataCell[numInputColumns + 8];
+                for (int i = 0; i < numInputColumns; i++) {
+                    cells[i] = inputRow.getCell(i);
+                }
+
+                // Copy the results to the new columns in the output.
+                cells[numInputColumns] = new DocumentCell(inputDoc);
+                cells[numInputColumns + 1] = new StringCell(code2Name(dominantLang.getLanguageCode()));
+                cells[numInputColumns + 2] = new StringCell(dominantLang.getLanguageCode());
+                cells[numInputColumns + 3] = new DoubleCell(dominantLang.getScore());
+
                 // Make row key unique with the input row number and the sequence number of each token
                 RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
-
-                // Create cells containing the output data
-                DataCell[] cells = new DataCell[5];
-                cells[0] = new StringCell(textValue);
-                cells[1] = new StringCell(keyPhrase.getText());
-                cells[2] = new DoubleCell(keyPhrase.getScore());
-                cells[3] = new IntCell(keyPhrase.getBeginOffset());
-                cells[4] = new IntCell(keyPhrase.getEndOffset());
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);
                 out.push(row);
             }
-
 
             ++inputRowIndex;
         }
@@ -146,17 +147,18 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
         return;
     }
 
-    @Override
-    public DataTableSpec createDataTableSpec(final String textColumnName) {
-        // Repeat the input text column adding in 5 columns of data returned from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
-        allColSpecs[0] = new DataColumnSpecCreator(textColumnName, StringCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Key Phrase", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+    private static String code2Name(final String langCode) {
+        String[] codes = langCode.split("-");
+        if (codes.length == 1) {
+            Locale loc = new Locale(codes[0]);
+            return loc.getDisplayLanguage();
+        }
+        else if (codes.length > 1){
+            Locale loc = new Locale(codes[0], codes[1]);
+            return loc.getDisplayLanguage();
+        }
 
-        return new DataTableSpec(allColSpecs);
+        return "<unknown>";
     }
 
 }

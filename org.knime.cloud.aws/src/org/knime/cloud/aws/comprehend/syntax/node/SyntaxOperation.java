@@ -46,18 +46,15 @@
  * History
  *   Apr 8, 2019 (jfalgout): created
  */
-package org.knime.cloud.aws.comprehend.node.syntax;
+package org.knime.cloud.aws.comprehend.syntax.node;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
 import org.knime.core.data.DataCell;
-import org.knime.core.data.DataColumnSpec;
-import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.RowKey;
-import org.knime.core.data.StringValue;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
@@ -66,6 +63,9 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
+import org.knime.ext.textprocessing.data.Document;
+import org.knime.ext.textprocessing.data.DocumentCell;
+import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.model.DetectSyntaxRequest;
@@ -76,13 +76,13 @@ import com.amazonaws.services.comprehend.model.SyntaxToken;
  *
  * @author jfalgout
  */
-/* protected */ class SyntaxOperation extends BaseComprehendOperation {
+class SyntaxOperation extends BaseComprehendOperation {
 
     // Language of the source text to be analyzed
     private final String m_sourceLanguage;
 
-    SyntaxOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLanguage) {
-        super(cxnInfo, textColumnName);
+    SyntaxOperation(final ConnectionInformation cxnInfo,final String textColumnName, final String sourceLanguage, final DataTableSpec outputSpec) {
+        super(cxnInfo, textColumnName, outputSpec);
         this.m_sourceLanguage = sourceLanguage;
     }
 
@@ -109,7 +109,8 @@ import com.amazonaws.services.comprehend.model.SyntaxToken;
             }
 
             // Grab the text to evaluate
-            String textValue = ((StringValue) inputRow.getCell(textColumnIdx)).getStringValue();
+            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
+            String textValue = inputDoc.getDocumentBodyText();
 
             // Create the delete syntax request
             DetectSyntaxRequest detectSyntaxRequest = new DetectSyntaxRequest()
@@ -125,17 +126,24 @@ import com.amazonaws.services.comprehend.model.SyntaxToken;
                 // Make row key unique with the input row number and the sequence number of each token
                 RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
 
-                // Create cells containing the output data
-                DataCell[] cells = new DataCell[8];
-                cells[0] = new StringCell(textValue);
-                cells[1] = new StringCell(token.getText());
-                cells[2] = new IntCell(token.getTokenId());
+                // Create cells containing the output data.
+                // Copy the input field values to the output.
+                int numInputColumns = m_outputTableSpec.getNumColumns();
+                DataCell[] cells = new DataCell[numInputColumns + 8];
+                for (int i = 0; i < numInputColumns; i++) {
+                    cells[i] = inputRow.getCell(i);
+                }
+
+                // Copy the results to the new columns in the output.
+                cells[numInputColumns] = new DocumentCell(inputDoc);
+                cells[numInputColumns + 1] = new StringCell(token.getText());
+                cells[numInputColumns + 2] = new IntCell(token.getTokenId());
                 String posCode = token.getPartOfSpeech().getTag();
-                cells[3] = new StringCell(posCode);
-                cells[4] = new StringCell(ComprehendUtils.POS_MAP.getOrDefault(posCode, "Unknown"));
-                cells[5] = new DoubleCell(token.getPartOfSpeech().getScore());
-                cells[6] = new IntCell(token.getBeginOffset());
-                cells[7] = new IntCell(token.getEndOffset());
+                cells[numInputColumns + 3] = new StringCell(posCode);
+                cells[numInputColumns + 4] = new StringCell(ComprehendUtils.POS_MAP.getOrDefault(posCode, "Unknown"));
+                cells[numInputColumns + 5] = new DoubleCell(token.getPartOfSpeech().getScore());
+                cells[numInputColumns + 6] = new IntCell(token.getBeginOffset());
+                cells[numInputColumns + 7] = new IntCell(token.getEndOffset());
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);
@@ -146,22 +154,6 @@ import com.amazonaws.services.comprehend.model.SyntaxToken;
         }
 
         return;
-    }
-
-    @Override
-    public DataTableSpec createDataTableSpec(final String textColumnName) {
-        // Repeat the input text column adding in 7 columns of data returned from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[8];
-        allColSpecs[0] = new DataColumnSpecCreator(textColumnName, StringCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Token Text", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Token ID", IntCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Part of Speech Code", StringCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("Part of Speech", StringCell.TYPE).createSpec();
-        allColSpecs[5] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[6] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[7] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
-
-        return new DataTableSpec(allColSpecs);
     }
 
 }

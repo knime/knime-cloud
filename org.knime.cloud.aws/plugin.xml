@@ -22,23 +22,23 @@
         id="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.node.syntax.ComprehendSyntaxNodeFactory" 
+      	factory-class="org.knime.cloud.aws.comprehend.syntax.node.ComprehendSyntaxNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.syntax.ComprehendSyntaxNodeFactory"/>
      <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.node.entities.ComprehendEntitiesNodeFactory" 
+      	factory-class="org.knime.cloud.aws.comprehend.entities.node.ComprehendEntitiesNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.entities.ComprehendEntitiesNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.node.keyphrases.ComprehendKeyPhrasesNodeFactory" 
+      	factory-class="org.knime.cloud.aws.comprehend.keyphrases.node.ComprehendKeyPhrasesNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.keyphrases.ComprehendKeyPhrasesNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.node.sentiment.ComprehendSentimentNodeFactory" 
+      	factory-class="org.knime.cloud.aws.comprehend.sentiment.node.ComprehendSentimentNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.sentiment.ComprehendSentimentNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.node.language.ComprehendLanguageNodeFactory" 
+      	factory-class="org.knime.cloud.aws.comprehend.language.node.ComprehendLanguageNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.language.ComprehendLanguageNodeFactory"/>
       <node 
       	category-path="/labs/aws" 

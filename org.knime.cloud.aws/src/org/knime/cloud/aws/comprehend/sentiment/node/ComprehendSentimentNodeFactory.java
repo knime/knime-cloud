@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend.node.keyphrases;
+package org.knime.cloud.aws.comprehend.sentiment.node;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendKeyPhrasesNodeFactory
-        extends NodeFactory<ComprehendKeyPhrasesNodeModel> {
+public class ComprehendSentimentNodeFactory
+        extends NodeFactory<ComprehendSentimentNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ComprehendKeyPhrasesNodeModel createNodeModel() {
-        return new ComprehendKeyPhrasesNodeModel();
+    public ComprehendSentimentNodeModel createNodeModel() {
+        return new ComprehendSentimentNodeModel();
     }
 
     /**
@@ -33,8 +33,8 @@ public class ComprehendKeyPhrasesNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<ComprehendKeyPhrasesNodeModel> createNodeView(final int viewIndex,
-            final ComprehendKeyPhrasesNodeModel nodeModel) {
+    public NodeView<ComprehendSentimentNodeModel> createNodeView(final int viewIndex,
+            final ComprehendSentimentNodeModel nodeModel) {
         return null;
     }
 
@@ -51,7 +51,7 @@ public class ComprehendKeyPhrasesNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new ComprehendKeyPhrasesNodeDialog();
+        return new ComprehendSentimentNodeDialog();
     }
 
 }

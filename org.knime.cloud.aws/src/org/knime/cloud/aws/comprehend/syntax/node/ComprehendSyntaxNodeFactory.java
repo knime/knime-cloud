@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend.node.syntax;
+package org.knime.cloud.aws.comprehend.syntax.node;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;

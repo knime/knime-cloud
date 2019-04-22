@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend.node.sentiment;
+package org.knime.cloud.aws.comprehend.language.node;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
@@ -10,15 +10,15 @@ import org.knime.core.node.NodeView;
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendSentimentNodeFactory
-        extends NodeFactory<ComprehendSentimentNodeModel> {
+public class ComprehendLanguageNodeFactory
+        extends NodeFactory<ComprehendLanguageNodeModel> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ComprehendSentimentNodeModel createNodeModel() {
-        return new ComprehendSentimentNodeModel();
+    public ComprehendLanguageNodeModel createNodeModel() {
+        return new ComprehendLanguageNodeModel();
     }
 
     /**
@@ -33,8 +33,8 @@ public class ComprehendSentimentNodeFactory
      * {@inheritDoc}
      */
     @Override
-    public NodeView<ComprehendSentimentNodeModel> createNodeView(final int viewIndex,
-            final ComprehendSentimentNodeModel nodeModel) {
+    public NodeView<ComprehendLanguageNodeModel> createNodeView(final int viewIndex,
+            final ComprehendLanguageNodeModel nodeModel) {
         return null;
     }
 
@@ -51,7 +51,7 @@ public class ComprehendSentimentNodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new ComprehendSentimentNodeDialog();
+        return new ComprehendLanguageNodeDialog();
     }
 
 }

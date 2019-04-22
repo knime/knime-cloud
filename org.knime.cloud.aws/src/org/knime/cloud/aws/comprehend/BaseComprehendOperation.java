@@ -49,6 +49,7 @@
 package org.knime.cloud.aws.comprehend;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.core.data.DataTableSpec;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -68,20 +69,25 @@ public abstract class BaseComprehendOperation implements ComprehendOperation {
     /** Name of the input text column to analyze. */
     protected final String m_textColumnName;
 
+    /** The output table specification. */
+    protected final DataTableSpec m_outputTableSpec;
+
     /**
      * Create a new operation instance.
      * @param cxnInfo AWS connection information
      * @param textColumnName Name of the input text column.
+     * @param outputTableSpec specification of the output table of the node
      */
-    public BaseComprehendOperation(final ConnectionInformation cxnInfo, final String textColumnName) {
+    public BaseComprehendOperation(final ConnectionInformation cxnInfo, final String textColumnName, final DataTableSpec outputTableSpec) {
         this.m_cxnInfo = cxnInfo;
         this.m_textColumnName = textColumnName;
+        this.m_outputTableSpec = outputTableSpec;
     }
 
     @Override
     public BufferedDataTable compute(final ExecutionContext exec, final BufferedDataTable data) throws CanceledExecutionException, InterruptedException {
         // Create the data container for the output data
-        final BufferedDataContainer dc = exec.createDataContainer(createDataTableSpec(m_textColumnName));
+        final BufferedDataContainer dc = exec.createDataContainer(m_outputTableSpec);
 
         // If not input data is available in the input, then return an empty output table.
         if (data.size() == 0) {

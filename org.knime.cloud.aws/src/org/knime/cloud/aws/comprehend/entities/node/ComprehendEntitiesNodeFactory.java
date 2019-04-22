@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend.node.entities;
+package org.knime.cloud.aws.comprehend.entities.node;
 
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;

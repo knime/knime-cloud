@@ -62,6 +62,9 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     /** Connection info passed in via the first input port */
     protected ConnectionInformation cxnInfo;
 
+    /** Output data table specification. */
+    protected DataTableSpec outputTableSpec;
+
     /**
      * Constructor for the node model.
      */
@@ -169,9 +172,9 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
             throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
         }
 
-        DataTableSpec outputSpec = getOperationInstance().createDataTableSpec(textColumnName.getStringValue());
+        this.outputTableSpec =  generateOutputTableSpec(tblSpec);
 
-        return new DataTableSpec[] {outputSpec};
+        return new DataTableSpec[] { this.outputTableSpec };
     }
 
     /**
@@ -231,6 +234,13 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
      * @return an instance of the operation executor
      */
     protected abstract ComprehendOperation getOperationInstance();
+
+    /** Generate the output table spec given the input table spec and the name of the text column.
+     *
+     * @param inputTableSpec input table specification
+     * @return the generated output table specification
+     */
+    protected abstract DataTableSpec generateOutputTableSpec(DataTableSpec inputTableSpec);
 
 }
 

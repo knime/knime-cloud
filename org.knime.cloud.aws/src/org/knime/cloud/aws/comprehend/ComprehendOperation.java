@@ -48,7 +48,6 @@
  */
 package org.knime.cloud.aws.comprehend;
 
-import org.knime.core.data.DataTableSpec;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -84,11 +83,4 @@ public interface ComprehendOperation {
      */
     void compute(final RowInput in, final RowOutput out, final ExecutionContext exec, final long rowCount) throws CanceledExecutionException, InterruptedException;
 
-    /**
-     * Create the table specification for the output data of this operation.
-     *
-     * @param textColumnName the name of the input text column
-     * @return the table specification for the output data
-     */
-    DataTableSpec createDataTableSpec(final String textColumnName);
 }

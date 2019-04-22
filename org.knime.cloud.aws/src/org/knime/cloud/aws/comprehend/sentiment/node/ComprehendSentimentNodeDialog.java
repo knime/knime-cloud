@@ -1,17 +1,18 @@
-package org.knime.cloud.aws.comprehend.node.language;
+package org.knime.cloud.aws.comprehend.sentiment.node;
 
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
-import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
+import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.ext.textprocessing.data.DocumentValue;
 
 /**
  *
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendLanguageNodeDialog extends DefaultNodeSettingsPane {
+public class ComprehendSentimentNodeDialog extends DefaultNodeSettingsPane {
 
     /**
      * New pane for configuring MyExampleNode node dialog.
@@ -19,7 +20,7 @@ public class ComprehendLanguageNodeDialog extends DefaultNodeSettingsPane {
      * components.
      */
     @SuppressWarnings("unchecked")
-    protected ComprehendLanguageNodeDialog() {
+    protected ComprehendSentimentNodeDialog() {
         super();
 
         addDialogComponent(
@@ -27,8 +28,16 @@ public class ComprehendLanguageNodeDialog extends DefaultNodeSettingsPane {
                 new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
                 "Text column to analyze:",
                 1,
-                StringValue.class)
+                DocumentValue.class)
         );
+
+        addDialogComponent(
+            new DialogComponentStringSelection(
+                new SettingsModelString(ComprehendUtils.CFGKEY_SOURCE_LANG, "English"),
+                "Source language:",
+                ComprehendUtils.LANG_MAP.keySet()
+                )
+            );
 
     }
 }
