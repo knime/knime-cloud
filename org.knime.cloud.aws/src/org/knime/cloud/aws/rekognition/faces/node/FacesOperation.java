@@ -46,14 +46,23 @@
  * History
  *   Apr 8, 2019 (jfalgout): created
  */
-package org.knime.cloud.aws.translate.node;
+package org.knime.cloud.aws.rekognition.faces.node;
+
+import java.nio.ByteBuffer;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.core.data.DataCell;
+import org.knime.core.data.DataColumnSpec;
+import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.DataType;
 import org.knime.core.data.RowKey;
 import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.IntCell;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.data.image.png.PNGImageBlobCell;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -63,42 +72,35 @@ import org.knime.core.node.streamable.BufferedDataTableRowOutput;
 import org.knime.core.node.streamable.DataTableRowInput;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
-import org.knime.ext.textprocessing.data.Document;
-import org.knime.ext.textprocessing.data.DocumentBuilder;
-import org.knime.ext.textprocessing.data.DocumentCell;
-import org.knime.ext.textprocessing.data.DocumentValue;
-import org.knime.ext.textprocessing.data.SectionAnnotation;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.translate.AmazonTranslate;
-import com.amazonaws.services.translate.AmazonTranslateClient;
-import com.amazonaws.services.translate.model.TranslateTextRequest;
-import com.amazonaws.services.translate.model.TranslateTextResult;
+import com.amazonaws.services.rekognition.AmazonRekognition;
+import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
+import com.amazonaws.services.rekognition.model.Attribute;
+import com.amazonaws.services.rekognition.model.DetectFacesRequest;
+import com.amazonaws.services.rekognition.model.DetectFacesResult;
+import com.amazonaws.services.rekognition.model.FaceDetail;
+import com.amazonaws.services.rekognition.model.Image;
+
+
 
 /**
  *
  * @author jfalgout
  */
-public class TranslateOperation {
+public class FacesOperation {
     private final ConnectionInformation m_cxnInfo;
-    private final String m_textColumnName;
-    private final String m_sourceLangCode;
-    private final String m_targetLangCode;
-    private final DataTableSpec m_outputSpec;
+    private final String m_imageColumnName;
 
-    TranslateOperation(final ConnectionInformation cxnInfo, final String textColumnName, final String sourceLangCode, final String targetLangCode, final DataTableSpec outputSpec) {
+    FacesOperation(final ConnectionInformation cxnInfo, final String imageColumnName) {
         this.m_cxnInfo = cxnInfo;
-        this.m_textColumnName = textColumnName;
-        this.m_sourceLangCode = sourceLangCode;
-        this.m_targetLangCode = targetLangCode;
-        this.m_outputSpec = outputSpec;
+        this.m_imageColumnName = imageColumnName;
     }
 
     BufferedDataTable compute(final ExecutionContext exec, final BufferedDataTable data) throws CanceledExecutionException, InterruptedException, InvalidSettingsException {
-
-        final BufferedDataContainer dc = exec.createDataContainer(m_outputSpec);
+        final BufferedDataContainer dc = exec.createDataContainer(FacesOperation.createDataTableSpec(m_imageColumnName));
         if (data.size() == 0) {
             dc.close();
             return dc.getTable();
@@ -128,60 +130,69 @@ public class TranslateOperation {
         AWSCredentialsProvider credProvider = new AWSStaticCredentialsProvider(creds);
 
         // Create a connection to the Translate service in the provided region
-        AmazonTranslate translate = AmazonTranslateClient.builder()
+
+        AmazonRekognition rekog = AmazonRekognitionClientBuilder.standard()
                 .withCredentials(credProvider)
                 .withRegion(m_cxnInfo.getHost())
                 .build();
 
-        int textColumnIdx = in.getDataTableSpec().findColumnIndex(m_textColumnName);
+        int imgColumnIdx = in.getDataTableSpec().findColumnIndex(m_imageColumnName);
         long inputRowIndex = 0;
         long rowCounter = 0;
 
-        // For each input row, grab the text column, make the call to Translate
-        // and push the input plus the translation to the output.
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
-            // Check for cancel and update the row progress
-            ++rowCounter;
-            exec.checkCanceled();
-            if (rowCount > 0) {
-                exec.setProgress(rowCounter / (double) rowCount, "Processing row " + rowCounter + " of " + rowCount);
+
+            PNGImageBlobCell imageCell = (PNGImageBlobCell) inputRow.getCell(imgColumnIdx);
+            byte[] imageBytes = imageCell.getImageContent().getByteArray();
+            ByteBuffer imgBuffer = ByteBuffer.wrap(imageBytes);
+
+            Image img = new Image().withBytes(imgBuffer);
+
+            DetectFacesRequest request =
+                    new DetectFacesRequest()
+                        .withImage(img)
+                        .withAttributes(Attribute.ALL);
+
+            DetectFacesResult result = rekog.detectFaces(request);
+            int faceCount = result.getFaceDetails().size();
+            System.out.println("# faces = " + faceCount);
+
+            long outputRowIndex = 0;
+            for (FaceDetail faceDetails : result.getFaceDetails()) {
+                // Make row key unique with the input row number and the sequence number of each token
+                RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
+
+                // Create cells containing the output data
+                DataCell[] cells = new DataCell[5];
+                cells[0] = imageCell.getImageContent().toImageCell();
+                cells[1] = new StringCell(faceDetails.getGender().getValue());
+                cells[2] = new DoubleCell(faceDetails.getGender().getConfidence());
+                cells[3] = new IntCell(faceDetails.getAgeRange().getLow());
+                cells[4] = new IntCell(faceDetails.getAgeRange().getHigh());
+
+
+                // Create a new data row and push it to the output container.
+                DataRow outputRow = new DefaultRow(key, cells);
+                out.push(outputRow);
             }
 
-            // Grab the text to translate.
-            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
-            String textValue = inputDoc.getDocumentBodyText();
-
-            TranslateTextRequest request = new TranslateTextRequest()
-                    .withText(textValue)
-                    .withSourceLanguageCode(m_sourceLangCode)
-                    .withTargetLanguageCode(m_targetLangCode);
-
-            TranslateTextResult result  = translate.translateText(request);
-
-            // TODO just copy the input row key to the output row key
-            RowKey key = new RowKey("Row " + inputRowIndex);
-
-            DocumentBuilder builder = new DocumentBuilder(inputDoc);
-            builder.addSection(result.getTranslatedText(), SectionAnnotation.UNKNOWN);
-            Document outputDoc = builder.createDocument();
-
-
-            // Create cells containing the output data
-            int numCols = m_outputSpec.getNumColumns();
-            DataCell[] cells = new DataCell[numCols];
-            for (int i = 0; i < numCols - 1; i++) {
-                cells[i] = inputRow.getCell(i);
-            }
-            cells[numCols-1] = new DocumentCell(outputDoc);
-
-            // Create a new data row and push it to the output container.
-            DataRow row = new DefaultRow(key, cells);
-            out.push(row);
             ++inputRowIndex;
         }
 
     }
 
+    static DataTableSpec createDataTableSpec(final String imageColumnName) {
+        // Repeat the input text column adding in a column for the translated text.
+        // TODO copy all input columns to the output
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
+        allColSpecs[0] = new DataColumnSpecCreator(imageColumnName, DataType.getType(PNGImageBlobCell.class)).createSpec();
+        allColSpecs[1] = new DataColumnSpecCreator("Gender", StringCell.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Gender Confidene", DoubleCell.TYPE).createSpec();
+        allColSpecs[3] = new DataColumnSpecCreator("Lower Age", IntCell.TYPE).createSpec();
+        allColSpecs[4] = new DataColumnSpecCreator("Upper Age", IntCell.TYPE).createSpec();
+
+        return new DataTableSpec(allColSpecs);
+    }
 
 }

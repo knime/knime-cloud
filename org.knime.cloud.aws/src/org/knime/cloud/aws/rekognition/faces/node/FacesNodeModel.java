@@ -1,16 +1,12 @@
-package org.knime.cloud.aws.translate.node;
+package org.knime.cloud.aws.rekognition.faces.node;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObject;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.DataType;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -32,7 +28,6 @@ import org.knime.core.node.streamable.PortOutput;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 import org.knime.core.node.streamable.StreamableOperator;
-import org.knime.ext.textprocessing.data.DocumentCell;
 
 
 /**
@@ -40,82 +35,28 @@ import org.knime.ext.textprocessing.data.DocumentCell;
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class TranslateNodeModel extends NodeModel {
+public class FacesNodeModel extends NodeModel {
 
     // the logger instance
     private static final NodeLogger logger = NodeLogger
-            .getLogger(TranslateNodeModel.class);
+            .getLogger(FacesNodeModel.class);
 
     // Settings name for the input column name with text to analyze
-	static final String CFGKEY_COLUMN_NAME = "TextColumnName";
+	static final String CFGKEY_COLUMN_NAME = "ImageColumnName";
 
-	// Settings name for the input column name with text to analyze
-    static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
-
-    // Settings name for the input column name with text to analyze
-    static final String CFGKEY_TARGET_LANG = "TargetLanguage";
-
-    private final SettingsModelString textColumnName =
+    private final SettingsModelString imageColumnName =
             new SettingsModelString(
-                TranslateNodeModel.CFGKEY_COLUMN_NAME,
-                "text");
+                FacesNodeModel.CFGKEY_COLUMN_NAME,
+                "image");
 
-    private final SettingsModelString sourceLanguage =
-            new SettingsModelString(
-                TranslateNodeModel.CFGKEY_SOURCE_LANG,
-                "Auto-detect");
-
-    private final SettingsModelString targetLanguage =
-            new SettingsModelString(
-                TranslateNodeModel.CFGKEY_TARGET_LANG,
-                "English");
 
     // Connection info passed in via the first input port
     private ConnectionInformation cxnInfo;
 
-    private DataTableSpec outputPortSpec;
-
-    private static Map<String, String> SUPPORTED_LANGS;
-    static {
-        Map<String, String> langMap = new HashMap<>();
-        langMap.put("Arabic", "ar");
-        langMap.put("Chinese (Simplified)", "zh");
-        langMap.put("Chinese (Traditional)", "zh-TW");
-        langMap.put("Czech", "cs");
-        langMap.put("Danish", "da");
-        langMap.put("Dutch", "nl");
-        langMap.put("English", "en");
-        langMap.put("Finnish", "fi");
-        langMap.put("French", "fr");
-        langMap.put("German", "de");
-        langMap.put("Hebrew", "he");
-        langMap.put("Indonesian", "id");
-        langMap.put("Italian", "it");
-        langMap.put("Japanese", "ja");
-        langMap.put("Korean", "ko");
-        langMap.put("Polish", "pl");
-        langMap.put("Portuguese", "pt");
-        langMap.put("Russian", "ru");
-        langMap.put("Swedish", "sv");
-        langMap.put("Spanish", "es");
-        langMap.put("Turkish", "tr");
-        SUPPORTED_LANGS = Collections.unmodifiableMap(langMap);
-    }
-
-    static Map<String, String> SOURCE_LANGS;
-    static {
-        Map<String, String> srcLangs = new HashMap<>();
-        srcLangs.put("Auto-detect", "auto");
-        srcLangs.putAll(SUPPORTED_LANGS);
-        SOURCE_LANGS = Collections.unmodifiableMap(srcLangs);
-    }
-
-    static Map<String, String> TARGET_LANGS = SUPPORTED_LANGS;
-
     /**
      * Constructor for the node model.
      */
-    protected TranslateNodeModel() {
+    protected FacesNodeModel() {
 
         // Inputs: connection info, data
         // Outputs: data
@@ -137,13 +78,10 @@ public class TranslateNodeModel extends NodeModel {
         }
 
         // Create computation object for the entity operation.
-        final TranslateOperation translateOp =
-                new TranslateOperation(
+        final FacesOperation translateOp =
+                new FacesOperation(
                     cxnInfo,
-                    textColumnName.getStringValue(),
-                    SOURCE_LANGS.getOrDefault(sourceLanguage.getStringValue(), "auto"),
-                    TARGET_LANGS.getOrDefault(targetLanguage.getStringValue(), "en"),
-                    this.outputPortSpec);
+                    imageColumnName.getStringValue());
 
         // Access the input data table
         BufferedDataTable table = (BufferedDataTable) inObjects[1];
@@ -159,13 +97,10 @@ public class TranslateNodeModel extends NodeModel {
     @Override
     public StreamableOperator createStreamableOperator(final PartitionInfo partitionInfo, final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
-        final TranslateOperation translateOp =
-                new TranslateOperation(
+        final FacesOperation translateOp =
+                new FacesOperation(
                     cxnInfo,
-                    textColumnName.getStringValue(),
-                    SOURCE_LANGS.getOrDefault(sourceLanguage.getStringValue(), "auto"),
-                    TARGET_LANGS.getOrDefault(targetLanguage.getStringValue(), "en"),
-                    this.outputPortSpec);
+                    imageColumnName.getStringValue());
 
         return new StreamableOperator() {
 
@@ -223,14 +158,13 @@ public class TranslateNodeModel extends NodeModel {
         }
 
         DataTableSpec tblSpec = (DataTableSpec) inSpecs[1];
-        if (!tblSpec.containsName(textColumnName.getStringValue())) {
-            throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
+        if (!tblSpec.containsName(imageColumnName.getStringValue())) {
+            throw new InvalidSettingsException("Input column '" + imageColumnName.getStringValue() + "' doesn't exit");
         }
 
-        DataTableSpec newColsSpec = new DataTableSpec(new String[] { textColumnName.getStringValue() + " (Translated)" }, new DataType[] { DocumentCell.TYPE });
-        this.outputPortSpec =  new DataTableSpec(tblSpec, newColsSpec);
+        DataTableSpec outputSpec = FacesOperation.createDataTableSpec(imageColumnName.getStringValue());
 
-        return new DataTableSpec[] { this.outputPortSpec };
+        return new DataTableSpec[] {outputSpec};
     }
 
     /**
@@ -239,9 +173,7 @@ public class TranslateNodeModel extends NodeModel {
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
 
-        textColumnName.saveSettingsTo(settings);
-        sourceLanguage.saveSettingsTo(settings);
-        targetLanguage.saveSettingsTo(settings);
+        imageColumnName.saveSettingsTo(settings);
 
     }
 
@@ -251,9 +183,7 @@ public class TranslateNodeModel extends NodeModel {
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
 
-        textColumnName.loadSettingsFrom(settings);
-        sourceLanguage.loadSettingsFrom(settings);
-        targetLanguage.loadSettingsFrom(settings);
+        imageColumnName.loadSettingsFrom(settings);
     }
 
     /**
@@ -263,9 +193,7 @@ public class TranslateNodeModel extends NodeModel {
     protected void validateSettings(final NodeSettingsRO settings)
             throws InvalidSettingsException {
 
-        textColumnName.validateSettings(settings);
-        sourceLanguage.validateSettings(settings);
-        targetLanguage.validateSettings(settings);
+        imageColumnName.validateSettings(settings);
     }
 
     /**

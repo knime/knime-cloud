@@ -44,6 +44,10 @@
       	category-path="/labs/aws" 
       	factory-class="org.knime.cloud.aws.translate.node.TranslateNodeFactory" 
       	id="org.knime.cloud.aws.translate.node.TranslateNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.rekognition.faces.node.FacesNodeFactory" 
+      	id="org.knime.cloud.aws.rekognition..faces.node.FacesNodeFactory"/>
    </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
       <RemoteFileHandler RemoteFileHandler="org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler">
