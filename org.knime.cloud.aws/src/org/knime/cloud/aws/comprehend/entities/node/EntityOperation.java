@@ -132,7 +132,7 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
 
                 // Create cells containing the output data.
                 // Copy the input data to the output
-                int numInputColumns = m_outputTableSpec.getNumColumns();
+                int numInputColumns = inputRow.getNumCells();
                 DataCell[] cells = new DataCell[numInputColumns + 5];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);

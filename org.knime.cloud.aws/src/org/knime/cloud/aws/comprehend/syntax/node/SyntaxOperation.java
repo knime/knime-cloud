@@ -128,7 +128,7 @@ class SyntaxOperation extends BaseComprehendOperation {
 
                 // Create cells containing the output data.
                 // Copy the input field values to the output.
-                int numInputColumns = m_outputTableSpec.getNumColumns();
+                int numInputColumns = inputRow.getNumCells();
                 DataCell[] cells = new DataCell[numInputColumns + 8];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);

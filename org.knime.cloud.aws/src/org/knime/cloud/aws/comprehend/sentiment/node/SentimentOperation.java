@@ -127,15 +127,22 @@ class SentimentOperation extends BaseComprehendOperation {
                 cells[i] = inputRow.getCell(i);
             }
 
+            // Grab scores for each sentiment category.
+            SentimentScore score = detectSentimentResult.getSentimentScore();
+
+            // Build the output document. Copy the input and add metadata about the sentiment and copy the text.
             DocumentBuilder builder = new DocumentBuilder(inputDoc);
             builder.addMetaInformation("Sentiment", detectSentimentResult.getSentiment());
+            builder.addMetaInformation("Sentiment_mixed_score", Float.toString(score.getMixed()));
+            builder.addMetaInformation("Sentiment_neutral_score", Float.toString(score.getNeutral()));
+            builder.addMetaInformation("Sentiment_negative_score", Float.toString(score.getNegative()));
+            builder.addMetaInformation("Sentiment_positive_score", Float.toString(score.getPositive()));
             builder.addSection(textValue, SectionAnnotation.UNKNOWN);
             Document outputDoc = builder.createDocument();
 
             // Copy the results to the new columns in the output.
             cells[numInputColumns] = new DocumentCell(outputDoc);
             cells[numInputColumns + 1] = new StringCell(detectSentimentResult.getSentiment());
-            SentimentScore score = detectSentimentResult.getSentimentScore();
             cells[numInputColumns + 2] = new DoubleCell(score.getMixed());
             cells[numInputColumns + 3] = new DoubleCell(score.getPositive());
             cells[numInputColumns + 4] = new DoubleCell(score.getNeutral());
