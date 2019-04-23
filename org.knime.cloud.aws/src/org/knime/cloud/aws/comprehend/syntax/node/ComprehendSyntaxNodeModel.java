@@ -8,17 +8,25 @@ import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.ext.textprocessing.data.DocumentCell;
 
 
 /**
- * This is the model implementation of MyExampleNode.
- * This is an example node provided by KNIME.
+ * Node model for the Comprehend Syntax service.
  *
  * @author KNIME AG, Zurich, Switzerland
  */
 public class ComprehendSyntaxNodeModel extends BaseComprehendNodeModel {
 
+    /** The source language of the input text data. */
+    private final SettingsModelString sourceLanguage =
+            new SettingsModelString(
+                BaseComprehendNodeModel.CFGKEY_SOURCE_LANG,
+                "English");
 
     @Override
     protected ComprehendOperation getOperationInstance() {
@@ -43,6 +51,37 @@ public class ComprehendSyntaxNodeModel extends BaseComprehendNodeModel {
         allColSpecs[7] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
 
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
+
+        textColumnName.saveSettingsTo(settings);
+        sourceLanguage.saveSettingsTo(settings);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
+
+        textColumnName.loadSettingsFrom(settings);
+        sourceLanguage.loadSettingsFrom(settings);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void validateSettings(final NodeSettingsRO settings)
+            throws InvalidSettingsException {
+
+        textColumnName.validateSettings(settings);
+        sourceLanguage.validateSettings(settings);
     }
 
 }

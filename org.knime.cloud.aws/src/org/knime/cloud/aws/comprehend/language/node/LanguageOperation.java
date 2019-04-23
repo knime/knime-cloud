@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.aws.comprehend.language.node;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
@@ -65,8 +66,10 @@ import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 import org.knime.ext.textprocessing.data.Document;
+import org.knime.ext.textprocessing.data.DocumentBuilder;
 import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
+import org.knime.ext.textprocessing.data.SectionAnnotation;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.model.DetectDominantLanguageRequest;
@@ -116,25 +119,39 @@ class LanguageOperation extends BaseComprehendOperation {
                 comprehendClient
                     .detectDominantLanguage(detectDominantLanguageRequest);
 
-            long outputRowIndex = 0;
-            for (DominantLanguage dominantLang : detectDominantLanguageResult.getLanguages()) {
+            List<DominantLanguage> dominantLangs = detectDominantLanguageResult.getLanguages();
+
+            // Build the output document. Copy the input and add metadata about the language(s) and copy the text.
+            DocumentBuilder builder = new DocumentBuilder(inputDoc);
+            builder.addSection(textValue, SectionAnnotation.UNKNOWN);
+            for (int index = 0; index < dominantLangs.size(); index++) {
+                DominantLanguage dominantLang = dominantLangs.get(index);
+                builder.addMetaInformation("Dominant_language_" + index + "_code", dominantLang.getLanguageCode());
+                builder.addMetaInformation("Dominant_language_" + index + "_name", code2Name(dominantLang.getLanguageCode()));
+                builder.addMetaInformation("Dominant_language_" + index + "_score", Float.toString(dominantLang.getScore()));
+            }
+            Document outputDoc = builder.createDocument();
+
+            // Push rows (one per language) to the output.
+            for (int index = 0; index < dominantLangs.size(); index++) {
+                DominantLanguage dominantLang = dominantLangs.get(index);
 
                 // Create cells containing the output data.
                 // Copy the input field values to the output.
-                int numInputColumns = m_outputTableSpec.getNumColumns();
-                DataCell[] cells = new DataCell[numInputColumns + 8];
+                int numInputColumns = inputRow.getNumCells();
+                DataCell[] cells = new DataCell[numInputColumns + 4];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);
                 }
 
                 // Copy the results to the new columns in the output.
-                cells[numInputColumns] = new DocumentCell(inputDoc);
+                cells[numInputColumns] = new DocumentCell(outputDoc);
                 cells[numInputColumns + 1] = new StringCell(code2Name(dominantLang.getLanguageCode()));
                 cells[numInputColumns + 2] = new StringCell(dominantLang.getLanguageCode());
                 cells[numInputColumns + 3] = new DoubleCell(dominantLang.getScore());
 
                 // Make row key unique with the input row number and the sequence number of each token
-                RowKey key = new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++);
+                RowKey key = new RowKey("Row " + inputRowIndex + "_" + index);
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);

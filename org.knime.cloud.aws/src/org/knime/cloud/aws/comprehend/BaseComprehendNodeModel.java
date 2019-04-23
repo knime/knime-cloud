@@ -37,27 +37,21 @@ import org.knime.core.node.streamable.StreamableOperator;
  */
 public abstract class BaseComprehendNodeModel extends NodeModel {
 
-    // the logger instance
-    private static final NodeLogger logger = NodeLogger
+    /** Logger instance */
+    protected static final NodeLogger logger = NodeLogger
             .getLogger(BaseComprehendNodeModel.class);
 
-    // Settings name for the input column name with text to analyze
-	static final String CFGKEY_COLUMN_NAME = "TextColumnName";
+    /** Settings name for the input column name with text to analyze */
+	protected static final String CFGKEY_COLUMN_NAME = "TextColumnName";
 
-	// Settings name for the input column name with text to analyze
-    static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
+	/** Settings name for the input column name with the source language value (optioal) */
+    protected static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
 
     /** Name of the input text column to analyze */
     protected final SettingsModelString textColumnName =
             new SettingsModelString(
                 BaseComprehendNodeModel.CFGKEY_COLUMN_NAME,
                 "text");
-
-    /** The source language of the input text data. */
-    protected final SettingsModelString sourceLanguage =
-            new SettingsModelString(
-                BaseComprehendNodeModel.CFGKEY_SOURCE_LANG,
-                "English");
 
     /** Connection info passed in via the first input port */
     protected ConnectionInformation cxnInfo;
@@ -184,8 +178,6 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     protected void saveSettingsTo(final NodeSettingsWO settings) {
 
         textColumnName.saveSettingsTo(settings);
-        sourceLanguage.saveSettingsTo(settings);
-
     }
 
     /**
@@ -195,8 +187,6 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
 
         textColumnName.loadSettingsFrom(settings);
-        sourceLanguage.loadSettingsFrom(settings);
-
     }
 
     /**
@@ -207,8 +197,6 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
             throws InvalidSettingsException {
 
         textColumnName.validateSettings(settings);
-        sourceLanguage.validateSettings(settings);
-
     }
 
     /**
