@@ -13,6 +13,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.ext.textprocessing.data.DocumentCell;
+import org.knime.ext.textprocessing.data.TermCell2;
 
 
 /**
@@ -41,12 +42,14 @@ public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
     public DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
 
         // The columns added from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[7];
         allColSpecs[0] = new DataColumnSpecCreator(textColumnName.getStringValue() + " (Processed)", DocumentCell.TYPE).createSpec();
         allColSpecs[1] = new DataColumnSpecCreator("Entity", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Entity Type", StringCell.TYPE).createSpec();
+        allColSpecs[3] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
+        allColSpecs[4] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
+        allColSpecs[5] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+        allColSpecs[6] = new DataColumnSpecCreator("Term", TermCell2.TYPE).createSpec();
 
         // Along with the input data columns.
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));

@@ -48,6 +48,10 @@
  */
 package org.knime.cloud.aws.comprehend.entities.node;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
@@ -66,11 +70,15 @@ import org.knime.core.node.streamable.RowOutput;
 import org.knime.ext.textprocessing.data.Document;
 import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
+import org.knime.ext.textprocessing.data.Tag;
+import org.knime.ext.textprocessing.data.Term;
+import org.knime.ext.textprocessing.data.TermCell2;
+import org.knime.ext.textprocessing.data.Word;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.KeyPhrase;
+import com.amazonaws.services.comprehend.model.DetectEntitiesRequest;
+import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
+import com.amazonaws.services.comprehend.model.Entity;
 
 /**
  *
@@ -113,18 +121,18 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
             Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
             String textValue = inputDoc.getDocumentBodyText();
 
-            DetectKeyPhrasesRequest detectKeyPhrasesRequest =
-                    new DetectKeyPhrasesRequest()
+            DetectEntitiesRequest request =
+                    new DetectEntitiesRequest()
                         .withText(textValue)
                         .withLanguageCode(ComprehendUtils.LANG_MAP.getOrDefault(m_sourceLanguage, "en"));
 
-            DetectKeyPhrasesResult detectKeyPhrasesResult =
+            DetectEntitiesResult result =
                 comprehendClient
-                    .detectKeyPhrases(detectKeyPhrasesRequest);
+                    .detectEntities(request);
 
             // Process the results
             long outputRowIndex = 0;
-            for (KeyPhrase phrase : detectKeyPhrasesResult.getKeyPhrases()) {
+            for (Entity entity : result.getEntities()) {
 
 
                 // Make row key unique with the input row number and the sequence number of each token
@@ -133,17 +141,19 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
                 // Create cells containing the output data.
                 // Copy the input data to the output
                 int numInputColumns = inputRow.getNumCells();
-                DataCell[] cells = new DataCell[numInputColumns + 5];
+                DataCell[] cells = new DataCell[numInputColumns + 7];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);
                 }
 
                 // Copy the discovered entity info to the output.
                 cells[numInputColumns] = new DocumentCell(inputDoc);
-                cells[numInputColumns + 1] = new StringCell(phrase.getText());
-                cells[numInputColumns + 2] = new DoubleCell(phrase.getScore());
-                cells[numInputColumns + 3] = new IntCell(phrase.getBeginOffset());
-                cells[numInputColumns + 4] = new IntCell(phrase.getEndOffset());
+                cells[numInputColumns + 1] = new StringCell(entity.getText());
+                cells[numInputColumns + 2] = new StringCell(entity.getType());
+                cells[numInputColumns + 3] = new DoubleCell(entity.getScore());
+                cells[numInputColumns + 4] = new IntCell(entity.getBeginOffset());
+                cells[numInputColumns + 5] = new IntCell(entity.getEndOffset());
+                cells[numInputColumns + 6] = new TermCell2(createTerm(entity.getText(), entity.getType()));
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);
@@ -154,6 +164,14 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
         }
 
         return;
+    }
+
+    private static Term createTerm(final String entity, final String tagValue) {
+
+        return new Term(
+            Stream.of(entity.split(" ")).map(word -> new Word(word, " ")).collect(Collectors.toList()),
+            Arrays.asList(new Tag[] { new Tag(tagValue, "AWS")}),
+            false);
     }
 
 }

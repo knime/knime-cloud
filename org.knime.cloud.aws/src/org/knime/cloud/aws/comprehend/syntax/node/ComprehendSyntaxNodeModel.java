@@ -13,6 +13,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.ext.textprocessing.data.DocumentCell;
+import org.knime.ext.textprocessing.data.TermCell2;
 
 
 /**
@@ -39,16 +40,16 @@ public class ComprehendSyntaxNodeModel extends BaseComprehendNodeModel {
 
     @Override
     public DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
-        // Repeat the input text column adding in 7 columns of data returned from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[8];
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[9];
         allColSpecs[0] = new DataColumnSpecCreator(textColumnName.getStringValue() + " (Processed)", DocumentCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Token Text", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Token ID", IntCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Part of Speech Code", StringCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("Part of Speech", StringCell.TYPE).createSpec();
-        allColSpecs[5] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[6] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[7] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+        allColSpecs[1] = new DataColumnSpecCreator("Terms", TermCell2.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Token Text", StringCell.TYPE).createSpec();
+        allColSpecs[3] = new DataColumnSpecCreator("Token ID", IntCell.TYPE).createSpec();
+        allColSpecs[4] = new DataColumnSpecCreator("Part of Speech Code", StringCell.TYPE).createSpec();
+        allColSpecs[5] = new DataColumnSpecCreator("Part of Speech", StringCell.TYPE).createSpec();
+        allColSpecs[6] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
+        allColSpecs[7] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
+        allColSpecs[8] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
 
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));
     }

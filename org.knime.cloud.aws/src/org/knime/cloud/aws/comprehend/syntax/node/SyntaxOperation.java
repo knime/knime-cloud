@@ -48,6 +48,8 @@
  */
 package org.knime.cloud.aws.comprehend.syntax.node;
 
+import java.util.Arrays;
+
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.cloud.aws.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
@@ -66,6 +68,10 @@ import org.knime.core.node.streamable.RowOutput;
 import org.knime.ext.textprocessing.data.Document;
 import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
+import org.knime.ext.textprocessing.data.Tag;
+import org.knime.ext.textprocessing.data.Term;
+import org.knime.ext.textprocessing.data.TermCell2;
+import org.knime.ext.textprocessing.data.Word;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.model.DetectSyntaxRequest;
@@ -129,21 +135,23 @@ class SyntaxOperation extends BaseComprehendOperation {
                 // Create cells containing the output data.
                 // Copy the input field values to the output.
                 int numInputColumns = inputRow.getNumCells();
-                DataCell[] cells = new DataCell[numInputColumns + 8];
+                DataCell[] cells = new DataCell[numInputColumns + 9];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);
                 }
 
                 // Copy the results to the new columns in the output.
                 cells[numInputColumns] = new DocumentCell(inputDoc);
-                cells[numInputColumns + 1] = new StringCell(token.getText());
-                cells[numInputColumns + 2] = new IntCell(token.getTokenId());
                 String posCode = token.getPartOfSpeech().getTag();
-                cells[numInputColumns + 3] = new StringCell(posCode);
-                cells[numInputColumns + 4] = new StringCell(ComprehendUtils.POS_MAP.getOrDefault(posCode, "Unknown"));
-                cells[numInputColumns + 5] = new DoubleCell(token.getPartOfSpeech().getScore());
-                cells[numInputColumns + 6] = new IntCell(token.getBeginOffset());
-                cells[numInputColumns + 7] = new IntCell(token.getEndOffset());
+                cells[numInputColumns + 1] = new TermCell2(createTerm(token.getText(), posCode));
+                cells[numInputColumns + 2] = new StringCell(token.getText());
+                cells[numInputColumns + 3] = new IntCell(token.getTokenId());
+
+                cells[numInputColumns + 4] = new StringCell(posCode);
+                cells[numInputColumns + 5] = new StringCell(ComprehendUtils.POS_MAP.getOrDefault(posCode, "Unknown"));
+                cells[numInputColumns + 6] = new DoubleCell(token.getPartOfSpeech().getScore());
+                cells[numInputColumns + 7] = new IntCell(token.getBeginOffset());
+                cells[numInputColumns + 8] = new IntCell(token.getEndOffset());
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);
@@ -154,6 +162,14 @@ class SyntaxOperation extends BaseComprehendOperation {
         }
 
         return;
+    }
+
+    private static Term createTerm(final String word, final String tagValue) {
+
+        return new Term(
+            Arrays.asList(new Word[] { new Word(word, " ")}),
+            Arrays.asList(new Tag[] { new Tag(tagValue, "AWS")}),
+            false);
     }
 
 }
