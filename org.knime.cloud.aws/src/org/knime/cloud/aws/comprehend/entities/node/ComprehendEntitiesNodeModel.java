@@ -1,27 +1,33 @@
 package org.knime.cloud.aws.comprehend.entities.node;
 
+import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObject;
 import org.knime.cloud.aws.comprehend.BaseComprehendNodeModel;
 import org.knime.cloud.aws.comprehend.ComprehendOperation;
+import org.knime.cloud.aws.comprehend.ComprehendUtils;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.def.DoubleCell;
-import org.knime.core.data.def.IntCell;
-import org.knime.core.data.def.StringCell;
+import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.core.node.port.PortType;
+import org.knime.core.node.streamable.InputPortRole;
 import org.knime.ext.textprocessing.data.DocumentCell;
-import org.knime.ext.textprocessing.data.TermCell2;
 
 
 /**
- * Node model for node that extracts entities from text using the Amazon Comprehend service.
+ * Tags the input document using the Amazon Comprehend service to detect entities.
  *
  * @author KNIME AG, Zurich, Switzerland
  */
 public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
+
+    private final SettingsModelString tokenizerName =
+            new SettingsModelString(
+                ComprehendUtils.CFGKEY_TOKENIZER,
+                "OpenNLP English WordTokenizer");
 
     /** The source language of the input text data. */
     private final SettingsModelString sourceLanguage =
@@ -29,27 +35,35 @@ public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
                 BaseComprehendNodeModel.CFGKEY_SOURCE_LANG,
                 "English");
 
+    /**
+     * Create the entities node model with the data port being first and the connection info second.
+     * Using this order against convention to enable reusing the <code>TaggerNodeSettingsPane2</code>
+     * as the basis of the node dialog.
+     */
+    public ComprehendEntitiesNodeModel() {
+        super(
+            new PortType[] { BufferedDataTable.TYPE, ConnectionInformationPortObject.TYPE },
+            new PortType[] { BufferedDataTable.TYPE });
+    }
+
     @Override
     protected ComprehendOperation getOperationInstance() {
-        return new EntityOperation(
+
+        // Return a new tagger operation
+        return new EntityTaggerOperation(
             this.cxnInfo,
             this.textColumnName.getStringValue(),
             this.sourceLanguage.getStringValue(),
+            this.tokenizerName.getStringValue(),
             this.outputTableSpec);
     }
 
     @Override
-    public DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
+    protected DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
 
         // The columns added from the AWS call.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[7];
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[1];
         allColSpecs[0] = new DataColumnSpecCreator(textColumnName.getStringValue() + " (Processed)", DocumentCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Entity", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Entity Type", StringCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[5] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
-        allColSpecs[6] = new DataColumnSpecCreator("Term", TermCell2.TYPE).createSpec();
 
         // Along with the input data columns.
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));
@@ -59,10 +73,19 @@ public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
      * {@inheritDoc}
      */
     @Override
+    public InputPortRole[] getInputPortRoles() {
+        return new InputPortRole[]{InputPortRole.DISTRIBUTED_STREAMABLE, InputPortRole.NONDISTRIBUTED_NONSTREAMABLE};
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
 
-        textColumnName.saveSettingsTo(settings);
+        super.saveSettingsTo(settings);
         sourceLanguage.saveSettingsTo(settings);
+        tokenizerName.saveSettingsTo(settings);
     }
 
     /**
@@ -71,8 +94,9 @@ public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
 
-        textColumnName.loadSettingsFrom(settings);
+        super.loadValidatedSettingsFrom(settings);
         sourceLanguage.loadSettingsFrom(settings);
+        tokenizerName.loadSettingsFrom(settings);
     }
 
     /**
@@ -82,8 +106,19 @@ public class ComprehendEntitiesNodeModel extends BaseComprehendNodeModel {
     protected void validateSettings(final NodeSettingsRO settings)
             throws InvalidSettingsException {
 
-        textColumnName.validateSettings(settings);
+        super.validateSettings(settings);
         sourceLanguage.validateSettings(settings);
+        tokenizerName.validateSettings(settings);
+    }
+
+    @Override
+    protected int getCxnPortIndex() {
+        return 1;
+    }
+
+    @Override
+    protected int getDataPortIndex() {
+        return 0;
     }
 }
 

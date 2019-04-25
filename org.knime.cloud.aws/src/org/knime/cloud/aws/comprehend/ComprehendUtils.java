@@ -76,6 +76,31 @@ public class ComprehendUtils {
     public static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
 
     /**
+     * The config key for the number of threads for parallel tagging.
+     */
+    public static final String CFGKEY_NUMBER_OF_THREADS = "Number of threads";
+
+    /**
+     * The config key for the name of the word tokenizer.
+     */
+    public static final String CFGKEY_TOKENIZER = "Word tokenizer";
+
+    /**
+     * The configuration key for appending the incoming document.
+     */
+    public static final String CFG_KEY_REPLACE_DOC = "Replace Document";
+
+    /**
+     * The configuration key for the new document column name
+     */
+    public static final String CFG_KEY_NEW_DOCUMENT_COL = "New Document Column Name";
+
+    /**
+     * The configuration key for the column containing the documents to process.
+     */
+    public static final String CFG_KEY_DOCUMENT_COL = "Document Column";
+
+    /**
      * Given a region name, determine if the region supports the Comprehend service.
      *
      * @param regionName

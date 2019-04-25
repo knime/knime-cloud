@@ -1,33 +1,31 @@
 package org.knime.cloud.aws.comprehend.entities.node;
 
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
-import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
-import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
-import org.knime.ext.textprocessing.data.DocumentValue;
+import org.knime.ext.textprocessing.nodes.tagging.TaggerNodeSettingsPane2;
 
 /**
  *
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public class ComprehendEntitiesNodeDialog extends DefaultNodeSettingsPane {
+public class ComprehendEntitiesNodeDialog extends TaggerNodeSettingsPane2 {
 
     /**
      * Create a basic dialog with column selection and selection for the source language.
      */
-    @SuppressWarnings("unchecked")
+//    @SuppressWarnings("unchecked")
     protected ComprehendEntitiesNodeDialog() {
         super();
 
-        addDialogComponent(
-            new DialogComponentColumnNameSelection(
-                new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
-                "Text column to analyze:",
-                1,
-                DocumentValue.class)
-        );
+//        addDialogComponent(
+//            new DialogComponentColumnNameSelection(
+//                new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
+//                "Text column to analyze:",
+//                1,
+//                DocumentValue.class)
+//        );
 
         addDialogComponent(
             new DialogComponentStringSelection(

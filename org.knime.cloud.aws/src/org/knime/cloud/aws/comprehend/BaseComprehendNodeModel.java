@@ -50,8 +50,8 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     /** Name of the input text column to analyze */
     protected final SettingsModelString textColumnName =
             new SettingsModelString(
-                BaseComprehendNodeModel.CFGKEY_COLUMN_NAME,
-                "text");
+                ComprehendUtils.CFG_KEY_DOCUMENT_COL,
+                null);
 
     /** Connection info passed in via the first input port */
     protected ConnectionInformation cxnInfo;
@@ -73,6 +73,15 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     }
 
     /**
+     *
+     * @param inputPortTypes
+     * @param outputPortTypes
+     */
+    protected BaseComprehendNodeModel( final PortType[] inputPortTypes, final PortType[] outputPortTypes) {
+        super(inputPortTypes, outputPortTypes);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -87,7 +96,7 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
         final ComprehendOperation op = getOperationInstance();
 
         // Access the input data table
-        BufferedDataTable table = (BufferedDataTable) inObjects[1];
+        BufferedDataTable table = (BufferedDataTable) inObjects[getDataPortIndex()];
 
         // Run the operation over the entire input.
         BufferedDataTable[] result = new BufferedDataTable[] { op.compute(exec, table) };
@@ -100,13 +109,14 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     public StreamableOperator createStreamableOperator(final PartitionInfo partitionInfo, final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
         final ComprehendOperation op = getOperationInstance();
+        final int inputIndex = getDataPortIndex();
 
         return new StreamableOperator() {
 
             @Override
             public void runFinal(final PortInput[] inputs, final PortOutput[] outputs, final ExecutionContext exec)
                 throws Exception {
-                RowInput input = (RowInput)inputs[1];
+                RowInput input = (RowInput)inputs[inputIndex];
                 RowOutput output = (RowOutput)outputs[0];
                 op.compute(input, output, exec, 0L);
                 input.close();
@@ -144,8 +154,8 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
-        if (inSpecs[0] != null) {
-            final ConnectionInformationPortObjectSpec object = (ConnectionInformationPortObjectSpec) inSpecs[0];
+        if (inSpecs[getCxnPortIndex()] != null) {
+            final ConnectionInformationPortObjectSpec object = (ConnectionInformationPortObjectSpec) inSpecs[getCxnPortIndex()];
             cxnInfo = object.getConnectionInformation();
             // Check if the port object has connection information
             if (cxnInfo == null) {
@@ -161,7 +171,7 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
             throw new InvalidSettingsException("No connection information available");
         }
 
-        DataTableSpec tblSpec = (DataTableSpec) inSpecs[1];
+        DataTableSpec tblSpec = (DataTableSpec) inSpecs[getDataPortIndex()];
         if (!tblSpec.containsName(textColumnName.getStringValue())) {
             throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
         }
@@ -229,6 +239,22 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
      * @return the generated output table specification
      */
     protected abstract DataTableSpec generateOutputTableSpec(DataTableSpec inputTableSpec);
+
+    /**
+     * Returns the index of the input AWS connection port.
+     * @return index of connection port
+     */
+    protected int getCxnPortIndex() {
+        return 0;
+    }
+
+    /**
+     * Returns the index of the input data port.
+     * @return index of data port
+     */
+    protected int getDataPortIndex() {
+        return 1;
+    }
 
 }
 
