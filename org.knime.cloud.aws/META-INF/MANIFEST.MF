@@ -17,7 +17,8 @@ Require-Bundle: org.apache.commons.lang3;bundle-version="[3.2.1,4.0.0)",
  org.apache.commons.logging;bundle-version="1.1.1",
  org.apache.httpcomponents.httpcore;bundle-version="4.4.9",
  joda-time;bundle-version="2.9.9",
- org.knime.ext.textprocessing;bundle-version="3.8.0"
+ org.knime.ext.textprocessing;bundle-version="3.8.0",
+ org.eclipse.ui;bundle-version="3.109.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: lib/aws-java-sdk-comprehend-1.11.490.jar,

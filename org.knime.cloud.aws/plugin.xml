@@ -22,31 +22,35 @@
         id="org.knime.cloud.aws.s3.node.connectiontourl.S3ConnectionToUrlNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.syntax.node.ComprehendSyntaxNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.tagging.comprehend.syntax.SyntaxTaggerNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.syntax.ComprehendSyntaxNodeFactory"/>
      <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.entities.node.ComprehendEntitiesNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.tagging.comprehend.entities.EntityTaggerNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.entities.ComprehendEntitiesNodeFactory"/>
+     <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.nodes.tagging.comprehend.sentiment.SentimentTaggerNodeFactory" 
+      	id="org.knime.cloud.aws.nodes.tagging.comprehend.sentiment.ComprehendSentimentNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.keyphrases.node.ComprehendKeyPhrasesNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.comprehend.keyphrases.ComprehendKeyPhrasesNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.keyphrases.ComprehendKeyPhrasesNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.sentiment.node.ComprehendSentimentNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.comprehend.sentiment.ComprehendSentimentNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.sentiment.ComprehendSentimentNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.comprehend.language.node.ComprehendLanguageNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.comprehend.language.ComprehendLanguageNodeFactory" 
       	id="org.knime.cloud.aws.comprehend.node.language.ComprehendLanguageNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.translate.node.TranslateNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.translate.TranslateNodeFactory" 
       	id="org.knime.cloud.aws.translate.node.TranslateNodeFactory"/>
       <node 
       	category-path="/labs/aws" 
-      	factory-class="org.knime.cloud.aws.rekognition.faces.node.FacesNodeFactory" 
+      	factory-class="org.knime.cloud.aws.nodes.rekognition.faces.FacesNodeFactory" 
       	id="org.knime.cloud.aws.rekognition..faces.node.FacesNodeFactory"/>
    </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
@@ -63,6 +67,18 @@
             specClass="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec"
             specSerializer="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec$Serializer">
       </portType>
+   </extension>
+   <extension
+         point="org.knime.ext.textprocessing.TagSet">
+      <TagSet
+            TagBuilder="org.knime.cloud.aws.comprehend.AmazonEntityTag">
+      </TagSet>
+      <TagSet
+            TagBuilder="org.knime.cloud.aws.comprehend.AmazonSentimentTag">
+      </TagSet>
+      <TagSet
+            TagBuilder="org.knime.cloud.aws.comprehend.AmazonSyntaxTag">
+      </TagSet>
    </extension>
    
 </plugin>

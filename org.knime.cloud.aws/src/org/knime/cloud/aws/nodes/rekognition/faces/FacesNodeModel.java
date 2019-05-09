@@ -1,4 +1,4 @@
-package org.knime.cloud.aws.comprehend;
+package org.knime.cloud.aws.nodes.rekognition.faces;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,54 +31,38 @@ import org.knime.core.node.streamable.StreamableOperator;
 
 
 /**
- * Base node model for all Amazon Comprehend nodes. Captures all the commonality between the implementations.
+ * Use the Amazon Translate service to translate from a source to a target language.
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-public abstract class BaseComprehendNodeModel extends NodeModel {
+public class FacesNodeModel extends NodeModel {
 
-    /** Logger instance */
-    protected static final NodeLogger logger = NodeLogger
-            .getLogger(BaseComprehendNodeModel.class);
+    // the logger instance
+    private static final NodeLogger logger = NodeLogger
+            .getLogger(FacesNodeModel.class);
 
-    /** Settings name for the input column name with text to analyze */
-	protected static final String CFGKEY_COLUMN_NAME = "TextColumnName";
+    // Settings name for the input column name with text to analyze
+	static final String CFGKEY_COLUMN_NAME = "ImageColumnName";
 
-	/** Settings name for the input column name with the source language value (optional) */
-    protected static final String CFGKEY_SOURCE_LANG = "SourceLanguage";
-
-    /** Name of the input text column to analyze */
-    protected final SettingsModelString textColumnName =
+    private final SettingsModelString imageColumnName =
             new SettingsModelString(
-                ComprehendUtils.CFG_KEY_DOCUMENT_COL,
-                null);
+                FacesNodeModel.CFGKEY_COLUMN_NAME,
+                "image");
 
-    /** Connection info passed in via the first input port */
-    protected ConnectionInformation cxnInfo;
 
-    /** Output data table specification. */
-    protected DataTableSpec outputTableSpec;
+    // Connection info passed in via the first input port
+    private ConnectionInformation cxnInfo;
 
     /**
      * Constructor for the node model.
      */
-    protected BaseComprehendNodeModel() {
+    protected FacesNodeModel() {
 
         // Inputs: connection info, data
         // Outputs: data
-
         super(
             new PortType[] { ConnectionInformationPortObject.TYPE, BufferedDataTable.TYPE},
             new PortType[] { BufferedDataTable.TYPE });
-    }
-
-    /**
-     *
-     * @param inputPortTypes
-     * @param outputPortTypes
-     */
-    protected BaseComprehendNodeModel( final PortType[] inputPortTypes, final PortType[] outputPortTypes) {
-        super(inputPortTypes, outputPortTypes);
     }
 
     /**
@@ -88,37 +72,44 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
 
         logger.info("Using region: " + cxnInfo.getHost());
+
         if (inObjects == null || inObjects.length != 2) {
             throw new InvalidSettingsException("Invalid input data. Expected two inputs.");
         }
 
-        // Create computation object for this operation.
-        final ComprehendOperation op = getOperationInstance();
+        // Create computation object for the entity operation.
+        final FacesOperation translateOp =
+                new FacesOperation(
+                    cxnInfo,
+                    imageColumnName.getStringValue());
 
         // Access the input data table
-        BufferedDataTable table = (BufferedDataTable) inObjects[getDataPortIndex()];
+        BufferedDataTable table = (BufferedDataTable) inObjects[1];
 
         // Run the operation over the entire input.
-        BufferedDataTable[] result = new BufferedDataTable[] { op.compute(exec, table) };
+        BufferedDataTable[] result = new BufferedDataTable[] { translateOp.compute(exec, table) };
         return result;
     }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public StreamableOperator createStreamableOperator(final PartitionInfo partitionInfo, final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
-        final ComprehendOperation op = getOperationInstance();
-        final int inputIndex = getDataPortIndex();
+        final FacesOperation translateOp =
+                new FacesOperation(
+                    cxnInfo,
+                    imageColumnName.getStringValue());
 
         return new StreamableOperator() {
 
             @Override
             public void runFinal(final PortInput[] inputs, final PortOutput[] outputs, final ExecutionContext exec)
                 throws Exception {
-                RowInput input = (RowInput)inputs[inputIndex];
+                RowInput input = (RowInput)inputs[1];
                 RowOutput output = (RowOutput)outputs[0];
-                op.compute(input, output, exec, 0L);
+                translateOp.compute(input, output, exec, 0L);
                 input.close();
                 output.close();
             }
@@ -154,31 +145,26 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
-        if (inSpecs[getCxnPortIndex()] != null) {
-            final ConnectionInformationPortObjectSpec object = (ConnectionInformationPortObjectSpec) inSpecs[getCxnPortIndex()];
+        if (inSpecs[0] != null) {
+            final ConnectionInformationPortObjectSpec object = (ConnectionInformationPortObjectSpec) inSpecs[0];
             cxnInfo = object.getConnectionInformation();
             // Check if the port object has connection information
             if (cxnInfo == null) {
                 throw new InvalidSettingsException("No connection information available");
             }
-
-            if (!ComprehendUtils.regionSupported(cxnInfo.getHost())) {
-                throw new InvalidSettingsException("Unsupported region for the Amazon Comprehend service: " + cxnInfo.getHost());
-            }
-
         }
         else {
             throw new InvalidSettingsException("No connection information available");
         }
 
-        DataTableSpec tblSpec = (DataTableSpec) inSpecs[getDataPortIndex()];
-        if (!tblSpec.containsName(textColumnName.getStringValue())) {
-            throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
+        DataTableSpec tblSpec = (DataTableSpec) inSpecs[1];
+        if (!tblSpec.containsName(imageColumnName.getStringValue())) {
+            throw new InvalidSettingsException("Input column '" + imageColumnName.getStringValue() + "' doesn't exit");
         }
 
-        this.outputTableSpec =  generateOutputTableSpec(tblSpec);
+        DataTableSpec outputSpec = FacesOperation.createDataTableSpec(imageColumnName.getStringValue());
 
-        return new DataTableSpec[] { this.outputTableSpec };
+        return new DataTableSpec[] {outputSpec};
     }
 
     /**
@@ -187,7 +173,8 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
 
-        textColumnName.saveSettingsTo(settings);
+        imageColumnName.saveSettingsTo(settings);
+
     }
 
     /**
@@ -196,7 +183,7 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
 
-        textColumnName.loadSettingsFrom(settings);
+        imageColumnName.loadSettingsFrom(settings);
     }
 
     /**
@@ -206,7 +193,7 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
     protected void validateSettings(final NodeSettingsRO settings)
             throws InvalidSettingsException {
 
-        textColumnName.validateSettings(settings);
+        imageColumnName.validateSettings(settings);
     }
 
     /**
@@ -225,35 +212,6 @@ public abstract class BaseComprehendNodeModel extends NodeModel {
             final ExecutionMonitor exec) throws IOException,
             CanceledExecutionException {
 
-    }
-
-    /**
-     * Create an instance of the operation execution for this node.
-     * @return an instance of the operation executor
-     */
-    protected abstract ComprehendOperation getOperationInstance();
-
-    /** Generate the output table spec given the input table spec and the name of the text column.
-     *
-     * @param inputTableSpec input table specification
-     * @return the generated output table specification
-     */
-    protected abstract DataTableSpec generateOutputTableSpec(DataTableSpec inputTableSpec);
-
-    /**
-     * Returns the index of the input AWS connection port.
-     * @return index of connection port
-     */
-    protected int getCxnPortIndex() {
-        return 0;
-    }
-
-    /**
-     * Returns the index of the input data port.
-     * @return index of data port
-     */
-    protected int getDataPortIndex() {
-        return 1;
     }
 
 }
