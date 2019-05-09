@@ -65,11 +65,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
-import org.knime.ext.textprocessing.data.Document;
-import org.knime.ext.textprocessing.data.DocumentBuilder;
-import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
-import org.knime.ext.textprocessing.data.SectionAnnotation;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.model.DetectDominantLanguageRequest;
@@ -77,8 +73,8 @@ import com.amazonaws.services.comprehend.model.DetectDominantLanguageResult;
 import com.amazonaws.services.comprehend.model.DominantLanguage;
 
 /**
- *
- * @author jfalgout
+ * Implementation of the operation to obtain the dominant languages of each input document.
+ * @author KNIME AG
  */
 class LanguageOperation extends BaseComprehendOperation {
 
@@ -108,8 +104,15 @@ class LanguageOperation extends BaseComprehendOperation {
             }
 
             // Grab the text to evaluate
-            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
-            String textValue = inputDoc.getDocumentBodyText();
+            String textValue = null;
+            DataCell cell = inputRow.getCell(textColumnIdx);
+
+            if (cell instanceof DocumentValue) {
+                textValue = ((DocumentValue) cell).getDocument().getDocumentBodyText();
+            }
+            else {
+                textValue = cell.toString();
+            }
 
             DetectDominantLanguageRequest detectDominantLanguageRequest =
                     new DetectDominantLanguageRequest()
@@ -121,17 +124,6 @@ class LanguageOperation extends BaseComprehendOperation {
 
             List<DominantLanguage> dominantLangs = detectDominantLanguageResult.getLanguages();
 
-            // Build the output document. Copy the input and add metadata about the language(s) and copy the text.
-            DocumentBuilder builder = new DocumentBuilder(inputDoc);
-            builder.addSection(textValue, SectionAnnotation.UNKNOWN);
-            for (int index = 0; index < dominantLangs.size(); index++) {
-                DominantLanguage dominantLang = dominantLangs.get(index);
-                builder.addMetaInformation("Dominant_language_" + index + "_code", dominantLang.getLanguageCode());
-                builder.addMetaInformation("Dominant_language_" + index + "_name", code2Name(dominantLang.getLanguageCode()));
-                builder.addMetaInformation("Dominant_language_" + index + "_score", Float.toString(dominantLang.getScore()));
-            }
-            Document outputDoc = builder.createDocument();
-
             // Push rows (one per language) to the output.
             for (int index = 0; index < dominantLangs.size(); index++) {
                 DominantLanguage dominantLang = dominantLangs.get(index);
@@ -139,16 +131,15 @@ class LanguageOperation extends BaseComprehendOperation {
                 // Create cells containing the output data.
                 // Copy the input field values to the output.
                 int numInputColumns = inputRow.getNumCells();
-                DataCell[] cells = new DataCell[numInputColumns + 4];
+                DataCell[] cells = new DataCell[numInputColumns + 3];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);
                 }
 
                 // Copy the results to the new columns in the output.
-                cells[numInputColumns] = new DocumentCell(outputDoc);
-                cells[numInputColumns + 1] = new StringCell(code2Name(dominantLang.getLanguageCode()));
-                cells[numInputColumns + 2] = new StringCell(dominantLang.getLanguageCode());
-                cells[numInputColumns + 3] = new DoubleCell(dominantLang.getScore());
+                cells[numInputColumns] = new StringCell(code2Name(dominantLang.getLanguageCode()));
+                cells[numInputColumns + 1] = new StringCell(dominantLang.getLanguageCode());
+                cells[numInputColumns + 2] = new DoubleCell(dominantLang.getScore());
 
                 // Make row key unique with the input row number and the sequence number of each token
                 RowKey key = new RowKey("Row " + inputRowIndex + "_" + index);

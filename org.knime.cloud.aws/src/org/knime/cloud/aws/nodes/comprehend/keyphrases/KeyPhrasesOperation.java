@@ -63,8 +63,6 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
-import org.knime.ext.textprocessing.data.Document;
-import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
@@ -109,9 +107,15 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
                 exec.setProgress(rowCounter / (double) rowCount, "Processing row " + rowCounter + " of " + rowCount);
             }
 
-            // Grab the text to translate.
-            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
-            String textValue = inputDoc.getDocumentBodyText();
+            // Grab the text to evaluate
+            String textValue = null;
+            DataCell cell = inputRow.getCell(textColumnIdx);
+            if (cell instanceof DocumentValue) {
+                textValue = ((DocumentValue) cell).getDocument().getDocumentBodyText();
+            }
+            else {
+                textValue = cell.toString();
+            }
 
             DetectKeyPhrasesRequest detectKeyPhrasesRequest =
                 new DetectKeyPhrasesRequest()
@@ -130,17 +134,16 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
                 // Create cells containing the output data.
                 // Copy the input data to the output
                 int numInputColumns = inputRow.getNumCells();
-                DataCell[] cells = new DataCell[numInputColumns + 5];
+                DataCell[] cells = new DataCell[numInputColumns + 4];
                 for (int i = 0; i < numInputColumns; i++) {
                     cells[i] = inputRow.getCell(i);
                 }
 
                 // Set new output cell values.
-                cells[numInputColumns] = new DocumentCell(inputDoc);               // repeat the input for now, it should be a new doc with phrases
-                cells[numInputColumns + 1] = new StringCell(keyPhrase.getText());
-                cells[numInputColumns + 2] = new DoubleCell(keyPhrase.getScore());
-                cells[numInputColumns + 3] = new IntCell(keyPhrase.getBeginOffset());
-                cells[numInputColumns + 4] = new IntCell(keyPhrase.getEndOffset());
+                cells[numInputColumns] = new StringCell(keyPhrase.getText());
+                cells[numInputColumns + 1] = new DoubleCell(keyPhrase.getScore());
+                cells[numInputColumns + 2] = new IntCell(keyPhrase.getBeginOffset());
+                cells[numInputColumns + 3] = new IntCell(keyPhrase.getEndOffset());
 
                 // Create a new data row and push it to the output container.
                 DataRow row = new DefaultRow(key, cells);

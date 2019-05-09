@@ -12,7 +12,6 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
-import org.knime.ext.textprocessing.data.DocumentCell;
 
 
 /**
@@ -40,12 +39,11 @@ public class ComprehendKeyPhrasesNodeModel extends BaseComprehendNodeModel {
     @Override
     public DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
         // Define the new columns to be added.
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[5];
-        allColSpecs[0] = new DataColumnSpecCreator(textColumnName.getStringValue() + " (Processed)", DocumentCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Key Phrase", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
-        allColSpecs[4] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[4];
+        allColSpecs[0] = new DataColumnSpecCreator("Key Phrase", StringCell.TYPE).createSpec();
+        allColSpecs[1] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Begin Offset", IntCell.TYPE).createSpec();
+        allColSpecs[3] = new DataColumnSpecCreator("End Offset", IntCell.TYPE).createSpec();
 
         // Output spec = input data spec + new columns
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));

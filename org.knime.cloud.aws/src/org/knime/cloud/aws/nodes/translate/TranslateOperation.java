@@ -54,6 +54,7 @@ import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.RowKey;
 import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -63,11 +64,7 @@ import org.knime.core.node.streamable.BufferedDataTableRowOutput;
 import org.knime.core.node.streamable.DataTableRowInput;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
-import org.knime.ext.textprocessing.data.Document;
-import org.knime.ext.textprocessing.data.DocumentBuilder;
-import org.knime.ext.textprocessing.data.DocumentCell;
 import org.knime.ext.textprocessing.data.DocumentValue;
-import org.knime.ext.textprocessing.data.SectionAnnotation;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -79,7 +76,7 @@ import com.amazonaws.services.translate.model.TranslateTextResult;
 
 /**
  *
- * @author jfalgout
+ * @author KNIME AG
  */
 public class TranslateOperation {
     private final ConnectionInformation m_cxnInfo;
@@ -148,9 +145,16 @@ public class TranslateOperation {
                 exec.setProgress(rowCounter / (double) rowCount, "Processing row " + rowCounter + " of " + rowCount);
             }
 
-            // Grab the text to translate.
-            Document inputDoc = ((DocumentValue) inputRow.getCell(textColumnIdx)).getDocument();
-            String textValue = inputDoc.getDocumentBodyText();
+            // Grab the text to evaluate
+            String textValue = null;
+            DataCell cell = inputRow.getCell(textColumnIdx);
+
+            if (cell instanceof DocumentValue) {
+                textValue = ((DocumentValue) cell).getDocument().getDocumentBodyText();
+            }
+            else {
+                textValue = cell.toString();
+            }
 
             TranslateTextRequest request = new TranslateTextRequest()
                     .withText(textValue)
@@ -162,18 +166,13 @@ public class TranslateOperation {
             // TODO just copy the input row key to the output row key
             RowKey key = new RowKey("Row " + inputRowIndex);
 
-            DocumentBuilder builder = new DocumentBuilder(inputDoc);
-            builder.addSection(result.getTranslatedText(), SectionAnnotation.UNKNOWN);
-            Document outputDoc = builder.createDocument();
-
-
             // Create cells containing the output data
             int numCols = m_outputSpec.getNumColumns();
             DataCell[] cells = new DataCell[numCols];
             for (int i = 0; i < numCols - 1; i++) {
                 cells[i] = inputRow.getCell(i);
             }
-            cells[numCols-1] = new DocumentCell(outputDoc);
+            cells[numCols-1] = new StringCell(result.getTranslatedText());
 
             // Create a new data row and push it to the output container.
             DataRow row = new DefaultRow(key, cells);

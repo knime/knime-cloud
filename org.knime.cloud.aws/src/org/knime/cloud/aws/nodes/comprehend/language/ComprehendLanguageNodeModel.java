@@ -7,11 +7,10 @@ import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
-import org.knime.ext.textprocessing.data.DocumentCell;
 
 
 /**
- * Implementation of the Amazon Comprehend (Sentiment) node.
+ * Implementation of the Amazon Comprehend (Langauge) node.
  *
  * @author KNIME AG, Zurich, Switzerland
  */
@@ -28,11 +27,10 @@ public class ComprehendLanguageNodeModel extends BaseComprehendNodeModel {
     @Override
     public DataTableSpec generateOutputTableSpec(final DataTableSpec inputSpec) {
         // Define the new columns
-        DataColumnSpec[] allColSpecs = new DataColumnSpec[4];
-        allColSpecs[0] = new DataColumnSpecCreator(textColumnName.getStringValue() + " (Processed)", DocumentCell.TYPE).createSpec();
-        allColSpecs[1] = new DataColumnSpecCreator("Language", StringCell.TYPE).createSpec();
-        allColSpecs[2] = new DataColumnSpecCreator("Language Code", StringCell.TYPE).createSpec();
-        allColSpecs[3] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[3];
+        allColSpecs[0] = new DataColumnSpecCreator("Language", StringCell.TYPE).createSpec();
+        allColSpecs[1] = new DataColumnSpecCreator("Language Code", StringCell.TYPE).createSpec();
+        allColSpecs[2] = new DataColumnSpecCreator("Confidence", DoubleCell.TYPE).createSpec();
 
         // Input spec + new columns
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));

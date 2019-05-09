@@ -1,11 +1,11 @@
 package org.knime.cloud.aws.nodes.comprehend.keyphrases;
 
 import org.knime.cloud.aws.comprehend.ComprehendUtils;
+import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
-import org.knime.ext.textprocessing.data.DocumentValue;
 
 /**
  *
@@ -23,10 +23,10 @@ public class ComprehendKeyPhrasesNodeDialog extends DefaultNodeSettingsPane {
 
         addDialogComponent(
             new DialogComponentColumnNameSelection(
-                new SettingsModelString(ComprehendUtils.CFGKEY_COLUMN_NAME, "text"),
+                new SettingsModelString(ComprehendUtils.CFG_KEY_DOCUMENT_COL, "text"),
                 "Text column to analyze:",
                 1,
-                DocumentValue.class)
+                StringValue.class)
         );
 
         addDialogComponent(

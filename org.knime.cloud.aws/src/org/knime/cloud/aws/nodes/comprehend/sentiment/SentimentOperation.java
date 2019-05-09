@@ -62,7 +62,6 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
-import org.knime.ext.textprocessing.data.Document;
 import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
@@ -109,9 +108,8 @@ class SentimentOperation extends BaseComprehendOperation {
             String textValue = null;
             DataCell cell = inputRow.getCell(textColumnIdx);
 
-            if (DocumentValue.class.isAssignableFrom(cell.getClass())) {
-                Document inputDoc = ((DocumentValue) cell).getDocument();
-                textValue = inputDoc.getText();
+            if (cell instanceof DocumentValue) {
+                textValue = ((DocumentValue) cell).getDocument().getDocumentBodyText();
             }
             else {
                 textValue = cell.toString();

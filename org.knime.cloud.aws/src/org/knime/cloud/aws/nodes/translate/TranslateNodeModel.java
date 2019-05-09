@@ -11,6 +11,7 @@ import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionI
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataType;
+import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -32,7 +33,6 @@ import org.knime.core.node.streamable.PortOutput;
 import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 import org.knime.core.node.streamable.StreamableOperator;
-import org.knime.ext.textprocessing.data.DocumentCell;
 
 
 /**
@@ -227,7 +227,7 @@ public class TranslateNodeModel extends NodeModel {
             throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
         }
 
-        DataTableSpec newColsSpec = new DataTableSpec(new String[] { textColumnName.getStringValue() + " (Translated)" }, new DataType[] { DocumentCell.TYPE });
+        DataTableSpec newColsSpec = new DataTableSpec(new String[] { textColumnName.getStringValue() + " (Translated)" }, new DataType[] { StringCell.TYPE });
         this.outputPortSpec =  new DataTableSpec(tblSpec, newColsSpec);
 
         return new DataTableSpec[] { this.outputPortSpec };
@@ -238,7 +238,6 @@ public class TranslateNodeModel extends NodeModel {
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
-
         textColumnName.saveSettingsTo(settings);
         sourceLanguage.saveSettingsTo(settings);
         targetLanguage.saveSettingsTo(settings);
@@ -250,7 +249,6 @@ public class TranslateNodeModel extends NodeModel {
      */
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-
         textColumnName.loadSettingsFrom(settings);
         sourceLanguage.loadSettingsFrom(settings);
         targetLanguage.loadSettingsFrom(settings);
@@ -260,9 +258,7 @@ public class TranslateNodeModel extends NodeModel {
      * {@inheritDoc}
      */
     @Override
-    protected void validateSettings(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-
+    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
         textColumnName.validateSettings(settings);
         sourceLanguage.validateSettings(settings);
         targetLanguage.validateSettings(settings);
