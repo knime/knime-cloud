@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: KNIME Amazon Machine Learning Integration
+Bundle-SymbolicName: org.knime.cloud.aws.mlservices
+Bundle-Version: 3.8.0.qualifier
+Bundle-Activator: org.knime.cloud.aws.comprehend.ComprehendActivator
+Bundle-Vendor: KNIME AG, Zurich, Switzerland
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.knime.core
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Automatic-Module-Name: org.knime.cloud.aws.comprehend
+Bundle-ActivationPolicy: lazy
