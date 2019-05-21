@@ -227,7 +227,7 @@ public class TranslateNodeModel extends NodeModel {
             throw new InvalidSettingsException("Input column '" + textColumnName.getStringValue() + "' doesn't exit");
         }
 
-        DataTableSpec newColsSpec = new DataTableSpec(new String[] { textColumnName.getStringValue() + " (Translated)" }, new DataType[] { StringCell.TYPE });
+        DataTableSpec newColsSpec = new DataTableSpec(new String[] { textColumnName.getStringValue() + " (Text Translated)" }, new DataType[] { StringCell.TYPE });
         this.outputPortSpec =  new DataTableSpec(tblSpec, newColsSpec);
 
         return new DataTableSpec[] { this.outputPortSpec };
