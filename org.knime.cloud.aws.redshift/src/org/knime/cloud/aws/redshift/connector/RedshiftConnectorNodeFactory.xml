@@ -2,17 +2,24 @@
 <knimeNode xmlns="http://knime.org/node/v2.10" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10" type="Source"
     icon="db_redshift_connector.png">
-    <name>Amazon Redshift Connector</name>
+    <name>Amazon Redshift Connector (legacy)</name>
     <shortDescription>Create a database connection to Amazon Redshift.</shortDescription>
     <fullDescription>
         <intro>
+            <p>
+            <b>This node is part of the legacy database framework.</b>
+            For more information on how to migrate to the new database framework see the
+            <a href="!@!TOBIS_DB_MIGRATION_DOCUMENTATION_LINK!@!">migration section</a> of the 
+            <a href="!@!TOBIS_DB_DOCUMENTATION_LINK!@!">database documentation</a>.
+            </p>
+            <p>
             This node creates a connection to Amazon Redshift using the native Amazon Redshift JDBC driver. You need to provide the server's
             hostname (or IP address), the port, and a database name. Login credentials can either be provided directly in
             the configuration or via credentials set on the workflow.
-            <br />
-            <br />
+            </p>
+            <p>
             For more information visit <a href="https://aws.amazon.com/redshift/">Amazon Redshift</a> and also the <a href="https://forums.aws.amazon.com/forum.jspa?forumID=155&amp;start=0">AWS Forums</a>.
-            <br />
+            </p>
             
         </intro>
 
