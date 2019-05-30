@@ -2,17 +2,15 @@
 <?eclipse version="3.0"?><plugin>
    <extension point="org.knime.workbench.repository.nodes">
    <node
-         category-path="/database/database-utility"
-         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory"
-         id="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory">
+         category-path="/db/utility"
+         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory">
    </node>
    <node
-         category-path="/database/database-utility"
-         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory"
-         id="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory">
+         category-path="/db/utility"
+         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory">
    </node>
    <node
-         category-path="/database/database-connector"
+         category-path="/db/database_legacy/database-connector"
          deprecated="false"
          factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory">
    </node>
