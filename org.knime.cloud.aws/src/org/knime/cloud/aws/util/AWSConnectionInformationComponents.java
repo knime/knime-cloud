@@ -53,6 +53,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
@@ -80,51 +81,75 @@ import com.amazonaws.regions.Regions;
  * @author Budi Yanto, KNIME.com
  * @author Ole Ostergaard, KNIME GmbH, Konstanz, Germany
  */
-public final class AWSConnectionInformationComponents extends ConnectionInformationCloudComponents<AWSConnectionInformationSettings> {
+public final class AWSConnectionInformationComponents
+    extends ConnectionInformationCloudComponents<AWSConnectionInformationSettings> {
 
-	private final DialogComponentStringSelection m_region;
+    private final DialogComponentStringSelection m_region;
 
-	private final DialogComponentBoolean m_sSEncrpytion;
+    private final DialogComponentBoolean m_sSEncrpytion;
 
-	private final DialogComponentBoolean m_switchRole;
-	private final DialogComponentString m_switchRoleAccount;
-	private final DialogComponentString m_switchRoleName;
+    private final DialogComponentBoolean m_switchRole;
 
-	/**
-	 * Creates the DialogComponents including the s3 specific region chooser
-	 * @param settings The corresponding {@link AWSConnectionInformationSettings}
-	 * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
-	 */
-	public AWSConnectionInformationComponents(final AWSConnectionInformationSettings settings,
-			final HashMap<AuthenticationType, Pair<String, String>> nameMap) {
-		super(settings, nameMap);
-		final ArrayList<String> regions = loadRegions();
-		m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions , false);
-		m_sSEncrpytion = new DialogComponentBoolean(settings.getSSEncryptionModel(), "Use SSE (Server Side Encryption)");
-		m_switchRole = new DialogComponentBoolean(settings.getSwitchRoleModel(), "Switch Role");
-		m_switchRoleAccount = new DialogComponentString(settings.getSwitchRoleAccountModel(), "Account: ", false,  20);
-		m_switchRoleName = new DialogComponentString(settings.getSwitchRoleNameModel(), "Role:       ", false, 20);
-	}
+    private final DialogComponentString m_switchRoleAccount;
 
-	private ArrayList<String> loadRegions() {
-		final AWSConnectionInformationSettings model = getSettings();
-		final ArrayList<String> regionNames = new ArrayList<>();
-		for (final Regions regions : Regions.values()) {
-			final Region region = Region.getRegion(regions);
-			if (region.isServiceSupported(model.getPrefix())) {
-				final String reg = region.getName();
-				regionNames.add(reg);
-			}
-		}
-		return regionNames;
-	}
+    private final DialogComponentString m_switchRoleName;
 
-	/**
+    private final boolean m_useEncryptionDialog;
+
+    /**
+     * Creates the DialogComponents including the s3 specific region chooser
+     *
+     * @param settings The corresponding {@link AWSConnectionInformationSettings}
+     * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
+     */
+    public AWSConnectionInformationComponents(final AWSConnectionInformationSettings settings,
+        final HashMap<AuthenticationType, Pair<String, String>> nameMap) {
+        this(settings, nameMap, true);
+    }
+
+    /**
+     * Creates the DialogComponents including the s3 specific region chooser
+     *
+     * @param settings The corresponding {@link AWSConnectionInformationSettings}
+     * @param nameMap The {@link HashMap} containing the names for the radio buttons for the authentication part
+     */
+    public AWSConnectionInformationComponents(final AWSConnectionInformationSettings settings,
+        final HashMap<AuthenticationType, Pair<String, String>> nameMap, final boolean encryptionDialog) {
+        super(settings, nameMap);
+        final ArrayList<String> regions = loadRegions();
+        m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions, false);
+        m_sSEncrpytion = encryptionDialog
+            ? new DialogComponentBoolean(settings.getSSEncryptionModel(), "Use SSE (Server Side Encryption)") : null;
+        m_switchRole = new DialogComponentBoolean(settings.getSwitchRoleModel(), "Switch Role");
+        m_switchRoleAccount = new DialogComponentString(settings.getSwitchRoleAccountModel(), "Account: ", false, 20);
+        m_switchRoleName = new DialogComponentString(settings.getSwitchRoleNameModel(), "Role:       ", false, 20);
+        m_useEncryptionDialog = encryptionDialog;
+    }
+
+    private ArrayList<String> loadRegions() {
+        final AWSConnectionInformationSettings model = getSettings();
+        final ArrayList<String> regionNames = new ArrayList<>();
+        final String prefix = model.getPrefix();
+        if (prefix != null && !prefix.isEmpty()) {
+            for (final Regions regions : Regions.values()) {
+                final Region region = Region.getRegion(regions);
+                if (region.isServiceSupported(model.getPrefix())) {
+                    final String reg = region.getName();
+                    regionNames.add(reg);
+                }
+            }
+        } else {
+            Stream.of(Regions.values()).forEach(reg -> regionNames.add(reg.getName()));
+        }
+        return regionNames;
+    }
+
+    /**
      * Get the {@link JPanel} for the Cloud connector dialog
      *
      * @return The panel for the cloud connector dialog
      */
-	@Override
+    @Override
     public JPanel getDialogPanel() {
         final JPanel panel = new JPanel(new GridBagLayout());
         final GridBagConstraints gbc = new GridBagConstraints();
@@ -136,13 +161,16 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
         return panel;
     }
 
-	/**
-	 * Get the {@link JPanel} for the cloud connector encryption dialog.
-	 *
-	 * @return The panel for the cloud connector encryption dialog
-	 */
-	public JPanel getEncryptionDialogPanel() {
-	    final JPanel panel = new JPanel(new GridBagLayout());
+    /**
+     * Get the {@link JPanel} for the cloud connector encryption dialog.
+     *
+     * @return The panel for the cloud connector encryption dialog
+     */
+    public JPanel getEncryptionDialogPanel() {
+        if (!m_useEncryptionDialog) {
+            return null;
+        }
+        final JPanel panel = new JPanel(new GridBagLayout());
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.weightx = 1;
@@ -150,29 +178,29 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
         gbc.gridy = 0;
         panel.add(m_sSEncrpytion.getComponentPanel(), gbc);
         return panel;
-	}
+    }
 
-	@Override
-	protected JPanel getAuthenticationPanel() {
-		final JPanel auth = new JPanel(new GridBagLayout());
-		final GridBagConstraints gbc = new GridBagConstraints();
-		gbc.anchor = GridBagConstraints.NORTHWEST;
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		gbc.fill =  GridBagConstraints.BOTH;
-		auth.add(getAuthenticationComponent().getComponentPanel());
-		gbc.gridy++;
-		auth.add(getSwitchRolePanel(), gbc);
-		gbc.fill = GridBagConstraints.NONE;
-		gbc.gridy++;
-		auth.add(m_region.getComponentPanel(), gbc);
-		return auth;
-	}
+    @Override
+    protected JPanel getAuthenticationPanel() {
+        final JPanel auth = new JPanel(new GridBagLayout());
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        auth.add(getAuthenticationComponent().getComponentPanel());
+        gbc.gridy++;
+        auth.add(getSwitchRolePanel(), gbc);
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.gridy++;
+        auth.add(m_region.getComponentPanel(), gbc);
+        return auth;
+    }
 
-	private JPanel getSwitchRolePanel() {
-	    final JPanel rolePanel = new JPanel(new GridBagLayout());
-	    rolePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " Switch Role "));
-	    final GridBagConstraints gbc = new GridBagConstraints();
+    private JPanel getSwitchRolePanel() {
+        final JPanel rolePanel = new JPanel(new GridBagLayout());
+        rolePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " Switch Role "));
+        final GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.weightx = 1;
         gbc.gridx = 0;
@@ -185,45 +213,50 @@ public final class AWSConnectionInformationComponents extends ConnectionInformat
         gbc.gridy++;
         rolePanel.add(m_switchRoleName.getComponentPanel(), gbc);
         return rolePanel;
-	}
+    }
 
-	private void updateEnabledStatus() {
-	    m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected());
+    private void updateEnabledStatus() {
+        m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected());
         m_switchRoleName.getModel().setEnabled(m_switchRole.isSelected());
-	}
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected DialogComponentAuthentication defineAuthenticationComponent() {
+        final DialogComponentAuthentication authComponent =
+            new DialogComponentAuthentication(m_settings.getAuthenticationModel(), "Authentication", getNameMap(),
+                AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS, AuthenticationType.KERBEROS);
+        authComponent.setUsernameLabel("Access Key ID");
+        authComponent.setPasswordLabel("Secret Key");
+        return authComponent;
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected DialogComponentAuthentication defineAuthenticationComponent() {
-		final DialogComponentAuthentication  authComponent = new DialogComponentAuthentication(m_settings.getAuthenticationModel(),
-				"Authentication", getNameMap(), AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS, AuthenticationType.KERBEROS);
-		authComponent.setUsernameLabel("Access Key ID");
-		authComponent.setPasswordLabel("Secret Key");
-		return authComponent;
-	}
+    @Override
+    public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs,
+        final CredentialsProvider cp) throws NotConfigurableException {
+        super.loadSettingsFrom(settings, specs, cp);
+        m_region.loadSettingsFrom(settings, specs);
+        if (m_useEncryptionDialog) {
+            m_sSEncrpytion.loadSettingsFrom(settings, specs);
+        }
+        m_switchRole.loadSettingsFrom(settings, specs);
+        m_switchRoleAccount.loadSettingsFrom(settings, specs);
+        m_switchRoleName.loadSettingsFrom(settings, specs);
 
-	@Override
-	public void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs, final CredentialsProvider cp) throws NotConfigurableException {
-		super.loadSettingsFrom(settings, specs, cp);
-		m_region.loadSettingsFrom(settings, specs);
-		m_sSEncrpytion.loadSettingsFrom(settings, specs);
-		m_switchRole.loadSettingsFrom(settings, specs);
-		m_switchRoleAccount.loadSettingsFrom(settings, specs);
-		m_switchRoleName.loadSettingsFrom(settings, specs);
+        updateEnabledStatus();
+    }
 
-		updateEnabledStatus();
-	}
-
-	@Override
-	public void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-		super.saveSettingsTo(settings);
-		m_region.saveSettingsTo(settings);
-		m_sSEncrpytion.saveSettingsTo(settings);
-		m_switchRole.saveSettingsTo(settings);
-		m_switchRoleAccount.saveSettingsTo(settings);
-		m_switchRoleName.saveSettingsTo(settings);
-	}
+    @Override
+    public void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        super.saveSettingsTo(settings);
+        m_region.saveSettingsTo(settings);
+        if (m_useEncryptionDialog) {
+            m_sSEncrpytion.saveSettingsTo(settings);
+        }
+        m_switchRole.saveSettingsTo(settings);
+        m_switchRoleAccount.saveSettingsTo(settings);
+        m_switchRoleName.saveSettingsTo(settings);
+    }
 }

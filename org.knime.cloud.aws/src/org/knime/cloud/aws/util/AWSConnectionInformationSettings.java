@@ -74,179 +74,192 @@ import com.amazonaws.regions.Regions;
  */
 public class AWSConnectionInformationSettings extends ConnectionInformationCloudSettings {
 
-	private final SettingsModelString m_region = createRegionModel();
-	private final SettingsModelBoolean m_sSEncryption = createSSEncrpyionModel();
-	private final SettingsModelBoolean m_switchRole = createSwitchRoleModel();
-	private final SettingsModelString m_switchRoleAccount = createSwitchRoleAccountModel();
-	private final SettingsModelString m_switchRoleName = createSwitchRoleNameModel();
+    private final SettingsModelString m_region = createRegionModel();
 
-	private static final  String SSE_KEY = "ssencryption";
-	private static final String SWITCH_ROLE_KEY = "switchRole";
-	private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
-	private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+    private final SettingsModelBoolean m_sSEncryption = createSSEncrpyionModel();
 
-	private static SettingsModelString createRegionModel() {
-		return new SettingsModelString("region", "us-east-1");
-	}
+    private final SettingsModelBoolean m_switchRole = createSwitchRoleModel();
 
-	private static SettingsModelBoolean createSSEncrpyionModel() {
-	    return new SettingsModelBoolean(SSE_KEY, false);
-	}
+    private final SettingsModelString m_switchRoleAccount = createSwitchRoleAccountModel();
 
-	private static SettingsModelBoolean createSwitchRoleModel() {
-	    return new SettingsModelBoolean(SWITCH_ROLE_KEY, false);
-	}
-	private static SettingsModelString createSwitchRoleAccountModel() {
-	    return new SettingsModelString(SWITCH_ROLE_ACCOUNT_KEY, "");
-	}
+    private final SettingsModelString m_switchRoleName = createSwitchRoleNameModel();
 
-	private static SettingsModelString createSwitchRoleNameModel() {
-	    return new SettingsModelString(SWITCH_ROLE_NAME_KEY, "");
-	}
+    private static final String SSE_KEY = "ssencryption";
 
+    private static final String SWITCH_ROLE_KEY = "switchRole";
 
-	/**
-	 * @param prefix
-	 */
-	public AWSConnectionInformationSettings(final String prefix) {
-		super(prefix);
-	}
+    private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
 
-	/**
-	 * Returns the selected region
-	 * @return the selected region
-	 */
-	public String getRegion() {
-		return m_region.getStringValue();
-	}
+    private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
 
-	@Override
-	public void validateValues() throws InvalidSettingsException {
-		super.validateValues();
-		if (StringUtils.isBlank(getRegion())) {
-			throw new InvalidSettingsException("Please enter a valid region");
-		}
+    private static SettingsModelString createRegionModel() {
+        return new SettingsModelString("region", "us-east-1");
+    }
 
-		if (!Region.getRegion(Regions.fromName(getRegion())).isServiceSupported(getPrefix())) {
-			throw new InvalidSettingsException(
-				"The region \"" + getRegion() + "\" is not supported by the service \"" + getPrefix() + "\"");
-		}
+    private static SettingsModelBoolean createSSEncrpyionModel() {
+        return new SettingsModelBoolean(SSE_KEY, false);
+    }
 
-	}
+    private static SettingsModelBoolean createSwitchRoleModel() {
+        return new SettingsModelBoolean(SWITCH_ROLE_KEY, false);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected SettingsModelAuthentication createAuthenticationModel() {
-		return new SettingsModelAuthentication("auth", AuthenticationType.KERBEROS, null, null, null);
-	}
+    private static SettingsModelString createSwitchRoleAccountModel() {
+        return new SettingsModelString(SWITCH_ROLE_ACCOUNT_KEY, "");
+    }
 
-	/**
-	 * Returns the {@link ConnectionInformation} resulting from the settings
-	 *
-	 * @param credentialsProvider the credentials provider
-	 * @param protocol the protocol
-	 * @return this settings ConnectionInformation
-	 */
-	@Override
-	public CloudConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
-		final Protocol protocol) {
+    private static SettingsModelString createSwitchRoleNameModel() {
+        return new SettingsModelString(SWITCH_ROLE_NAME_KEY, "");
+    }
 
-		// Create connection information object
-		final CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
+    /**
+     * @param prefix
+     */
+    public AWSConnectionInformationSettings(final String prefix) {
+        super(prefix);
+    }
 
-		connectionInformation.setProtocol(protocol.getName());
-		connectionInformation.setHost(getRegion());
-		connectionInformation.setPort(protocol.getPort());
-		connectionInformation.setTimeout(getTimeout());
+    /**
+     * Returns the selected region
+     *
+     * @return the selected region
+     */
+    public String getRegion() {
+        return m_region.getStringValue();
+    }
 
-		// Set the field "useKerberos" to true if "Default Credentials Provider Chain" should be used, otherwise to false
-		connectionInformation.setUseKeyChain(getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS));
+    @Override
+    public void validateValues() throws InvalidSettingsException {
+        super.validateValues();
+        if (StringUtils.isBlank(getRegion())) {
+            throw new InvalidSettingsException("Please enter a valid region");
+        }
 
-		if(getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS)) {
-		    connectionInformation.setUser("*****");
-		    connectionInformation.setPassword(null);
-		} else {
-		    // Put accessKeyId as user and secretAccessKey as password
-	        if (useWorkflowCredential()) {
-	            // Use credentials
-	            final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
-	            connectionInformation.setUser(credentials.getLogin());
-	            connectionInformation.setPassword(credentials.getPassword());
-	        } else {
-	            connectionInformation.setUser(getUserValue());
-	            connectionInformation.setPassword(getPasswordValue());
-	        }
-		}
+        if (!StringUtils.isBlank(getPrefix())
+            && !Region.getRegion(Regions.fromName(getRegion())).isServiceSupported(getPrefix())) {
+            throw new InvalidSettingsException(
+                "The region \"" + getRegion() + "\" is not supported by the service \"" + getPrefix() + "\"");
+        }
 
-		connectionInformation.setUseSSEncryption(getSSEncryptionModel().getBooleanValue());
+    }
 
-		connectionInformation.setSwitchRole(getSwitchRoleModel().getBooleanValue());
-		connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
-		connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
-		return connectionInformation;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected SettingsModelAuthentication createAuthenticationModel() {
+        return new SettingsModelAuthentication("auth", AuthenticationType.KERBEROS, null, null, null);
+    }
 
-	@Override
-	public void saveSettingsTo(final NodeSettingsWO settings) {
-		super.saveSettingsTo(settings);
-		m_region.saveSettingsTo(settings);
-		// New Server Side Encryption AP-8823
-		m_sSEncryption.saveSettingsTo(settings);
-		m_switchRole.saveSettingsTo(settings);
-		m_switchRoleAccount.saveSettingsTo(settings);
-		m_switchRoleName.saveSettingsTo(settings);
-	}
+    /**
+     * Returns the {@link ConnectionInformation} resulting from the settings
+     *
+     * @param credentialsProvider the credentials provider
+     * @param protocol the protocol
+     * @return this settings ConnectionInformation
+     */
+    @Override
+    public CloudConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
+        final Protocol protocol) {
 
-	@Override
-	public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-		super.loadValidatedSettings(settings);
-		m_region.loadSettingsFrom(settings);
-		// New Server Side Encryption AP-8823
-		if (settings.containsKey(SSE_KEY)) {
-		    m_sSEncryption.loadSettingsFrom(settings);
-		}
-		if (settings.containsKey(SWITCH_ROLE_KEY)) {
-		    m_switchRole.loadSettingsFrom(settings);
-		    m_switchRoleAccount.loadSettingsFrom(settings);
-		    m_switchRoleName.loadSettingsFrom(settings);
-		}
-	}
+        // Create connection information object
+        final CloudConnectionInformation connectionInformation = new CloudConnectionInformation();
 
-	@Override
-	public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-		super.validateSettings(settings);
-		m_region.validateSettings(settings);
-		// New Server Side Encryption AP-8823
-		if (settings.containsKey(SSE_KEY)) {
-		    m_sSEncryption.validateSettings(settings);
-		}
-		if (settings.containsKey(SWITCH_ROLE_KEY)) {
+        connectionInformation.setProtocol(protocol.getName());
+        connectionInformation.setHost(getRegion());
+        connectionInformation.setPort(protocol.getPort());
+        connectionInformation.setTimeout(getTimeout());
+
+        // Set the field "useKerberos" to true if "Default Credentials Provider Chain" should be used, otherwise to false
+        connectionInformation
+            .setUseKeyChain(getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS));
+
+        if (getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS)) {
+            connectionInformation.setUser("*****");
+            connectionInformation.setPassword(null);
+        } else {
+            // Put accessKeyId as user and secretAccessKey as password
+            if (useWorkflowCredential()) {
+                // Use credentials
+                final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
+                connectionInformation.setUser(credentials.getLogin());
+                connectionInformation.setPassword(credentials.getPassword());
+            } else {
+                connectionInformation.setUser(getUserValue());
+                connectionInformation.setPassword(getPasswordValue());
+            }
+        }
+
+        connectionInformation.setUseSSEncryption(getSSEncryptionModel().getBooleanValue());
+
+        connectionInformation.setSwitchRole(getSwitchRoleModel().getBooleanValue());
+        connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
+        connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
+        return connectionInformation;
+    }
+
+    @Override
+    public void saveSettingsTo(final NodeSettingsWO settings) {
+        super.saveSettingsTo(settings);
+        m_region.saveSettingsTo(settings);
+        // New Server Side Encryption AP-8823
+        m_sSEncryption.saveSettingsTo(settings);
+        m_switchRole.saveSettingsTo(settings);
+        m_switchRoleAccount.saveSettingsTo(settings);
+        m_switchRoleName.saveSettingsTo(settings);
+    }
+
+    @Override
+    public void loadValidatedSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        super.loadValidatedSettings(settings);
+        m_region.loadSettingsFrom(settings);
+        // New Server Side Encryption AP-8823
+        if (settings.containsKey(SSE_KEY)) {
+            m_sSEncryption.loadSettingsFrom(settings);
+        }
+        if (settings.containsKey(SWITCH_ROLE_KEY)) {
+            m_switchRole.loadSettingsFrom(settings);
+            m_switchRoleAccount.loadSettingsFrom(settings);
+            m_switchRoleName.loadSettingsFrom(settings);
+        }
+    }
+
+    @Override
+    public void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        super.validateSettings(settings);
+        m_region.validateSettings(settings);
+        // New Server Side Encryption AP-8823
+        if (settings.containsKey(SSE_KEY)) {
+            m_sSEncryption.validateSettings(settings);
+        }
+        if (settings.containsKey(SWITCH_ROLE_KEY)) {
             m_switchRole.validateSettings(settings);
             m_switchRoleAccount.validateSettings(settings);
             m_switchRoleName.validateSettings(settings);
         }
-	}
+    }
 
-	/**
-	 * Get the {@link SettingsModelString} for the region selector
-	 * @return the {@link SettingsModelString} for the region selector
-	 */
-	public SettingsModelString getRegionModel() {
-		return m_region;
-	}
+    /**
+     * Get the {@link SettingsModelString} for the region selector
+     *
+     * @return the {@link SettingsModelString} for the region selector
+     */
+    public SettingsModelString getRegionModel() {
+        return m_region;
+    }
 
-	/**
-	 * Get the {@link SettingsModelBoolean} for the Server Side Encryption.
-	 * @return the {@link SettingsModelBoolean} for the Server Side Encryption
-	 */
-	public SettingsModelBoolean getSSEncryptionModel() {
-	    return m_sSEncryption;
-	}
+    /**
+     * Get the {@link SettingsModelBoolean} for the Server Side Encryption.
+     *
+     * @return the {@link SettingsModelBoolean} for the Server Side Encryption
+     */
+    public SettingsModelBoolean getSSEncryptionModel() {
+        return m_sSEncryption;
+    }
 
     /**
      * Get the {@link SettingsModelBoolean} for the Switch Role option.
+     *
      * @return The {@link SettingsModelBoolean} for the Switch Role option
      */
     public SettingsModelBoolean getSwitchRoleModel() {
@@ -255,6 +268,7 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 
     /**
      * Get the {@link SettingsModelString} for the Switch Role account.
+     *
      * @return The {@link SettingsModelString} for the Switch Role account
      */
     public SettingsModelString getSwitchRoleAccountModel() {
@@ -263,11 +277,11 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 
     /**
      * Get the {@link SettingsModelString} for the Switch Role name.
+     *
      * @return The {@link SettingsModelString} for the Switch Role name
      */
     public SettingsModelString getSwitchRoleNameModel() {
         return m_switchRoleName;
     }
-
 
 }
