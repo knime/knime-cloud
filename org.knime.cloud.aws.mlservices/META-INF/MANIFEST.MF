@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: KNIME Amazon Machine Learning Integration
+Bundle-SymbolicName: org.knime.cloud.aws.mlservices;singleton:=true
+Bundle-Version: 3.8.0.qualifier
+Bundle-Activator: org.knime.cloud.aws.mlservices.ComprehendActivator
+Bundle-Vendor: KNIME AG, Zurich, Switzerland
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.knime.core,
+ org.knime.base;bundle-version="3.8.0",
+ com.amazonaws.aws-java-sdk-core;bundle-version="1.11.490",
+ com.amazonaws.aws-java-sdk-s3;bundle-version="1.11.490",
+ com.amazonaws.aws-java-sdk-sts;bundle-version="1.11.490",
+ org.knime.base.filehandling;bundle-version="3.8.0",
+ org.knime.ext.textprocessing;bundle-version="3.8.0",
+ org.apache.commons.logging;bundle-version="1.2.0",
+ com.google.guava;bundle-version="19.0.0",
+ com.fasterxml.jackson.core.jackson-core;bundle-version="2.8.9",
+ org.knime.cloud.aws,
+ org.knime.cloud.core
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Automatic-Module-Name: org.knime.cloud.aws.comprehend
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: lib/aws-java-sdk-comprehend-1.11.490.jar,
+ lib/aws-java-sdk-translate-1.11.490.jar,
+ .

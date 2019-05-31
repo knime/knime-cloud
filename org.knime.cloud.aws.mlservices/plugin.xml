@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.knime.workbench.repository.categories">
+      <category
+            icon="icons/default.png"
+            level-id="aws"
+            locked="true"
+            name="AWS"
+            path="/labs/">
+      </category>
+   </extension>
+   <extension
+         point="org.knime.core.PortType">
+      <portType
+            color="#4386f7"
+            hidden="false"
+            name="AWS Comprehend Connection"
+            objectClass="org.knime.cloud.aws.mlservices.utils.connection.AmazonConnectionInformationPortObject"
+            objectSerializer="org.knime.cloud.aws.mlservices.utils.connection.AmazonConnectionInformationPortObject$Serializer"
+            specClass="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec"
+            specSerializer="org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec$Serializer">
+      </portType>
+   </extension>
+   <extension point="org.knime.workbench.repository.nodes">
+	<node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.comprehend.tagging.syntax.SyntaxTaggerNodeFactory"/>
+     <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.comprehend.tagging.entities.EntityTaggerNodeFactory"/>
+     <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.comprehend.language.ComprehendLanguageNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.comprehend.keyphrases.ComprehendKeyPhrasesNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.comprehend.sentiment.ComprehendSentimentNodeFactory"/>
+      <node 
+      	category-path="/labs/aws" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.translate.TranslateNodeFactory"/>
+      <node
+            category-path="/labs/aws"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.connector.AWSAuthenticationNodeFactory">
+      </node>
+   </extension>
+   <extension
+         point="org.knime.ext.textprocessing.TagSet">
+      <TagSet
+            TagBuilder="org.knime.cloud.aws.mlservices.utils.tagsets.AmazonEntityTag">
+      </TagSet>
+   </extension>
+</plugin>
