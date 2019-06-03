@@ -46,15 +46,15 @@
  * History
  *   May 28, 2019 (Julian Bunzel): created
  */
-package org.knime.cloud.aws.mlservices.nodes.connector;
+package org.knime.cloud.aws.nodes.connector;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.knime.cloud.aws.mlservices.utils.connection.AmazonConnectionInformationPortObject;
 import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
 import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
+import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;

@@ -56,8 +56,8 @@ import java.util.Map;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
-import org.knime.cloud.aws.mlservices.utils.connection.AmazonConnectionInformationPortObject;
-import org.knime.cloud.aws.mlservices.utils.connection.ConnectionUtils;
+import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
+import org.knime.cloud.aws.util.ConnectionUtils;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;

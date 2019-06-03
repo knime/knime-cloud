@@ -44,44 +44,38 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   May 28, 2019 (Julian Bunzel): created
+ *   May 31, 2019 (julian): created
  */
-package org.knime.cloud.aws.mlservices.nodes.connector;
+package org.knime.cloud.aws.util;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import java.util.List;
+
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.RegionUtils;
 
 /**
- * Node factory for AWS Authentication node.
+ * Class containing utility methods regarding AWS service connections
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-public class AmazonAuthenticationNodeFactory extends NodeFactory<AmazonAuthenticationNodeModel> {
+public final class ConnectionUtils {
 
-    @Override
-    public AmazonAuthenticationNodeModel createNodeModel() {
-        return new AmazonAuthenticationNodeModel();
+    /** Empty constructor */
+    private ConnectionUtils() {
+        // Empty constructor...
     }
 
-    @Override
-    public int getNrNodeViews() {
-        return 0;
+    /**
+     * Given a region name, determine if the region supports the given service
+     *
+     * @param regionName The name of the region
+     * @param serviceEndpoint
+     * @return true if supported, false otherwise
+     */
+    public static boolean regionSupported(final String regionName, final String serviceEndpoint) {
+        final Region region = RegionUtils.getRegion(regionName);
+        final List<Region> regions = RegionUtils.getRegionsForService(serviceEndpoint);
+        return regions.contains(region);
     }
 
-    @Override
-    public NodeView<AmazonAuthenticationNodeModel> createNodeView(final int viewIndex,
-        final AmazonAuthenticationNodeModel nodeModel) {
-        return null;
-    }
-
-    @Override
-    public boolean hasDialog() {
-        return true;
-    }
-
-    @Override
-    public NodeDialogPane createNodeDialogPane() {
-        return new AmazonAuthenticationNodeDialog();
-    }
 }

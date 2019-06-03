@@ -46,7 +46,7 @@
  * History
  *   May 28, 2019 (Julian Bunzel): created
  */
-package org.knime.cloud.aws.mlservices.nodes.connector;
+package org.knime.cloud.aws.nodes.connector;
 
 import java.awt.Container;
 import java.awt.Frame;

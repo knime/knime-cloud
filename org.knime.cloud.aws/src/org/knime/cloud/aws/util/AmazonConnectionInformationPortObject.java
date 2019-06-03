@@ -46,7 +46,7 @@
  * History
  *   May 28, 2019 (julian): created
  */
-package org.knime.cloud.aws.mlservices.utils.connection;
+package org.knime.cloud.aws.util;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
