@@ -5,12 +5,6 @@
          point="org.knime.workbench.repository.categories">
       <category
             icon="icons/missing.gif"
-            level-id="aws"
-            name="Amazon Web Services"
-            path="/labs/">
-      </category>
-      <category
-            icon="icons/missing.gif"
             level-id="comprehend"
             name="Amazon Comprehend"
             path="/labs/aws/">

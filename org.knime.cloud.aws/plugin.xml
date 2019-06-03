@@ -6,6 +6,15 @@
    <node category-path="/labs/aws" deprecated="false" factory-class="org.knime.cloud.aws.nodes.connector.AmazonAuthenticationNodeFactory">
       </node>
    </extension>
+   <extension
+         point="org.knime.workbench.repository.categories">
+      <category
+            icon="icons/missing.gif"
+            level-id="aws"
+            name="Amazon Web Services"
+            path="/labs/">
+      </category>
+   </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
       <RemoteFileHandler RemoteFileHandler="org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler">
       </RemoteFileHandler>
