@@ -75,7 +75,7 @@ import org.knime.core.util.Pair;
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-class AmazonAuthenticationNodeModel extends NodeModel {
+final class AmazonAuthenticationNodeModel extends NodeModel {
 
     /** Settings containing information about the AWS connection. */
     private final AWSConnectionInformationSettings m_model = createAWSConnectionModel();
@@ -152,6 +152,7 @@ class AmazonAuthenticationNodeModel extends NodeModel {
      */
     private CloudConnectionInformationPortObjectSpec createSpec() throws InvalidSettingsException {
         m_model.validateValues();
+        // TODO fix protocol -- S3 as placeholder but it's ignored downstream
         final CloudConnectionInformation connectionInformation =
             m_model.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
         return new CloudConnectionInformationPortObjectSpec(connectionInformation);
