@@ -3,18 +3,9 @@
    <extension point="org.knime.workbench.repository.nodes">
       <node category-path="/io/filehandling/remote/connections" factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory"/>
    <node category-path="/io/filehandling/remote" factory-class="org.knime.cloud.aws.s3.node.filepicker.S3FilePickerNodeFactory"/>
-   <node category-path="/labs/aws/connector" deprecated="false" factory-class="org.knime.cloud.aws.nodes.connector.AmazonAuthenticationNodeFactory">
+   <node category-path="/labs/aws" deprecated="false" factory-class="org.knime.cloud.aws.nodes.connector.AmazonAuthenticationNodeFactory">
       </node>
    </extension>
-   <extension
-         point="org.knime.workbench.repository.categories">
-      <category
-            icon="icons/missing.gif"
-            level-id="connector"
-            name="Amazon Connector"
-            path="/labs/aws/">
-      </category>
-</extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
       <RemoteFileHandler RemoteFileHandler="org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler">
       </RemoteFileHandler>
