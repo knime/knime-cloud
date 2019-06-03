@@ -75,14 +75,14 @@ import org.knime.core.node.port.PortObjectSpec;
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-class AWSAuthenticationNodeDialog extends NodeDialogPane {
+class AmazonAuthenticationNodeDialog extends NodeDialogPane {
 
     private final AWSConnectionInformationComponents m_awsComp =
-        new AWSConnectionInformationComponents(AWSAuthenticationNodeModel.createAWSConnectionModel(),
-            AWSAuthenticationNodeModel.getNameMap(), false);
+        new AWSConnectionInformationComponents(AmazonAuthenticationNodeModel.createAWSConnectionModel(),
+            AmazonAuthenticationNodeModel.getNameMap(), false);
 
     /** Constructor */
-    AWSAuthenticationNodeDialog() {
+    AmazonAuthenticationNodeDialog() {
         final JPanel panel = new JPanel(new GridBagLayout());
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);

@@ -57,11 +57,11 @@ import org.knime.core.node.NodeView;
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-public class AWSAuthenticationNodeFactory extends NodeFactory<AWSAuthenticationNodeModel> {
+public class AmazonAuthenticationNodeFactory extends NodeFactory<AmazonAuthenticationNodeModel> {
 
     @Override
-    public AWSAuthenticationNodeModel createNodeModel() {
-        return new AWSAuthenticationNodeModel();
+    public AmazonAuthenticationNodeModel createNodeModel() {
+        return new AmazonAuthenticationNodeModel();
     }
 
     @Override
@@ -70,8 +70,8 @@ public class AWSAuthenticationNodeFactory extends NodeFactory<AWSAuthenticationN
     }
 
     @Override
-    public NodeView<AWSAuthenticationNodeModel> createNodeView(final int viewIndex,
-        final AWSAuthenticationNodeModel nodeModel) {
+    public NodeView<AmazonAuthenticationNodeModel> createNodeView(final int viewIndex,
+        final AmazonAuthenticationNodeModel nodeModel) {
         return null;
     }
 
@@ -82,6 +82,6 @@ public class AWSAuthenticationNodeFactory extends NodeFactory<AWSAuthenticationN
 
     @Override
     public NodeDialogPane createNodeDialogPane() {
-        return new AWSAuthenticationNodeDialog();
+        return new AmazonAuthenticationNodeDialog();
     }
 }

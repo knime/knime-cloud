@@ -74,7 +74,7 @@ import org.knime.core.util.Pair;
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-public class AWSAuthenticationNodeModel extends NodeModel {
+public class AmazonAuthenticationNodeModel extends NodeModel {
 
     private final AWSConnectionInformationSettings m_model = createAWSConnectionModel();
 
@@ -94,7 +94,7 @@ public class AWSAuthenticationNodeModel extends NodeModel {
     /**
      * Constructor for the node model.
      */
-    protected AWSAuthenticationNodeModel() {
+    protected AmazonAuthenticationNodeModel() {
         super(new PortType[]{}, new PortType[]{AmazonConnectionInformationPortObject.TYPE});
     }
 

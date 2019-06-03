@@ -45,7 +45,7 @@
       <node
             category-path="/labs/aws"
             deprecated="false"
-            factory-class="org.knime.cloud.aws.mlservices.nodes.connector.AWSAuthenticationNodeFactory">
+            factory-class="org.knime.cloud.aws.mlservices.nodes.connector.AmazonAuthenticationNodeFactory">
       </node>
    </extension>
    <extension

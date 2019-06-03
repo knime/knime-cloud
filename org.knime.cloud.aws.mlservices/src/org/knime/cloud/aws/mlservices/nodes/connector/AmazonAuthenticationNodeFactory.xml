@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <knimeNode icon="../../icons/aws_authenticator.png" type="Source" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
-    <name>AWS Authentication</name>
+    <name>Amazon Authentication</name>
     <shortDescription>
-        Configures the connection information used to connect to  several AWS services.
+        Configures the connection information used to connect to  several Amazon services.
     </shortDescription>
     <fullDescription>
         <intro>
         	<p>
-        		This node configures the connection information that will be used to connect to several AWS services like
+        		This node configures the connection information that will be used to connect to several Amazon services like
         		AWS Comprehend or AWS Translate. 
         	</p>
         </intro>
