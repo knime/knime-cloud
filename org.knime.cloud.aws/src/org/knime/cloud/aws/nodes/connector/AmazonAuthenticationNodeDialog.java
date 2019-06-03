@@ -48,22 +48,13 @@
  */
 package org.knime.cloud.aws.nodes.connector;
 
-import java.awt.Container;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import org.knime.base.filehandling.remote.connectioninformation.node.TestConnectionDialog;
-import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
 import org.knime.cloud.aws.util.AWSConnectionInformationComponents;
-import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
@@ -72,6 +63,7 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.port.PortObjectSpec;
 
 /**
+ * Node dialog for the Amazon Authentication node.
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
@@ -95,9 +87,6 @@ class AmazonAuthenticationNodeDialog extends NodeDialogPane {
         gbc.gridy++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
-        final JButton testConnectionButton = new JButton("Test connection");
-        testConnectionButton.addActionListener(new TestConnectionListener());
-        panel.add(testConnectionButton, gbc);
         addTab("Options", panel);
     }
 
@@ -110,35 +99,5 @@ class AmazonAuthenticationNodeDialog extends NodeDialogPane {
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
         m_awsComp.loadSettingsFrom(settings, specs, getCredentialsProvider());
-    }
-
-    /**
-     * Listener that opens the test connection dialog.
-     *
-     * @author Patrick Winter, KNIME AG, Zurich, Switzerland
-     */
-    private class TestConnectionListener implements ActionListener {
-
-        @Override
-        public void actionPerformed(final ActionEvent e) {
-            // Get frame
-            Frame frame = null;
-            Container container = getPanel().getParent();
-            while (container != null) {
-                if (container instanceof Frame) {
-                    frame = (Frame)container;
-                    break;
-                }
-                container = container.getParent();
-            }
-
-            // Get connection information to current settings
-            final AWSConnectionInformationSettings model = m_awsComp.getSettings();
-            final CloudConnectionInformation connectionInformation =
-                model.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
-
-            new TestConnectionDialog(connectionInformation).open(frame);
-        }
-
     }
 }

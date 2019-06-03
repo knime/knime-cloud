@@ -58,7 +58,7 @@ import org.knime.core.data.DataTableSpec;
  *
  * @author Jim Falgout, KNIME AG, Zurich, Switzerland
  */
-class EntityTaggerNodeModel extends ComprehendTaggerNodeModel {
+final class EntityTaggerNodeModel extends ComprehendTaggerNodeModel {
 
     @Override
     protected ComprehendTaggerOperation getOperationInstance(final CloudConnectionInformation cxnInfo,

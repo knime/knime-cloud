@@ -71,17 +71,21 @@ import org.knime.core.node.port.PortType;
 import org.knime.core.util.Pair;
 
 /**
+ * Node model for the Amazon Authentication node.
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
-public class AmazonAuthenticationNodeModel extends NodeModel {
+class AmazonAuthenticationNodeModel extends NodeModel {
 
+    /** Settings containing information about the AWS connection. */
     private final AWSConnectionInformationSettings m_model = createAWSConnectionModel();
 
-    static AWSConnectionInformationSettings createAWSConnectionModel() {
+    /** Method to create a new settings object containing information about the AWS connection. */
+    static final AWSConnectionInformationSettings createAWSConnectionModel() {
         return new AWSConnectionInformationSettings(null);
     }
 
+    /** Returs a map of authentication type and credentials. */
     static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
         final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
         nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Access Key ID and Secret Key",
@@ -94,7 +98,7 @@ public class AmazonAuthenticationNodeModel extends NodeModel {
     /**
      * Constructor for the node model.
      */
-    protected AmazonAuthenticationNodeModel() {
+    AmazonAuthenticationNodeModel() {
         super(new PortType[]{}, new PortType[]{AmazonConnectionInformationPortObject.TYPE});
     }
 

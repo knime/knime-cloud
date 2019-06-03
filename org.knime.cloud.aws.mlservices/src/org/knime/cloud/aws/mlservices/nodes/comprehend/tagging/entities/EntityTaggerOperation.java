@@ -63,7 +63,7 @@ import com.amazonaws.services.comprehend.AmazonComprehend;
  *
  * @author Jim Falgout, KNIME AG, Switzerland, Zurich
  */
-class EntityTaggerOperation extends ComprehendTaggerOperation {
+final class EntityTaggerOperation extends ComprehendTaggerOperation {
 
     /**
      * Creates a new instance of {@code EntityTaggerOperation}

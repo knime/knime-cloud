@@ -62,7 +62,7 @@ import org.knime.core.data.def.StringCell;
  *
  * @author KNIME AG, Zurich, Switzerland
  */
-class ComprehendLanguageNodeModel extends BaseComprehendNodeModel {
+final class ComprehendLanguageNodeModel extends BaseComprehendNodeModel {
 
     @Override
     protected ComprehendOperation getOperationInstance(final CloudConnectionInformation cxnInfo,

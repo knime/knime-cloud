@@ -67,8 +67,9 @@ import org.knime.core.node.port.PortTypeRegistry;
 import org.knime.core.node.util.ViewUtils;
 
 /**
+ * Port object to store Amazon connection information.
  *
- * @author julian
+ * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
 public class AmazonConnectionInformationPortObject extends AbstractSimplePortObject {
 
@@ -90,8 +91,6 @@ public class AmazonConnectionInformationPortObject extends AbstractSimplePortObj
 
     /**
      * Type of this optional port.
-     *
-     * @since 3.0
      */
     @SuppressWarnings("hiding")
     public static final PortType TYPE_OPTIONAL =
