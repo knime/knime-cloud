@@ -12,7 +12,7 @@
             icon="icons/missing.gif"
             level-id="aws"
             name="Amazon Web Services"
-            path="/labs/">
+            path="/labs">
       </category>
    </extension>
    <extension point="org.knime.base.filehandling.RemoteFileHandler">
