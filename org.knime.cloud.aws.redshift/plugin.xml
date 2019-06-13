@@ -1,20 +1,149 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?eclipse version="3.0"?><plugin>
+<?eclipse version="3.0"?>
+<plugin>
+<!--************************** DB Extensions **************************-->
+    <!-- Database Types -->
+   <extension point="org.knime.database.DBType">
+      <DBType id="redshift" name="Amazon Redshift"/>
+   </extension>
+   
+   <!-- Agents -->
+   <extension point="org.knime.database.Agent">
+      <Agent
+            dbTypes="redshift"
+            factory="org.knime.cloud.aws.redshift.connector2.utility.RedshiftAgentFactory"
+            interface="org.knime.database.agent.loader.DBLoader"/>
+      <Agent
+            dbTypes="redshift"
+            factory="org.knime.cloud.aws.redshift.connector2.utility.RedshiftAgentFactory"
+            interface="org.knime.database.agent.metadata.DBMetadataReader"/>
+      <Agent
+            dbTypes="redshift"
+            factory="org.knime.cloud.aws.redshift.connector2.utility.RedshiftAgentFactory"
+            interface="org.knime.database.agent.sampling.DBSampling"/>
+      <Agent
+            dbTypes="redshift"
+            factory="org.knime.cloud.aws.redshift.connector2.utility.RedshiftAgentFactory"
+            interface="org.knime.database.agent.writer.DBWriter"/>
+   </extension>
+
+   <!-- Dialect -->
+   <extension point="org.knime.database.SQLDialect">
+      <SQLDialect dbTypes="redshift" factory="org.knime.cloud.aws.redshift.connector2.utility.RedshiftDBSQLDialect$Factory"/>
+   </extension>
+
+   <!-- Driver  -->
+   <extension point="org.knime.database.Driver">
+      <Driver locator="org.knime.cloud.aws.redshift.connector2.utility.RedshiftDriverLocator"/>
+   </extension>
+   
+   <!--  Aggregation Functions -->
+   <extension point="org.knime.database.AggregationFunction">
+
+      <!-- ************************** Common ************************** -->
+
+      <!-- LISTAGG, PERCENTILE_CONT, and MEDIAN are not supported with sub queries in order by clause-->
+
+      <!-- AvgDistinctDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.AvgDistinctDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- CountDistinctDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.CountDistinctDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- MaxDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.MaxDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+     
+      <!-- MinDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.MinDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- SumDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.SumDistinctDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+
+      <!-- BitAndDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.BitAndDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- BitOrDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.BitOrDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- StdDevPopDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.StdDevPopDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- StdDevSampDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.StdDevSampDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!-- VarPopDBAggregationFunction -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.VarPopDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+
+      <!--VarSampDBAggregationFunction  -->
+      <AggregationFunction
+            factory="org.knime.database.function.aggregation.impl.functions.VarSampDBAggregationFunction$Factory"
+            dbTypes="redshift"/>
+   </extension>
+   
+   
+   
+   <!-- Loader node implementations -->
+<!-- See AP-12028   
+   <extension point="org.knime.database.nodes.LoaderNode">
+      <LoaderNode dbTypes="redshift" class="org.knime.cloud.aws.redshift.connector2.utility.RedshiftDBLoaderNode"/>
+   </extension>
+-->
+
+
+
+    <!-- Type mapping service -->    
+    <extension point="org.knime.database.DBTypeMappingService">
+      <DBTypeMappingService 
+            dbTypeId="redshift"
+            supplier="org.knime.cloud.aws.redshift.connector2.utility.RedshiftTypeMappingServiceSupplier">
+      </DBTypeMappingService>
+   </extension>
+   
+   
    <extension point="org.knime.workbench.repository.nodes">
-   <node
-         category-path="/db/utility"
-         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory">
-   </node>
-   <node
-         category-path="/db/utility"
-         factory-class="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory">
-   </node>
-   <node
-         category-path="/db/database_legacy/database-connector"
-         deprecated="false"
-         factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory">
-   </node>
-</extension>
+       <node
+             category-path="/db/utility"
+             factory-class="org.knime.cloud.aws.redshift.clustermanipulation.creator.RedshiftClusterLauncherNodeFactory">
+       </node>
+       <node
+             category-path="/db/utility"
+             factory-class="org.knime.cloud.aws.redshift.clustermanipulation.deleter.RedshiftClusterDeleterNodeFactory">
+       </node>
+       <node
+             category-path="/db/connector"
+             deprecated="false"
+             factory-class="org.knime.cloud.aws.redshift.connector2.RedshiftDBConnectorNodeFactory">
+       </node>
+       <node
+             category-path="/db/database_legacy/database-connector"
+             deprecated="false"
+             factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory">
+       </node>
+    </extension>
+    
+    
+<!-- Legacy framework -->
    <extension
          point="org.knime.core.DatabaseUtility">
       <databaseUtility
