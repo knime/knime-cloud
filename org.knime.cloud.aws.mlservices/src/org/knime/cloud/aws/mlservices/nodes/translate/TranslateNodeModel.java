@@ -51,7 +51,7 @@ package org.knime.cloud.aws.mlservices.nodes.translate;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
@@ -152,27 +152,31 @@ class TranslateNodeModel extends NodeModel {
     /** Map of supported language and their language code/identifier */
     private static final Map<String, String> SUPPORTED_LANGS;
     static {
-        Map<String, String> langMap = new HashMap<>();
+        Map<String, String> langMap = new LinkedHashMap<>();
         langMap.put("Arabic", "ar");
         langMap.put("Chinese (Simplified)", "zh");
         langMap.put("Chinese (Traditional)", "zh-TW");
         langMap.put("Czech", "cs");
         langMap.put("Danish", "da");
         langMap.put("Dutch", "nl");
-        langMap.put("English", "en");
+        langMap.put(DEF_TARGET_LANGUAGE, "en");
         langMap.put("Finnish", "fi");
         langMap.put("French", "fr");
         langMap.put("German", "de");
         langMap.put("Hebrew", "he");
+        langMap.put("Hindi", "hi");
         langMap.put("Indonesian", "id");
         langMap.put("Italian", "it");
         langMap.put("Japanese", "ja");
         langMap.put("Korean", "ko");
+        langMap.put("Malay", "ms");
+        langMap.put("Norwegian", "no");
+        langMap.put("Persian", "fa");
         langMap.put("Polish", "pl");
         langMap.put("Portuguese", "pt");
         langMap.put("Russian", "ru");
-        langMap.put("Swedish", "sv");
         langMap.put("Spanish", "es");
+        langMap.put("Swedish", "sv");
         langMap.put("Turkish", "tr");
         SUPPORTED_LANGS = Collections.unmodifiableMap(langMap);
     }
@@ -180,7 +184,7 @@ class TranslateNodeModel extends NodeModel {
     /** Map of supported source language */
     static final Map<String, String> SOURCE_LANGS;
     static {
-        Map<String, String> srcLangs = new HashMap<>();
+        Map<String, String> srcLangs = new LinkedHashMap<>();
         srcLangs.put(DEF_SOURCE_LANGUAGE, "auto");
         srcLangs.putAll(SUPPORTED_LANGS);
         SOURCE_LANGS = Collections.unmodifiableMap(srcLangs);
