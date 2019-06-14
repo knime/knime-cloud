@@ -49,9 +49,12 @@
 package org.knime.cloud.aws.mlservices.nodes.translate;
 
 import org.knime.core.data.StringValue;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
 /**
  * The node dialog for the Amazon Translate node.
@@ -60,6 +63,12 @@ import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
  */
 class TranslateNodeDialog extends DefaultNodeSettingsPane {
 
+    /** Settings model storing the source language. */
+    final SettingsModelString m_sourceLanguageModel = TranslateNodeModel.getSourceLanguageModel();
+
+    /** Settings model storing the target language. */
+    final SettingsModelString m_targetLanguageModel = TranslateNodeModel.getTargetLanguageModel();
+
     /**
      * New pane for configuring MyExampleNode node dialog. This is just a suggestion to demonstrate possible default
      * dialog components.
@@ -67,14 +76,19 @@ class TranslateNodeDialog extends DefaultNodeSettingsPane {
     @SuppressWarnings("unchecked")
     protected TranslateNodeDialog() {
         super();
-
         addDialogComponent(new DialogComponentColumnNameSelection(TranslateNodeModel.getTextColModel(),
             "Text column to translate:", 1, StringValue.class));
+        addDialogComponent(new DialogComponentStringSelection(m_sourceLanguageModel, "Source language:",
+            TranslateUtils.getSourceLanguageMap().keySet()));
+        addDialogComponent(new DialogComponentStringSelection(m_targetLanguageModel, "Target language:",
+            TranslateUtils.getTargetLanguageMap().keySet()));
+    }
 
-        addDialogComponent(new DialogComponentStringSelection(TranslateNodeModel.getSourceLanguageModel(),
-            "Source language:", TranslateNodeModel.SOURCE_LANGS.keySet()));
-
-        addDialogComponent(new DialogComponentStringSelection(TranslateNodeModel.getTargetLanguageModel(),
-            "Target language:", TranslateNodeModel.TARGET_LANGS.keySet()));
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void saveAdditionalSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        TranslateUtils.checkPair(m_sourceLanguageModel.getStringValue(), m_targetLanguageModel.getStringValue());
     }
 }

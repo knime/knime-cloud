@@ -50,9 +50,6 @@ package org.knime.cloud.aws.mlservices.nodes.translate;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
@@ -149,50 +146,6 @@ class TranslateNodeModel extends NodeModel {
     /** {@link SettingsModelString} storing the target language to translate the text to */
     private final SettingsModelString m_targetLanguage = getTargetLanguageModel();
 
-    /** Map of supported language and their language code/identifier */
-    private static final Map<String, String> SUPPORTED_LANGS;
-    static {
-        Map<String, String> langMap = new LinkedHashMap<>();
-        langMap.put("Arabic", "ar");
-        langMap.put("Chinese (Simplified)", "zh");
-        langMap.put("Chinese (Traditional)", "zh-TW");
-        langMap.put("Czech", "cs");
-        langMap.put("Danish", "da");
-        langMap.put("Dutch", "nl");
-        langMap.put(DEF_TARGET_LANGUAGE, "en");
-        langMap.put("Finnish", "fi");
-        langMap.put("French", "fr");
-        langMap.put("German", "de");
-        langMap.put("Hebrew", "he");
-        langMap.put("Hindi", "hi");
-        langMap.put("Indonesian", "id");
-        langMap.put("Italian", "it");
-        langMap.put("Japanese", "ja");
-        langMap.put("Korean", "ko");
-        langMap.put("Malay", "ms");
-        langMap.put("Norwegian", "no");
-        langMap.put("Persian", "fa");
-        langMap.put("Polish", "pl");
-        langMap.put("Portuguese", "pt");
-        langMap.put("Russian", "ru");
-        langMap.put("Spanish", "es");
-        langMap.put("Swedish", "sv");
-        langMap.put("Turkish", "tr");
-        SUPPORTED_LANGS = Collections.unmodifiableMap(langMap);
-    }
-
-    /** Map of supported source language */
-    static final Map<String, String> SOURCE_LANGS;
-    static {
-        Map<String, String> srcLangs = new LinkedHashMap<>();
-        srcLangs.put(DEF_SOURCE_LANGUAGE, "auto");
-        srcLangs.putAll(SUPPORTED_LANGS);
-        SOURCE_LANGS = Collections.unmodifiableMap(srcLangs);
-    }
-
-    /** Map of supported target languages */
-    static final Map<String, String> TARGET_LANGS = SUPPORTED_LANGS;
-
     /** Constructor for the node model */
     TranslateNodeModel() {
         // Inputs: connection info, data
@@ -216,8 +169,8 @@ class TranslateNodeModel extends NodeModel {
 
         // Create computation object for the entity operation.
         final TranslateOperation translateOp = new TranslateOperation(cxnInfo, m_textColumnName.getStringValue(),
-            SOURCE_LANGS.getOrDefault(m_sourceLanguage.getStringValue(), "auto"),
-            TARGET_LANGS.getOrDefault(m_targetLanguage.getStringValue(), "en"),
+            TranslateUtils.getSourceLanguageMap().getOrDefault(m_sourceLanguage.getStringValue(), "auto"),
+            TranslateUtils.getSourceLanguageMap().getOrDefault(m_targetLanguage.getStringValue(), "en"),
             createNewDataTableSpec(table.getDataTableSpec()));
 
         // Run the operation over the entire input.
@@ -243,7 +196,7 @@ class TranslateNodeModel extends NodeModel {
         } else {
             throw new InvalidSettingsException("No connection information available");
         }
-
+        TranslateUtils.checkPair(m_sourceLanguage.getStringValue(), m_targetLanguage.getStringValue());
         final DataTableSpec tblSpec = (DataTableSpec)inSpecs[DATA_PORT_IDX];
         checkDataTableSpec(tblSpec);
 
@@ -286,8 +239,9 @@ class TranslateNodeModel extends NodeModel {
         final ConnectionInformationPortObjectSpec cnxSpec = (ConnectionInformationPortObjectSpec)inSpecs[CNX_PORT_IDX];
         final CloudConnectionInformation cxnInfo = (CloudConnectionInformation)cnxSpec.getConnectionInformation();
         final TranslateOperation translateOp = new TranslateOperation(cxnInfo, m_textColumnName.getStringValue(),
-            SOURCE_LANGS.getOrDefault(m_sourceLanguage.getStringValue(), "auto"),
-            TARGET_LANGS.getOrDefault(m_targetLanguage.getStringValue(), "en"), createNewDataTableSpec(dataSpec));
+            TranslateUtils.getTargetLanguageMap().getOrDefault(m_sourceLanguage.getStringValue(), "auto"),
+            TranslateUtils.getSourceLanguageMap().getOrDefault(m_targetLanguage.getStringValue(), "en"),
+            createNewDataTableSpec(dataSpec));
 
         return new StreamableOperator() {
 
