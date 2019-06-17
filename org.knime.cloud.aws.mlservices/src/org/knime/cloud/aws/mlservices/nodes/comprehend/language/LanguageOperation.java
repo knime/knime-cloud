@@ -165,19 +165,20 @@ class LanguageOperation extends BaseComprehendOperation {
     }
 
     /**
-     * Converts a language code to the name of a language while the name is represented in the users' system language.
+     * Converts a language code to the name of a language while the name is represented in English language.
      *
      * @param langCode The language code
      * @return The name of the language
      */
     private static String code2Name(final String langCode) {
         final String[] codes = langCode.split("-");
+        final Locale locale = new Locale("en", "US");
         if (codes.length == 1) {
             final Locale loc = new Locale(codes[0]);
-            return loc.getDisplayLanguage();
+            return loc.getDisplayLanguage(locale);
         } else if (codes.length > 1) {
             final Locale loc = new Locale(codes[0], codes[1]);
-            return loc.getDisplayLanguage();
+            return loc.getDisplayLanguage(locale);
         }
 
         return "<unknown>";
