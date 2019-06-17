@@ -48,11 +48,16 @@
  */
 package org.knime.cloud.aws.mlservices.nodes.comprehend.language;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.knime.cloud.aws.mlservices.nodes.comprehend.BaseComprehendOperation;
+import org.knime.cloud.aws.mlservices.utils.comprehend.ComprehendUtils;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataRow;
@@ -70,8 +75,9 @@ import org.knime.ext.textprocessing.data.Document;
 import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.model.DetectDominantLanguageRequest;
-import com.amazonaws.services.comprehend.model.DetectDominantLanguageResult;
+import com.amazonaws.services.comprehend.model.BatchDetectDominantLanguageItemResult;
+import com.amazonaws.services.comprehend.model.BatchDetectDominantLanguageRequest;
+import com.amazonaws.services.comprehend.model.BatchDetectDominantLanguageResult;
 import com.amazonaws.services.comprehend.model.DominantLanguage;
 
 /**
@@ -98,11 +104,13 @@ class LanguageOperation extends BaseComprehendOperation {
         final int textColIdx, final ExecutionContext exec, final long rowCount)
         throws CanceledExecutionException, InterruptedException {
 
-        long inputRowIndex = 0;
         long rowCounter = 0;
+        final int numInputColumns = in.getDataTableSpec().getNumColumns();
 
-        // For each input row, grab the text column, make the call to Comprehend to
-        // detect the languages.
+        // Create row batches based on global batch size and process one batch in one request
+        final List<DataRow> rowBatch = new ArrayList<>(ComprehendUtils.BATCH_SIZE);
+        final List<String> texts = new ArrayList<>(ComprehendUtils.BATCH_SIZE);
+        final Set<Integer> validRows = new HashSet<>(ComprehendUtils.BATCH_SIZE);
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
             // Check for cancel and update the row progress
@@ -111,57 +119,78 @@ class LanguageOperation extends BaseComprehendOperation {
             if (rowCount > 0) {
                 exec.setProgress(rowCounter / (double)rowCount, "Processing row " + rowCounter + " of " + rowCount);
             }
-
-            // Grab the text to evaluate
-            String textValue = null;
+            rowBatch.add(inputRow);
             final DataCell cell = inputRow.getCell(textColIdx);
-            // Create cells containing the output data.
-            // Copy the input data to the output
-            final int numInputColumns = inputRow.getNumCells();
-            DataCell[] cells =
-                Stream.generate(DataType::getMissingCell).limit(numInputColumns + 3).toArray(DataCell[]::new);
-            for (int i = 0; i < numInputColumns; i++) {
-                cells[i] = inputRow.getCell(i);
-            }
             if (!cell.isMissing()) {
+                String textValue = null;
                 if (cell.getType().isCompatible(DocumentValue.class)) {
                     final Document doc = ((DocumentValue)cell).getDocument();
                     textValue = doc.getTitle() + " " + doc.getDocumentBodyText();
                 } else {
                     textValue = cell.toString();
                 }
-                final DetectDominantLanguageRequest detectDominantLanguageRequest =
-                    new DetectDominantLanguageRequest().withText(textValue);
+                texts.add(textValue);
+                validRows.add(rowBatch.size() - 1);
+            }
+            if (rowBatch.size() == ComprehendUtils.BATCH_SIZE) {
+                processChunk(out, comprehendClient, numInputColumns, rowBatch, texts, validRows);
+            }
+        }
 
-                final DetectDominantLanguageResult detectDominantLanguageResult =
-                    comprehendClient.detectDominantLanguage(detectDominantLanguageRequest);
+        // process remaining chunk
+        processChunk(out, comprehendClient, numInputColumns, rowBatch, texts, validRows);
+    }
 
-                final List<DominantLanguage> dominantLangs = detectDominantLanguageResult.getLanguages();
-
+    /**
+     * Method to process one chunk with given texts.
+     *
+     * @param out RowOutput to push new rows to
+     * @param comprehendClient Comprehend client to send the requests
+     * @param numInputColumns Number of input columns
+     * @param rowBatch List containing rows
+     * @param texts Texts to process
+     * @param validRows List containing indices of valid rows
+     * @throws InterruptedException Thrown if execution is canceled
+     */
+    @SuppressWarnings("null")
+    private static final void processChunk(final RowOutput out, final AmazonComprehend comprehendClient,
+        final int numInputColumns, final List<DataRow> rowBatch, final List<String> texts, final Set<Integer> validRows)
+        throws InterruptedException {
+        final BatchDetectDominantLanguageRequest detectDominantLanguageRequest;
+        final BatchDetectDominantLanguageResult detectDominantLanguageResult;
+        Iterator<BatchDetectDominantLanguageItemResult> results = null;
+        if (!texts.isEmpty()) {
+            detectDominantLanguageRequest = new BatchDetectDominantLanguageRequest().withTextList(texts);
+            detectDominantLanguageResult = comprehendClient.batchDetectDominantLanguage(detectDominantLanguageRequest);
+            results = detectDominantLanguageResult.getResultList().iterator();
+        }
+        final DataCell[] cells = new DataCell[numInputColumns + 3];
+        for (int i = 0; i < rowBatch.size(); i++) {
+            final DataRow row = rowBatch.get(i);
+            for (int j = 0; j < numInputColumns; j++) {
+                cells[j] = row.getCell(j);
+            }
+            if (validRows.contains(i)) {
+                long outputRowIndex = 0;
                 // Push rows (one per language) to the output.
-                for (int index = 0; index < dominantLangs.size(); index++) {
-                    final DominantLanguage dominantLang = dominantLangs.get(index);
-
+                for (final DominantLanguage dominantLang : results.next().getLanguages()) {
                     // Copy the results to the new columns in the output.
                     cells[numInputColumns] = new StringCell(code2Name(dominantLang.getLanguageCode()));
                     cells[numInputColumns + 1] = new StringCell(dominantLang.getLanguageCode());
                     cells[numInputColumns + 2] = new DoubleCell(dominantLang.getScore());
 
-                    // Make row key unique with the input row number and the sequence number of each
-                    // token
-                    final RowKey key = new RowKey("Row " + inputRowIndex + "_" + index);
-
                     // Create a new data row and push it to the output container.
-                    final DataRow row = new DefaultRow(key, cells);
-                    out.push(row);
+                    out.push(new DefaultRow(new RowKey(row.getKey().getString() + "_" + outputRowIndex++), cells));
                 }
             } else {
-                final RowKey key = new RowKey("Row " + inputRowIndex + "_" + 0);
-                final DataRow row = new DefaultRow(key, cells);
-                out.push(row);
+                Arrays.fill(cells, numInputColumns, numInputColumns + 3, DataType.getMissingCell());
+                out.push(new DefaultRow(new RowKey(row.getKey().getString() + "_" + 0), cells));
             }
-            ++inputRowIndex;
         }
+        // Clean up
+        rowBatch.clear();
+        texts.clear();
+        validRows.clear();
     }
 
     /**

@@ -78,6 +78,9 @@ public class ComprehendUtils {
     /** Default source language. */
     private static final String DEF_SOURCE_LANG = "English";
 
+    /** Batch size used by Comprehend nodes running in batch mode. */
+    public static final int BATCH_SIZE = 25;
+
     /**
      * Creates and returns a new instance of {@link SettingsModelString} storing the name of the text column
      *

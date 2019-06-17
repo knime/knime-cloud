@@ -81,5 +81,4 @@ final class ComprehendLanguageNodeModel extends BaseComprehendNodeModel {
         // Input spec + new columns
         return new DataTableSpec(inputSpec, new DataTableSpec(allColSpecs));
     }
-
 }

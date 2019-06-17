@@ -48,7 +48,12 @@
  */
 package org.knime.cloud.aws.mlservices.nodes.comprehend.keyphrases;
 
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import org.knime.cloud.aws.mlservices.nodes.comprehend.BaseComprehendOperation;
 import org.knime.cloud.aws.mlservices.utils.comprehend.ComprehendUtils;
@@ -70,8 +75,9 @@ import org.knime.ext.textprocessing.data.Document;
 import org.knime.ext.textprocessing.data.DocumentValue;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
+import com.amazonaws.services.comprehend.model.BatchDetectKeyPhrasesItemResult;
+import com.amazonaws.services.comprehend.model.BatchDetectKeyPhrasesRequest;
+import com.amazonaws.services.comprehend.model.BatchDetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.KeyPhrase;
 
 /**
@@ -81,7 +87,7 @@ import com.amazonaws.services.comprehend.model.KeyPhrase;
  */
 class KeyPhrasesOperation extends BaseComprehendOperation {
 
-    // Language of the source text to be analyzed
+    /** Language of the source text to be analyzed */
     private final String m_sourceLanguage;
 
     /**
@@ -103,47 +109,77 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
         final int textColIdx, final ExecutionContext exec, final long rowCount)
         throws CanceledExecutionException, InterruptedException {
 
-        long inputRowIndex = 0;
+        // Row index
         long rowCounter = 0;
+        final int numInputColumns = in.getDataTableSpec().getNumColumns();
 
-        // For each input row, grab the text column, make the call to Comprehend
-        // and push each of the syntax elements to the output.
+        // Create row batches based on global batch size and process one batch in one request
+        final List<DataRow> rowBatch = new ArrayList<>(ComprehendUtils.BATCH_SIZE);
+        final List<String> texts = new ArrayList<>(ComprehendUtils.BATCH_SIZE);
+        final Set<Integer> validRows = new HashSet<>(ComprehendUtils.BATCH_SIZE);
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
-
             // Check for cancel and update the row progress
             ++rowCounter;
             exec.checkCanceled();
             if (rowCount > 0) {
                 exec.setProgress(rowCounter / (double)rowCount, "Processing row " + rowCounter + " of " + rowCount);
             }
-
-            // Grab the text to evaluate
-            String textValue = null;
+            rowBatch.add(inputRow);
             final DataCell cell = inputRow.getCell(textColIdx);
-            // Create cells containing the output data.
-            // Copy the input data to the output
-            final int numInputColumns = inputRow.getNumCells();
-            DataCell[] cells =
-                Stream.generate(DataType::getMissingCell).limit(numInputColumns + 4).toArray(DataCell[]::new);
-            for (int i = 0; i < numInputColumns; i++) {
-                cells[i] = inputRow.getCell(i);
-            }
             if (!cell.isMissing()) {
+                String textValue = null;
                 if (cell.getType().isCompatible(DocumentValue.class)) {
                     final Document doc = ((DocumentValue)cell).getDocument();
                     textValue = doc.getTitle() + " " + doc.getDocumentBodyText();
                 } else {
                     textValue = cell.toString();
                 }
-                final DetectKeyPhrasesRequest detectKeyPhrasesRequest =
-                    new DetectKeyPhrasesRequest().withText(textValue)
-                        .withLanguageCode(ComprehendUtils.LANG_MAP.getOrDefault(m_sourceLanguage, "en"));
-                final DetectKeyPhrasesResult detectKeyPhrasesResult =
-                    comprehendClient.detectKeyPhrases(detectKeyPhrasesRequest);
+                texts.add(textValue);
+                validRows.add(rowBatch.size() - 1);
+            }
+            if (rowBatch.size() == ComprehendUtils.BATCH_SIZE) {
+                processChunk(out, comprehendClient, numInputColumns, rowBatch, texts, validRows);
+            }
+        }
 
+        // process remaining chunk
+        processChunk(out, comprehendClient, numInputColumns, rowBatch, texts, validRows);
+    }
+
+    /**
+     * Method to process one chunk with given texts.
+     *
+     * @param out RowOutput to push new rows to
+     * @param comprehendClient Comprehend client to send the requests
+     * @param numInputColumns Number of input columns
+     * @param rowBatch List containing rows
+     * @param texts Texts to process
+     * @param validRows List containing indices of valid rows
+     * @throws InterruptedException Thrown if execution is canceled
+     */
+    @SuppressWarnings("null")
+    private final void processChunk(final RowOutput out, final AmazonComprehend comprehendClient,
+        final int numInputColumns, final List<DataRow> rowBatch, final List<String> texts, final Set<Integer> validRows)
+        throws InterruptedException {
+        final BatchDetectKeyPhrasesRequest detectKeyPhrasesRequest;
+        final BatchDetectKeyPhrasesResult detectKeyPhrasesResult;
+        Iterator<BatchDetectKeyPhrasesItemResult> results = null;
+        if (!texts.isEmpty()) {
+            detectKeyPhrasesRequest = new BatchDetectKeyPhrasesRequest().withTextList(texts)
+                .withLanguageCode(ComprehendUtils.LANG_MAP.getOrDefault(m_sourceLanguage, "en"));
+            detectKeyPhrasesResult = comprehendClient.batchDetectKeyPhrases(detectKeyPhrasesRequest);
+            results = detectKeyPhrasesResult.getResultList().iterator();
+        }
+        final DataCell[] cells = new DataCell[numInputColumns + 4];
+        for (int i = 0; i < rowBatch.size(); i++) {
+            final DataRow row = rowBatch.get(i);
+            for (int j = 0; j < numInputColumns; j++) {
+                cells[j] = row.getCell(j);
+            }
+            if (validRows.contains(i)) {
                 long outputRowIndex = 0;
-                for (final KeyPhrase keyPhrase : detectKeyPhrasesResult.getKeyPhrases()) {
+                for (final KeyPhrase keyPhrase : results.next().getKeyPhrases()) {
                     // Set new output cell values.
                     cells[numInputColumns] = new StringCell(keyPhrase.getText());
                     cells[numInputColumns + 1] = new DoubleCell(keyPhrase.getScore());
@@ -151,13 +187,16 @@ class KeyPhrasesOperation extends BaseComprehendOperation {
                     cells[numInputColumns + 3] = new IntCell(keyPhrase.getEndOffset());
 
                     // Create a new data row and push it to the output container.
-                    out.push(new DefaultRow(new RowKey("Row " + inputRowIndex + "_" + outputRowIndex++), cells));
+                    out.push(new DefaultRow(new RowKey(row.getKey().getString() + "_" + outputRowIndex++), cells));
                 }
             } else {
-                out.push(new DefaultRow(new RowKey("Row " + inputRowIndex + "_" + 0), cells));
+                Arrays.fill(cells, numInputColumns, numInputColumns + 4, DataType.getMissingCell());
+                out.push(new DefaultRow(new RowKey(row.getKey().getString() + "_" + 0), cells));
             }
-            ++inputRowIndex;
         }
+        // Clean up
+        rowBatch.clear();
+        texts.clear();
+        validRows.clear();
     }
-
 }
