@@ -142,6 +142,11 @@
        </node>
     </extension>
     
+<!-- Node migration rules -->    
+    <extension point="org.knime.database.node.workflow.migration.NodeMigrationRule">
+      <Rule class="org.knime.cloud.aws.redshift.connector2.RedshiftDBConnectorNodeMigrationRule"/>
+   </extension>
+    
     
 <!-- Legacy framework -->
    <extension
