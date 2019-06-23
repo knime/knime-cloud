@@ -65,6 +65,7 @@ import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.database.DBType;
+import org.knime.database.dialect.impl.SQL92DBSQLDialect;
 import org.knime.database.util.DerivableProperties;
 import org.knime.node.workflow.migration.MigrationException;
 import org.knime.node.workflow.migration.MigrationNodeMatchResult;
@@ -134,6 +135,8 @@ public class RedshiftDBConnectorNodeMigrationRule extends NodeMigrationRule {
                     "com.amazon.redshift.ssl.NonValidatingFactory");
             }
             attributeValues.put(ATTRIBUTE_JDBC_PROPERTIES.getId(), jdbcProperties);
+            //The former Redshift StatementManipulator only quoted if the identifier contained a space
+            attributeValues.put(SQL92DBSQLDialect.ATTRIBUTE_SYNTAX_IDENTIFIER_DELIMITING_ONLY_SPACES.getId(), true);
             saveAttributeValues(attributeValues, getOrAddNodeSettings(newModelSettings, "session_info", "attributes"));
         } catch (final InvalidSettingsException invalidSettingsException) {
             throw new MigrationException(invalidSettingsException.getMessage(), invalidSettingsException);
