@@ -49,7 +49,6 @@
 package org.knime.cloud.aws.redshift.connector2.utility;
 
 import static java.util.Collections.emptySet;
-import static org.knime.database.driver.URLTemplate.NAME_DEFAULT;
 
 import java.util.Collection;
 
@@ -58,8 +57,6 @@ import org.knime.database.attribute.AttributeCollection;
 import org.knime.database.attribute.AttributeCollection.Accessibility;
 import org.knime.database.connection.DBConnectionManagerAttributes;
 import org.knime.database.driver.AbstractDriverLocator;
-import org.knime.database.driver.URLTemplate;
-import org.knime.database.driver.URLTemplates;
 
 /**
  * Redshift driver locator implementation.
@@ -120,7 +117,7 @@ public class RedshiftDriverLocator extends AbstractDriverLocator {
     }
 
     @Override
-    public URLTemplates getURLTemplates() {
-        return new URLTemplates(new URLTemplate(NAME_DEFAULT, "jdbc:redshift://<host>:5439/<database_name>"));
+    public String getURLTemplate() {
+        return "jdbc:redshift://<host>:<port>/[database]";
     }
 }
