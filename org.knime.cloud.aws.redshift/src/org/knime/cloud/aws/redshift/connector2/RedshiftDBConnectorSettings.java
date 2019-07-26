@@ -48,8 +48,6 @@
  */
 package org.knime.cloud.aws.redshift.connector2;
 
-import java.util.Optional;
-
 import org.knime.cloud.aws.redshift.connector2.utility.Redshift;
 import org.knime.database.DBType;
 import org.knime.database.dialect.DBSQLDialectFactory;
@@ -88,29 +86,8 @@ public class RedshiftDBConnectorSettings extends ServerDBConnectorSettings {
     }
 
     @Override
-    protected String createJdbcUrl() {
-        final Optional<DBDriverWrapper> driver = DBDriverRegistry.getInstance().getDriver(getDriver());
-        if (isRedshiftDriver(driver.get())) {
-            return "jdbc:redshift://" + getHost() + ":" + getPort() + "/" + getDatabaseName();
-        } else {
-            //use PostgreSQL driver
-            return "jdbc:postgresql://" + getHost() + ":" + getPort() + "/" + getDatabaseName();
-        }
-    }
-
-
-    private static boolean isRedshiftDriver(final DBDriverWrapper driver) {
-        return driver != null && driver.getDriver().getClass().getName().startsWith("com.amazon.redshift");
-    }
-
-    @Override
     protected String getDatabaseTypeId() {
         return DB_TYPE.getId();
-    }
-
-    @Override
-    public boolean isDatabaseNameMandatory() {
-        return false;
     }
 
 }
