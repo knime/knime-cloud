@@ -24,4 +24,6 @@ Require-Bundle: org.eclipse.ui;bundle-version="[3.109.0,4.0.0)",
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: org.knime.cloud.aws.comprehend
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .
+Bundle-ClassPath: .,
+ lib/aws-java-sdk-personalizeruntime-1.11.602.jar,
+ lib/aws-java-sdk-personalize-1.11.602.jar

@@ -15,6 +15,12 @@
             name="Amazon Translate"
             path="/labs/aws/">
       </category>
+      <category
+            icon="icons/missing.gif"
+            level-id="personalize"
+            name="Amazon Personalize"
+            path="/labs/aws/">
+      </category>
    </extension>
    <extension point="org.knime.workbench.repository.nodes">
 	<node 
@@ -35,6 +41,9 @@
       <node 
       	category-path="/labs/aws/translate" 
       	factory-class="org.knime.cloud.aws.mlservices.nodes.translate.TranslateNodeFactory"/>
+      <node 
+      	category-path="/labs/aws/personalize" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.recommend.RecommendNodeFactory"/>
    </extension>
    <extension
          point="org.knime.ext.textprocessing.TagSet">
