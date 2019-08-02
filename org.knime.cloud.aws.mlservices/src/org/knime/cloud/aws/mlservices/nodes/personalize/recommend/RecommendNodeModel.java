@@ -69,6 +69,7 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
@@ -99,6 +100,18 @@ class RecommendNodeModel extends NodeModel {
     /** Settings name for the input column name with text to analyze */
     private static final String CFG_CAMPAIGN_ARN = "campaign_arn";
 
+    /** Settings name for the type of recommendation to apply */
+    private static final String CFG_REC_TYPE = "recommendation_type";
+
+    /** Settings name for the limit of the number of recommendations */
+    private static final String CFG_OUTPUT_LIMIT = "output_limit";
+
+    /** Recommendations for Users */
+    static final String REC_TYPE_USER = "user";
+
+    /** Recommendation type for Items */
+    static final String REC_TYPE_ITEM = "item";
+
     /**
      * Method to create a {@link SettingsModelString} storing the name of the input column containing the entity id.
      */
@@ -113,11 +126,31 @@ class RecommendNodeModel extends NodeModel {
         return new SettingsModelString(CFG_CAMPAIGN_ARN, null);
     }
 
+    /**
+     * Method to create a {@link SettingsModelString} storing type of recommendation to apply.
+     */
+    static final SettingsModelString getRecTypeModel() {
+        return new SettingsModelString(CFG_REC_TYPE, REC_TYPE_USER);
+    }
+
+    /**
+     * Method to create a {@link SettingsModelInteger} storing the limit of the number of returned recommendations.
+     */
+    static final SettingsModelInteger getOutputLimitModel() {
+        return new SettingsModelInteger(CFG_OUTPUT_LIMIT, 0);
+    }
+
     /** {@link SettingsModelString} storing the name of the column containing the entity id. */
     private final SettingsModelString m_entityCol= getEntityColModel();
 
     /** {@link SettingsModelString} storing the ARN of the Campaign to use. */
     private final SettingsModelString m_campaignArn= getCampaignArnModel();
+
+    /** {@link SettingsModelString} storing the recommendation type. */
+    private final SettingsModelString m_recType= getRecTypeModel();
+
+    /** {@link SettingsModelInteger} storing the limit of the number of returned recommendations. */
+    private final SettingsModelInteger m_outputLimit = getOutputLimitModel();
 
     /** Constructor for the node model */
     RecommendNodeModel() {
@@ -147,6 +180,8 @@ class RecommendNodeModel extends NodeModel {
                     cxnInfo,
                     m_entityCol.getStringValue(),
                     m_campaignArn.getStringValue(),
+                    m_recType.getStringValue(),
+                    m_outputLimit.getIntValue(),
                     createNewDataTableSpec(table.getDataTableSpec()));
 
         // Run the operation over the entire input.
@@ -168,7 +203,7 @@ class RecommendNodeModel extends NodeModel {
 //            if (!ConnectionUtils.regionSupported(cxnInfo.getHost(), AmazonPersonalize.ENDPOINT_PREFIX)) {
 //                throw new InvalidSettingsException(
 //                    "Unsupported region for the Amazon Personalize Runtime service: " + cxnInfo.getHost());
-//           }
+//            }
         } else {
             throw new InvalidSettingsException("No connection information available");
         }
@@ -218,6 +253,8 @@ class RecommendNodeModel extends NodeModel {
                     cxnInfo,
                     m_entityCol.getStringValue(),
                     m_campaignArn.getStringValue(),
+                    m_recType.getStringValue(),
+                    m_outputLimit.getIntValue(),
                     createNewDataTableSpec(dataSpec));
 
         return new StreamableOperator() {
@@ -248,6 +285,8 @@ class RecommendNodeModel extends NodeModel {
     protected void saveSettingsTo(final NodeSettingsWO settings) {
         m_entityCol.saveSettingsTo(settings);
         m_campaignArn.saveSettingsTo(settings);
+        m_recType.saveSettingsTo(settings);
+        m_outputLimit.saveSettingsTo(settings);
 
     }
 
@@ -255,12 +294,16 @@ class RecommendNodeModel extends NodeModel {
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_entityCol.loadSettingsFrom(settings);
         m_campaignArn.loadSettingsFrom(settings);
+        m_recType.loadSettingsFrom(settings);
+        m_outputLimit.loadSettingsFrom(settings);
     }
 
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_entityCol.validateSettings(settings);
         m_campaignArn.validateSettings(settings);
+        m_recType.validateSettings(settings);
+        m_outputLimit.validateSettings(settings);
     }
 
     @Override

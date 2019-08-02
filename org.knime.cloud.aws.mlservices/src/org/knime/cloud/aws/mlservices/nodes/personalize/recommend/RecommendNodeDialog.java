@@ -52,9 +52,12 @@ import org.knime.core.data.StringValue;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentButtonGroup;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
+import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
 import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.core.node.util.ButtonGroupEnumInterface;
 
 /**
  * The node dialog for the Amazon Translate node.
@@ -69,11 +72,6 @@ class RecommendNodeDialog extends DefaultNodeSettingsPane {
     /** Settings model storing the source language. */
     final SettingsModelString m_campaignArn = RecommendNodeModel.getCampaignArnModel();
 
-
-    /**
-     * New pane for configuring MyExampleNode node dialog. This is just a suggestion to demonstrate possible default
-     * dialog components.
-     */
     @SuppressWarnings("unchecked")
     protected RecommendNodeDialog() {
         super();
@@ -89,6 +87,18 @@ class RecommendNodeDialog extends DefaultNodeSettingsPane {
             true,
             20));
 
+        addDialogComponent(new DialogComponentButtonGroup(
+            RecommendNodeModel.getRecTypeModel(),
+            "",
+            true,
+            new ButtonGroupEnumInterface[] { new UserRecommendation(), new ItemRecommendation() }
+            ));
+
+        addDialogComponent(new DialogComponentNumber(
+            RecommendNodeModel.getOutputLimitModel(),
+            "Number of results (0 implies unlimited): ",
+            5,
+            5));
     }
 
     /**
@@ -96,6 +106,55 @@ class RecommendNodeDialog extends DefaultNodeSettingsPane {
      */
     @Override
     public void saveAdditionalSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+
+    }
+
+    private class UserRecommendation implements ButtonGroupEnumInterface {
+
+        @Override
+        public String getText() {
+            return "User personalization: recommend items for users";
+        }
+
+        @Override
+        public String getActionCommand() {
+            return RecommendNodeModel.REC_TYPE_USER;
+        }
+
+        @Override
+        public String getToolTip() {
+            return "Select this option to recommend items for a user. The input column must contain user identifiers.";
+        }
+
+        @Override
+        public boolean isDefault() {
+            return true;
+        }
+
+    }
+
+    private class ItemRecommendation implements ButtonGroupEnumInterface {
+
+        @Override
+        public String getText() {
+            return "Related items: recommend items related to the given item";
+        }
+
+        @Override
+        public String getActionCommand() {
+            return RecommendNodeModel.REC_TYPE_ITEM;
+        }
+
+        @Override
+        public String getToolTip() {
+            // TODO Auto-generated method stub
+            return "Select this option to find a list of items related to the given item. The input column must container item identifiers.";
+        }
+
+        @Override
+        public boolean isDefault() {
+            return false;
+        }
 
     }
 }

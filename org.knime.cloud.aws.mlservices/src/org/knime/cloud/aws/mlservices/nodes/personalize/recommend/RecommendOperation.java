@@ -82,11 +82,17 @@ class RecommendOperation {
     /** AWS connection information. */
     private final CloudConnectionInformation m_cxnInfo;
 
+    /** Name of the input column containing entity id's. */
+    private final String m_entityCol;
+
     /** Name of the input text column to analyze. */
     private final String m_campaignArn;
 
-    /** Name of the input column containing entity id's. */
-    private final String m_entityCol;
+    /** Name of the recommendation type to apply */
+    private final String m_recType;
+
+    /** Limit the number of recommendations returned. */
+    private final int m_outputLimit;
 
 
     /** The output table specification. */
@@ -99,10 +105,12 @@ class RecommendOperation {
      * @param campaignArn The ARN of the campaign to invoke
      * @param outputSpec The output spec
      */
-    RecommendOperation(final CloudConnectionInformation cxnInfo, final String entityCol, final String campaignArn, final DataTableSpec outputSpec) {
+    RecommendOperation(final CloudConnectionInformation cxnInfo, final String entityCol, final String campaignArn, final String recType, final int outputLimit, final DataTableSpec outputSpec) {
         this.m_cxnInfo = cxnInfo;
         this.m_entityCol = entityCol;
         this.m_campaignArn = campaignArn;
+        this.m_recType = recType;
+        this.m_outputLimit = outputLimit;
         this.m_outputSpec = outputSpec;
     }
 
@@ -177,8 +185,14 @@ class RecommendOperation {
                 GetRecommendationsRequest request =
                         new GetRecommendationsRequest()
                             .withCampaignArn(m_campaignArn)
-                            .withNumResults(5)
-                            .withUserId(entityValue); // TODO
+                            .withNumResults(m_outputLimit);
+
+                if (m_recType.equals(RecommendNodeModel.REC_TYPE_USER)) {
+                    request = request.withUserId(entityValue);
+                }
+                else {
+                    request = request.withItemId(entityValue);
+                }
 
                 GetRecommendationsResult result = personalize.getRecommendations(request);
 
@@ -189,9 +203,9 @@ class RecommendOperation {
                             .map(item -> new StringCell(item.getItemId()))
                             .collect(Collectors.toList());
 
-//                String tempResult = Arrays.toString(recommendations);
                 cells[numInputColumns] = CollectionCellFactory.createListCell(recommendations);
             }
+
             // Create a new data row and push it to the output container.
             out.push(new DefaultRow(inputRow.getKey(), cells));
         }
