@@ -46,7 +46,7 @@
  * History
  *   Apr 8, 2019 (jfalgout): created
  */
-package org.knime.cloud.aws.mlservices.nodes.personalize.recommend;
+package org.knime.cloud.aws.mlservices.nodes.personalize.rank;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,6 +59,7 @@ import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataType;
 import org.knime.core.data.collection.CollectionCellFactory;
+import org.knime.core.data.collection.ListCell;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -70,15 +71,15 @@ import org.knime.core.node.streamable.RowInput;
 import org.knime.core.node.streamable.RowOutput;
 
 import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntime;
-import com.amazonaws.services.personalizeruntime.model.GetRecommendationsRequest;
-import com.amazonaws.services.personalizeruntime.model.GetRecommendationsResult;
+import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
+import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
 
 /**
- * Class to provide functionality to get a recommendation from a campaign.
+ * Class to provide functionality to rank a list of items for a user.
  *
  * @author Jim Falgout, KNIME AG, Zurich, Switzerland
  */
-class RecommendOperation {
+class RankOperation {
 
     /** AWS connection information. */
     private final CloudConnectionInformation m_cxnInfo;
@@ -86,15 +87,11 @@ class RecommendOperation {
     /** Name of the input column containing entity id's. */
     private final String m_entityCol;
 
+    /** Name of the input column containing item id's. */
+    private final String m_itemCol;
+
     /** Name of the input text column to analyze. */
     private final String m_campaignArn;
-
-    /** Name of the recommendation type to apply */
-    private final String m_recType;
-
-    /** Limit the number of recommendations returned. */
-    private final int m_outputLimit;
-
 
     /** The output table specification. */
     private final DataTableSpec m_outputSpec;
@@ -106,12 +103,11 @@ class RecommendOperation {
      * @param campaignArn The ARN of the campaign to invoke
      * @param outputSpec The output spec
      */
-    RecommendOperation(final CloudConnectionInformation cxnInfo, final String entityCol, final String campaignArn, final String recType, final int outputLimit, final DataTableSpec outputSpec) {
+    RankOperation(final CloudConnectionInformation cxnInfo, final String entityCol, final String itemCol, final String campaignArn, final DataTableSpec outputSpec) {
         this.m_cxnInfo = cxnInfo;
         this.m_entityCol = entityCol;
+        this.m_itemCol = itemCol;
         this.m_campaignArn = campaignArn;
-        this.m_recType = recType;
-        this.m_outputLimit = outputLimit;
         this.m_outputSpec = outputSpec;
     }
 
@@ -155,11 +151,12 @@ class RecommendOperation {
         final PersonalizeRuntimeConnection conn = new PersonalizeRuntimeConnection(m_cxnInfo);
         final AmazonPersonalizeRuntime personalize = conn.getClient();
 
-        int inColIndex = in.getDataTableSpec().findColumnIndex(m_entityCol);
+        int inUserIndex = in.getDataTableSpec().findColumnIndex(m_entityCol);
+        int inItemIndex = in.getDataTableSpec().findColumnIndex(m_itemCol);
         long rowCounter = 0;
 
-        // For each input row, grab the text column, make the call to Translate
-        // and push the input plus the translation to the output.
+        // For each input row, grab the user ID and the list of item IDs to rank.
+        // Invoke the Personalize API to rank the items.
         DataRow inputRow = null;
         while ((inputRow = in.poll()) != null) {
             // Check for cancel and update the row progress
@@ -170,8 +167,8 @@ class RecommendOperation {
             }
 
             // Grab the text to evaluate
-            String entityValue = null;
-            final DataCell cell = inputRow.getCell(inColIndex);
+            final DataCell userCell = inputRow.getCell(inUserIndex);
+            final DataCell itemCell = inputRow.getCell(inItemIndex);
             // Create cells containing the output data.
             // Copy the input data to the output
             final int numInputColumns = inputRow.getNumCells();
@@ -180,31 +177,32 @@ class RecommendOperation {
             for (int i = 0; i < numInputColumns; i++) {
                 cells[i] = inputRow.getCell(i);
             }
-            if (!cell.isMissing()) {
-                entityValue = cell.toString();
+            if (!userCell.isMissing() && !itemCell.isMissing()) {
+                String userValue = userCell.toString();
 
-                GetRecommendationsRequest request =
-                        new GetRecommendationsRequest()
+                // Convert input list cell into a list of type string.
+                List<String> itemValues =
+                        ((ListCell) itemCell)
+                            .stream()
+                            .map(cell -> cell.toString())
+                            .collect(Collectors.toList());
+
+                GetPersonalizedRankingRequest request =
+                        new GetPersonalizedRankingRequest()
                             .withCampaignArn(m_campaignArn)
-                            .withNumResults(m_outputLimit);
+                            .withUserId(userValue)
+                            .withInputList(itemValues);
 
-                if (m_recType.equals(RecommendNodeModel.REC_TYPE_USER)) {
-                    request = request.withUserId(entityValue);
-                }
-                else {
-                    request = request.withItemId(entityValue);
-                }
+                GetPersonalizedRankingResult result = personalize.getPersonalizedRanking(request);
 
-                GetRecommendationsResult result = personalize.getRecommendations(request);
-
-                List<DataCell> recommendations =
+                List<DataCell> ranking =
                         result
-                            .getItemList()
+                            .getPersonalizedRanking()
                             .stream()
                             .map(item -> new StringCell(item.getItemId()))
                             .collect(Collectors.toList());
 
-                cells[numInputColumns] = CollectionCellFactory.createListCell(recommendations);
+                cells[numInputColumns] = CollectionCellFactory.createListCell(ranking);
             }
 
             // Create a new data row and push it to the output container.

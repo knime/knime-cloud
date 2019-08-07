@@ -44,6 +44,9 @@
       <node 
       	category-path="/labs/aws/personalize" 
       	factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.recommend.RecommendNodeFactory"/>
+      <node 
+      	category-path="/labs/aws/personalize" 
+      	factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.rank.RankNodeFactory"/>
    </extension>
    <extension
          point="org.knime.ext.textprocessing.TagSet">

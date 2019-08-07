@@ -46,7 +46,7 @@
  * History
  *   May 28, 2019 (julian): created
  */
-package org.knime.cloud.aws.mlservices.nodes.personalize.recommend;
+package org.knime.cloud.aws.mlservices.personalize;
 
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -86,7 +86,7 @@ public class PersonalizeRuntimeConnection extends Connection {
      *
      * @param connectionInformation The connection information
      */
-    PersonalizeRuntimeConnection(final CloudConnectionInformation connectionInformation) {
+    public PersonalizeRuntimeConnection(final CloudConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
     }
 
@@ -209,7 +209,7 @@ public class PersonalizeRuntimeConnection extends Connection {
      * @return Returns an AmazonPersonalizeRuntime client
      * @throws Exception Thrown if client could not be created
      */
-    final AmazonPersonalizeRuntime getClient() throws Exception {
+    public final AmazonPersonalizeRuntime getClient() throws Exception {
         if (!isOpen()) {
             open();
         }
