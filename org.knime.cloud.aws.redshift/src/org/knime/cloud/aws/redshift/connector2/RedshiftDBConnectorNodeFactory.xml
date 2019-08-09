@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <knimeNode  type="Source" icon="db_redshift_connector.png"
-    xmlns="http://knime.org/node/v3.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://knime.org/node/v3.1 http://knime.org/node/v3.1.xsd">
+xmlns="http://knime.org/node/v3.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://knime.org/node/v3.6 http://knime.org/node/v3.6.xsd">
     <name>Amazon Redshift Connector</name>
     <shortDescription>Create a database connection to Amazon Redshift.</shortDescription>
     <fullDescription>
@@ -77,7 +77,7 @@
         </tab>
         <tab name="JDBC Parameters">
             <description>
-                This tab allows you define JDBC driver connection parameter. The value of a parameter can be a 
+                This tab allows you to define JDBC driver connection parameter. The value of a parameter can be a 
                 constant, variable, credential user, credential password or KNIME URL.
                 For more information about the supported driver properties see the 
                 <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/configure-jdbc-options.html">Redshift documentation</a>.
