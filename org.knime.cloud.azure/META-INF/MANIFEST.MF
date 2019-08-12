@@ -16,3 +16,4 @@ Require-Bundle: org.knime.workbench.repository;bundle-version="[4.0.0,5.0.0)",
   org.knime.cloud.core;bundle-version="[4.0.0,5.0.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
+Eclipse-BundleShape: dir
