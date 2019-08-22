@@ -2,7 +2,7 @@
 
 This repository contains:
 
-* [KNIME Amazon Cloud Connectors](https://hub.knime.com/knime/extensions/org.knime.features.cloud.aws/latest)
+* [KNIME Amazon Cloud Connectors](https://hub.knime.com/knime/extensions/org.knime.features.cloud.aws/latest)  
 This extension enables the use of the KNIME filehandling nodes with Amazon S3.
 * [KNIME Amazon Machine Learning Integration](https://hub.knime.com/knime/extensions/org.knime.features.cloud.aws.mlservices/latest)  
 This extension provides nodes for interaction with Amazon Comprehend and Amazon Translate.
