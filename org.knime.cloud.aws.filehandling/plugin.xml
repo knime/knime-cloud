@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.knime.workbench.repository.nodes">
+           
+      <node
+            category-path="/labs/file-handling-prototype"
+            factory-class="org.knime.cloud.aws.filehandling.nodes.S3connection.S3ConnectionNodeFactory">
+      </node>
+
+   </extension>
+
+</plugin>
