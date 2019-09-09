@@ -5,11 +5,12 @@ Bundle-SymbolicName: org.knime.cloud.aws.filehandling;singleton:=true
 Bundle-Version: 4.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
-Require-Bundle: org.knime.cloud.core,
- org.knime.core;bundle-version="4.1.0",
- org.knime.filehandling.core;bundle-version="4.1.0",
+Require-Bundle: org.knime.cloud.core;bundle-version="[4.1.0,5.0.0)",
+ org.knime.core;bundle-version="[4.1.0,5.0.0)",
+ org.knime.filehandling.core;bundle-version="[4.1.0,5.0.0)",
  com.amazonaws.aws-java-sdk-core;bundle-version="1.11.490",
  com.amazonaws.aws-java-sdk-s3;bundle-version="1.11.490",
  com.amazonaws.aws-java-sdk-sts;bundle-version="1.11.490",
- org.knime.base.filehandling,
- org.knime.cloud.aws
+ org.knime.base.filehandling;bundle-version="[4.1.0,5.0.0)",
+ org.knime.cloud.aws;bundle-version="[4.1.0,5.0.0)"
+Bundle-ClassPath: cloud_aws_filehandling.jar
