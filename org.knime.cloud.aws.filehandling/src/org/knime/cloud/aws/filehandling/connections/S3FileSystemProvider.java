@@ -76,6 +76,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.knime.filehandling.core.connections.FSPath;
+import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeView;
+import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -350,11 +352,17 @@ public class S3FileSystemProvider extends FileSystemProvider {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
         final LinkOption... options) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+        try {
+            return (V)new FSBasicFileAttributeView(path.getFileName().toString(),
+                readAttributes(path, BasicFileAttributes.class));
+        } catch (final IOException ex) {
+            return null;
+        }
+
     }
 
     /**
@@ -379,8 +387,8 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public Map<String, Object> readAttributes(final Path path, final String attributes, final LinkOption... options)
         throws IOException {
-        // TODO implement
-        throw new UnsupportedOperationException();
+        return BasicFileAttributesUtil.attributesToMap(readAttributes(path, BasicFileAttributes.class, options),
+            attributes);
     }
 
     /**
