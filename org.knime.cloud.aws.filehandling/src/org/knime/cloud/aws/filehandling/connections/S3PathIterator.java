@@ -51,7 +51,6 @@ package org.knime.cloud.aws.filehandling.connections;
 import java.io.IOException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -118,13 +117,12 @@ public class S3PathIterator implements Iterator<Path> {
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
             } catch (final AmazonS3Exception e) {
-                m_objectsCommonPrefixes = Collections.emptyList();
                 // Listing does not work, when bucket is in wrong region
             }
 
         }
 
-        m_nextPath = getNextPath();
+        m_nextPath = m_objectsListing == null ? null : getNextPath();
 
     }
 
