@@ -84,6 +84,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.Grant;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.S3Object;
@@ -215,12 +218,20 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
         final AmazonS3 client = path.getFileSystem().getClient();
 
+        if (path.isDirectory()) {
+            final ListObjectsV2Request request = new ListObjectsV2Request();
+            request.withBucketName(path.getBucketName()).withPrefix(path.getKey()).withDelimiter(path.getKey())
+                .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(path.getKey())
+                .setMaxKeys(1);
+
+            final ObjectListing listObjects = client.listObjects(path.getBucketName(), path.getKey());
+            return !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
+        }
         if (!path.getKey().isEmpty()) {
             return client.doesObjectExist(path.getBucketName(), path.getKey());
         } else {
             return client.doesBucketExistV2(path.getBucketName());
         }
-
     }
 
     /**
@@ -264,8 +275,11 @@ public class S3FileSystemProvider extends FileSystemProvider {
     public void move(final Path source, final Path target, final CopyOption... options) throws IOException {
         final S3Path sourceS3Path = toS3Path(source);
         final S3Path targetS3Path = (S3Path)target;
+        if (sourceS3Path.isDirectory()) {
+            moveDir(sourceS3Path, targetS3Path);
+            return;
+        }
         final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
-
         try {
             client.copyObject(sourceS3Path.getBucketName(), sourceS3Path.getKey(), targetS3Path.getBucketName(),
                 targetS3Path.getKey());
@@ -274,6 +288,19 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
 
         delete(sourceS3Path);
+    }
+
+    private static void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path) {
+        // We have to move every blob with this prefix
+        final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
+        final ListObjectsV2Result list = client.listObjectsV2(sourceS3Path.getBucketName(), sourceS3Path.getKey());
+        list.getObjectSummaries().forEach(p -> {
+            client.copyObject(p.getBucketName(), p.getKey(), targetS3Path.getBucketName(),
+                p.getKey().replace(sourceS3Path.getKey(), targetS3Path.getKey() + "/"));
+
+            client.deleteObject(p.getBucketName(), p.getKey());
+        });
+
     }
 
     /**
@@ -312,6 +339,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
         if (!exists(s3Path)) {
             throw new AccessDeniedException(s3Path.getFullPath());
+        }
+        if (s3Path.isDirectory()) {
+            return;
         }
 
         AccessControlList acl;

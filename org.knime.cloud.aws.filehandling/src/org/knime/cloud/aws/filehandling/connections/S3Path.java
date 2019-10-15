@@ -66,6 +66,7 @@ import java.util.Iterator;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.connections.attributes.FSBasicAttributes;
 import org.knime.filehandling.core.connections.attributes.FSFileAttributes;
+import org.knime.filehandling.core.filechooser.NioFile;
 
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -86,8 +87,7 @@ public class S3Path implements FSPath {
 
     private final S3FileSystem m_fileSystem;
 
-    private boolean m_isAbsolute;
-
+    private final boolean m_isAbsolute;
 
     /**
      * Creates an S3Path from the given path string
@@ -119,38 +119,32 @@ public class S3Path implements FSPath {
 
     private ArrayList<String> getPathSplits(final String pathString) {
 
-
         //Prepare path string for splitting
         String path = pathString;
         if (isAbsolute()) {
             path = path.substring(1);
         }
 
-
         if (path.endsWith(PATH_SEPARATOR)) {
-            path = path.substring(0, path.length()-1);
+            path = path.substring(0, path.length() - 1);
         }
 
-
-
-        ArrayList<String> splitList = new ArrayList<>();
-        if(path.isEmpty()) {
+        final ArrayList<String> splitList = new ArrayList<>();
+        if (path.isEmpty()) {
             return splitList;
         }
 
         int index = 0;
-        while(index != -1) {
-            int  secondOccurence = path.indexOf(PATH_SEPARATOR, index+1);
-            if(secondOccurence == -1) {
+        while (index != -1) {
+            int secondOccurence = path.indexOf(PATH_SEPARATOR, index + 1);
+            if (secondOccurence == -1) {
                 splitList.add(path.substring(index));
                 secondOccurence = -2;
             } else {
                 splitList.add(path.substring(index, secondOccurence));
             }
-            index = secondOccurence+1;
+            index = secondOccurence + 1;
         }
-
-
 
         return splitList;
     }
@@ -203,11 +197,11 @@ public class S3Path implements FSPath {
             return null;
         }
 
-        StringBuilder sb = new StringBuilder(PATH_SEPARATOR);
-        Iterator<String> iter = m_blobParts.iterator();
-        for ( String part = iter.next(); iter.hasNext(); part = iter.next()) {
-           sb.append(part);
-           sb.append(PATH_SEPARATOR);
+        final StringBuilder sb = new StringBuilder(PATH_SEPARATOR);
+        final Iterator<String> iter = m_blobParts.iterator();
+        for (String part = iter.next(); iter.hasNext(); part = iter.next()) {
+            sb.append(part);
+            sb.append(PATH_SEPARATOR);
         }
 
         return new S3Path(m_fileSystem, sb.toString());
@@ -230,7 +224,7 @@ public class S3Path implements FSPath {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < index; i++) {
             sb.append(m_blobParts.get(i));
         }
@@ -243,15 +237,14 @@ public class S3Path implements FSPath {
      */
     @Override
     public Path subpath(final int beginIndex, final int endIndex) {
-        if(beginIndex > endIndex) {
+        if (beginIndex > endIndex) {
             throw new IllegalArgumentException("Begin index must not be greater than end index");
         }
-        if (beginIndex < 0 || beginIndex >= m_blobParts.size() ||
-                endIndex < 0 || endIndex >= m_blobParts.size()) {
+        if (beginIndex < 0 || beginIndex >= m_blobParts.size() || endIndex < 0 || endIndex >= m_blobParts.size()) {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = beginIndex; i < endIndex; i++) {
             sb.append(m_blobParts.get(i));
         }
@@ -311,7 +304,7 @@ public class S3Path implements FSPath {
      */
     @Override
     public boolean endsWith(final String other) {
-       return m_fullPath.endsWith(other);
+        return m_fullPath.endsWith(other);
     }
 
     /**
@@ -327,15 +320,15 @@ public class S3Path implements FSPath {
      */
     @Override
     public Path resolve(final Path other) {
-        S3Path otherPath = toS3Path(other);
-        if(otherPath.m_isAbsolute) {
+        final S3Path otherPath = toS3Path(other);
+        if (otherPath.m_isAbsolute) {
             return other;
         }
-        if(otherPath.getNameCount() == 0) {
+        if (otherPath.getNameCount() == 0) {
             return this;
         }
 
-        String resolvedPath = m_fullPath + otherPath.getFullPath();
+        final String resolvedPath = m_fullPath + otherPath.getFullPath();
 
         return new S3Path(m_fileSystem, resolvedPath);
     }
@@ -371,14 +364,14 @@ public class S3Path implements FSPath {
      */
     @Override
     public Path relativize(final Path other) {
-        S3Path path = toS3Path(other);
-        if(!this.m_isAbsolute) {
+        final S3Path path = toS3Path(other);
+        if (!this.m_isAbsolute) {
             return this;
         }
-        if(!path.isAbsolute()) {
+        if (!path.isAbsolute()) {
             throw new IllegalArgumentException("Input path must be absolut");
         }
-        URI relative = toUri().relativize(other.toUri());
+        final URI relative = toUri().relativize(other.toUri());
 
         return new S3Path(m_fileSystem, relative.getPath());
     }
@@ -397,7 +390,7 @@ public class S3Path implements FSPath {
      */
     @Override
     public Path toAbsolutePath() {
-        if(isAbsolute()) {
+        if (isAbsolute()) {
             return this;
         }
         throw new IllegalStateException(String.format("Realtive path %s cannot be made absolut.", this));
@@ -416,7 +409,7 @@ public class S3Path implements FSPath {
      */
     @Override
     public File toFile() {
-        throw new UnsupportedOperationException();
+        return new NioFile(this);
     }
 
     /**
@@ -450,15 +443,15 @@ public class S3Path implements FSPath {
      */
     @Override
     public int compareTo(final Path other) {
-        S3Path otherPath = toS3Path(other);
+        final S3Path otherPath = toS3Path(other);
         return m_fullPath.compareTo(otherPath.getFullPath());
     }
 
     private static S3Path toS3Path(final Path other) {
-        if(!(other instanceof S3Path)) {
+        if (!(other instanceof S3Path)) {
             throw new IllegalArgumentException("Input path must be an S3 Path");
         }
-        return (S3Path) other;
+        return (S3Path)other;
     }
 
     @Override
@@ -482,7 +475,7 @@ public class S3Path implements FSPath {
      * @return the bucket name
      */
     public String getBucketName() {
-        if(m_blobParts.isEmpty()) {
+        if (m_blobParts.isEmpty()) {
             return null;
         }
         return m_blobParts.get(0);
@@ -493,13 +486,13 @@ public class S3Path implements FSPath {
      */
     public String getKey() {
         int start = 0;
-        if(isAbsolute()) {
+        if (isAbsolute()) {
             start = 1;
         }
-        if(m_blobParts.size() == 1) {
+        if (m_blobParts.size() == 1) {
             return "";
         }
-        return m_fullPath.substring(m_fullPath.indexOf(PATH_SEPARATOR,start+1)+1);
+        return m_fullPath.substring(m_fullPath.indexOf(PATH_SEPARATOR, start + 1) + 1);
     }
 
     @Override
@@ -545,33 +538,31 @@ public class S3Path implements FSPath {
                 FileTime lastmod = FileTime.fromMillis(0L);
                 long size = 0;
 
-                S3Path s3Path = (S3Path) p;
-                    try {
-                        final ObjectMetadata objectMetadata = s3Path.getFileSystem().getClient()
-                            .getObjectMetadata(s3Path.getBucketName(), s3Path.getKey());
+                final S3Path s3Path = (S3Path)p;
+                try {
+                    final ObjectMetadata objectMetadata =
+                        s3Path.getFileSystem().getClient().getObjectMetadata(s3Path.getBucketName(), s3Path.getKey());
 
-                        final Date metaDataLastMod = objectMetadata.getLastModified();
+                    final Date metaDataLastMod = objectMetadata.getLastModified();
 
-                        lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
-                            : FileTime.from(s3Path.getBucket().getCreationDate().toInstant());
-                        size = objectMetadata.getContentLength();
+                    lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
+                        : FileTime.from(s3Path.getBucket().getCreationDate().toInstant());
+                    size = objectMetadata.getContentLength();
 
-                    } catch (final Exception e) {
-                        // If we do not have metadata we use fall back values
-                    }
-
+                } catch (final Exception e) {
+                    // If we do not have metadata we use fall back values
+                }
 
                 return new FSBasicAttributes(lastmod, lastmod, lastmod, size, false, false);
             });
-    }
+        }
         throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
     }
-
 
     /**
      * @return whether this is the virtual S3 root "/"
      */
     public boolean isVirtualRoot() {
         return m_blobParts.isEmpty();
-                }
+    }
 }

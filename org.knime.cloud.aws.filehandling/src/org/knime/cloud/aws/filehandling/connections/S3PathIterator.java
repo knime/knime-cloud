@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -112,11 +111,11 @@ public class S3PathIterator implements Iterator<Path> {
             try {
                 m_listRequest = new ListObjectsV2Request();
                 m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
-                    .withDelimiter(S3Path.PATH_SEPARATOR).withStartAfter(s3Path.getKey());
+                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
                 m_objectsListing = m_client.listObjectsV2(m_listRequest);
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
-            } catch (final AmazonS3Exception e) {
+            } catch (final Exception e) {
                 // Listing does not work, when bucket is in wrong region
             }
 
