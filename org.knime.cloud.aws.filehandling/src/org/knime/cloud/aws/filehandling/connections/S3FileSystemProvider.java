@@ -218,17 +218,24 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
         final AmazonS3 client = path.getFileSystem().getClient();
 
-        if (path.isDirectory()) {
-            final ListObjectsV2Request request = new ListObjectsV2Request();
-            request.withBucketName(path.getBucketName()).withPrefix(path.getKey()).withDelimiter(path.getKey())
-                .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(path.getKey())
-                .setMaxKeys(1);
-
-            final ObjectListing listObjects = client.listObjects(path.getBucketName(), path.getKey());
-            return !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
-        }
         if (!path.getKey().isEmpty()) {
-            return client.doesObjectExist(path.getBucketName(), path.getKey());
+            boolean exists = client.doesObjectExist(path.getBucketName(), path.getKey());
+            if (!exists && path.isDirectory()) {
+                final ListObjectsV2Request request = new ListObjectsV2Request();
+                request.withBucketName(path.getBucketName()).withPrefix(path.getKey()).withDelimiter(path.getKey())
+                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(path.getKey())
+                    .setMaxKeys(1);
+
+                ObjectListing listObjects;
+                try {
+                    listObjects = client.listObjects(path.getBucketName(), path.getKey());
+                    exists = !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
+                } catch (final AmazonServiceException ex) {
+
+                }
+            }
+
+            return exists;
         } else {
             return client.doesBucketExistV2(path.getBucketName());
         }
@@ -386,9 +393,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
         final LinkOption... options) {
+
         try {
-            return (V)new FSBasicFileAttributeView(path.getFileName().toString(),
-                readAttributes(path, BasicFileAttributes.class));
+            return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
         } catch (final IOException ex) {
             return null;
         }

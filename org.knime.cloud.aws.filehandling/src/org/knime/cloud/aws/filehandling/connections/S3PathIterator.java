@@ -54,8 +54,11 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -105,7 +108,15 @@ public class S3PathIterator implements Iterator<Path> {
         m_bucketName = s3Path.getBucketName();
 
         if (path.getNameCount() == 0) {
-            m_roots = m_fileSystem.getRootDirectories().iterator();
+            try {
+                final List<Bucket> buckets = m_client.listBuckets();
+                m_roots = buckets.stream() //
+                    .map(bucket -> (Path)new S3Path(m_fileSystem,
+                        S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
+                    .collect(Collectors.toList()).iterator();
+            } catch (final SdkClientException e) {
+                // In case of anonymous browsing listBuckets() will fail.
+            }
 
         } else {
             try {
@@ -121,7 +132,7 @@ public class S3PathIterator implements Iterator<Path> {
 
         }
 
-        m_nextPath = m_objectsListing == null ? null : getNextPath();
+        m_nextPath = m_objectsListing == null && m_roots == null ? null : getNextPath();
 
     }
 

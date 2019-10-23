@@ -102,9 +102,12 @@ public class S3Connection implements FSConnection {
      * @throws IOException if an I/O error occurs
      */
     public void closeFileSystem() throws IOException {
-        m_provider.getFileSystem( m_connInfo.getFileSystemURI()).close();
+        try {
+            m_provider.getFileSystem(m_connInfo.getFileSystemURI()).close();
+        } catch (final Exception e) {
+            throw new IOException(e.getMessage());
+        }
     }
-
 
     /**
      * {@inheritDoc}

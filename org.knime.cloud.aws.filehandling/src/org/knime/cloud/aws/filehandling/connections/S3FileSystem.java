@@ -68,7 +68,6 @@ import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.AnonymousAWSCredentials;
@@ -76,7 +75,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
@@ -226,26 +224,8 @@ public class S3FileSystem extends FileSystem {
      */
     @Override
     public Iterable<Path> getRootDirectories() {
-        final List<Path> paths = new ArrayList<>();
 
-        for (final Bucket bucket : getBuckets()) {
-            paths.add(new S3Path(this, m_fileStore.name() + bucket.getName() + PATH_SEPARATOR));
-        }
-        if (paths.isEmpty()) {
-            //In this case we just add the virtual root
-            paths.add(new S3Path(this, m_fileStore.name()));
-        }
-
-        return Collections.unmodifiableList(paths);
-    }
-
-    private Iterable<Bucket> getBuckets() {
-        try {
-            return m_client.listBuckets();
-        } catch (final SdkClientException e) {
-            // In case of anonymous browsing listBuckets() will fail.
-            return Collections.emptyList();
-        }
+        return Collections.singletonList(new S3Path(this, m_fileStore.name()));
     }
 
     /**
