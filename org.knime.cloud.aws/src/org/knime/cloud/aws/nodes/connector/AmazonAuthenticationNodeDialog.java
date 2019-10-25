@@ -48,13 +48,22 @@
  */
 package org.knime.cloud.aws.nodes.connector;
 
+import java.awt.Container;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import org.knime.base.filehandling.remote.connectioninformation.node.TestConnectionDialog;
+import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
+import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
 import org.knime.cloud.aws.util.AWSConnectionInformationComponents;
+import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
@@ -87,7 +96,48 @@ class AmazonAuthenticationNodeDialog extends NodeDialogPane {
         gbc.gridy++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
+
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.ABOVE_BASELINE_LEADING;
+        final JButton testConnectionButton = new JButton("Test connection");
+        testConnectionButton.addActionListener(new TestConnectionListener());
+        panel.add(testConnectionButton, gbc);
         addTab("Options", panel);
+    }
+
+    /**
+     * Listener that opens the test connection dialog.
+     *
+     *
+     * @author Patrick Winter, KNIME AG, Zurich, Switzerland
+     */
+    private class TestConnectionListener implements ActionListener {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            // Get frame
+            Frame frame = null;
+            Container container = getPanel().getParent();
+            while (container != null) {
+                if (container instanceof Frame) {
+                    frame = (Frame)container;
+                    break;
+                }
+                container = container.getParent();
+            }
+
+            // Get connection information to current settings
+            final AWSConnectionInformationSettings model = m_awsComp.getSettings();
+            final ConnectionInformation connectionInformation =
+                model.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
+
+            new TestConnectionDialog(connectionInformation).open(frame);
+        }
+
     }
 
     @Override

@@ -88,10 +88,11 @@ final class AmazonAuthenticationNodeModel extends NodeModel {
     /** Returs a map of authentication type and credentials. */
     static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
         final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
-        nameMap.put(AuthenticationType.USER_PWD, new Pair<String, String>("Access Key ID and Secret Key",
+        nameMap.put(AuthenticationType.USER_PWD, new Pair<>("Access Key ID and Secret Key",
             "Access Key ID and Secret Access Key based authentication"));
-        nameMap.put(AuthenticationType.KERBEROS, new Pair<String, String>("Default Credential Provider Chain",
+        nameMap.put(AuthenticationType.KERBEROS, new Pair<>("Default Credential Provider Chain",
             "Use the Default Credential Provider Chain for authentication"));
+        nameMap.put(AuthenticationType.NONE, new Pair<>("Anonymous Credentials", "Use Anonymous Credentials"));
         return nameMap;
     }
 

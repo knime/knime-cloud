@@ -72,6 +72,7 @@ public class AWSConnectionInformationView extends JPanel {
     private static final long serialVersionUID = -4166582429664304717L;
 
     private static final String WHITE_SPACE = "&nbsp;&nbsp;";
+
     private static final String NEW_LINE = "<br/><br/>";
 
     /**
@@ -86,25 +87,29 @@ public class AWSConnectionInformationView extends JPanel {
         buf.append(NEW_LINE);
 
         buf.append("<strong>Authentication type:</strong>" + WHITE_SPACE);
-        if(cloudConnectioInformation.useKeyChain()) {
-            buf.append("<tt>" + "Default Credential Provider Chain"+ "</tt>");
-        } else {
+        if (cloudConnectioInformation.useKeyChain()) {
+            buf.append("<tt>" + "Default Credential Provider Chain" + "</tt>");
+        } else if (cloudConnectioInformation.useKerberos()) {
             buf.append("<tt>" + "Access Key ID & Secret Key" + "</tt>");
+        } else {
+            buf.append("<tt>" + "Anonymous" + "</tt>");
         }
         buf.append(NEW_LINE);
 
-        if(!cloudConnectioInformation.useKeyChain()) {
+        if (!cloudConnectioInformation.useKeyChain()) {
             buf.append("&emsp; Access key ID:" + WHITE_SPACE);
             buf.append("<tt>" + cloudConnectioInformation.getUser() + "</tt>");
             buf.append(NEW_LINE);
         }
 
-        if(cloudConnectioInformation.switchRole()) {
+        if (cloudConnectioInformation.switchRole()) {
             buf.append("<strong>Switch Role:</strong>" + WHITE_SPACE);
             buf.append(NEW_LINE);
-            buf.append("&emsp; Account:" + WHITE_SPACE +"<tt>" + cloudConnectioInformation.getSwitchRoleAccount()+ "</tt>");
+            buf.append(
+                "&emsp; Account:" + WHITE_SPACE + "<tt>" + cloudConnectioInformation.getSwitchRoleAccount() + "</tt>");
             buf.append(NEW_LINE);
-            buf.append("&emsp; Role Name:" + WHITE_SPACE+ "<tt>" + cloudConnectioInformation.getSwitchRoleName()+ "</tt>");
+            buf.append(
+                "&emsp; Role Name:" + WHITE_SPACE + "<tt>" + cloudConnectioInformation.getSwitchRoleName() + "</tt>");
             buf.append(NEW_LINE);
         }
 
@@ -119,7 +124,7 @@ public class AWSConnectionInformationView extends JPanel {
         buf.append("<strong>Encryption:</strong>" + WHITE_SPACE);
         if (cloudConnectioInformation.useSSEncryption()) {
             buf.append("<tt>SSE (Server Side Encryption</tt>)");
-        } else{
+        } else {
             buf.append("<tt>None</tt>");
         }
 

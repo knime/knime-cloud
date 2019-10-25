@@ -14,6 +14,10 @@
         <option name="Authentication">
         Method for authentication
         	<br/>
+        	<b>Anonymous Credentials</b>
+        	<br/>
+        	Use anonymous credentials to make anonymous requests to an Amazon service
+        	<br/>
         	<b>Workflow Credentials</b>
         	<br/>
         	Use workflow credentials to determine the access key ID and the secret access key. 

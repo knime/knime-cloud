@@ -189,6 +189,7 @@ public final class AWSConnectionInformationComponents
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
         auth.add(getAuthenticationComponent().getComponentPanel());
+        getAuthenticationComponent().getModel().addChangeListener(e -> updateEnabledStatus());
         gbc.gridy++;
         auth.add(getSwitchRolePanel(), gbc);
         gbc.fill = GridBagConstraints.NONE;
@@ -216,8 +217,10 @@ public final class AWSConnectionInformationComponents
     }
 
     private void updateEnabledStatus() {
-        m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected());
-        m_switchRoleName.getModel().setEnabled(m_switchRole.isSelected());
+        m_switchRole.getModel()
+            .setEnabled(m_settings.getAuthenticationModel().getAuthenticationType() != AuthenticationType.NONE);
+        m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected() && m_switchRole.getModel().isEnabled());
+        m_switchRoleName.getModel().setEnabled(m_switchRole.isSelected() && m_switchRole.getModel().isEnabled());
     }
 
     /**
@@ -225,9 +228,9 @@ public final class AWSConnectionInformationComponents
      */
     @Override
     protected DialogComponentAuthentication defineAuthenticationComponent() {
-        final DialogComponentAuthentication authComponent =
-            new DialogComponentAuthentication(m_settings.getAuthenticationModel(), "Authentication", getNameMap(),
-                AuthenticationType.USER_PWD, AuthenticationType.CREDENTIALS, AuthenticationType.KERBEROS);
+        final DialogComponentAuthentication authComponent = new DialogComponentAuthentication(
+            m_settings.getAuthenticationModel(), "Authentication", getNameMap(), AuthenticationType.USER_PWD,
+            AuthenticationType.CREDENTIALS, AuthenticationType.KERBEROS, AuthenticationType.NONE);
         authComponent.setUsernameLabel("Access Key ID");
         authComponent.setPasswordLabel("Secret Key");
         return authComponent;

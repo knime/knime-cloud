@@ -13,6 +13,7 @@ import org.knime.core.util.KnimeEncryption;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -144,6 +145,9 @@ public class S3Connection extends Connection {
 	}
 
 	private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation) throws Exception {
+	    if (connectionInformation.isUseAnonymous()) {
+            return new AnonymousAWSCredentials();
+        }
 	    final String accessKeyId = connectionInformation.getUser();
         final String secretAccessKey = KnimeEncryption.decrypt(connectionInformation.getPassword());
         return new BasicAWSCredentials(accessKeyId, secretAccessKey);

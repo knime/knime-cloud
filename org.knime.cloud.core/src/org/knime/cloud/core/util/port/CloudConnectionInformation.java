@@ -61,37 +61,50 @@ import org.knime.core.node.ModelContentWO;
  */
 public class CloudConnectionInformation extends ConnectionInformation {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private boolean m_useKeyChain;
+    private boolean m_useKeyChain;
 
-	private boolean m_useSSEncryption;
-	private static final  String SSE_KEY = "ssencryption";
+    private static final String KEY_CHAIN_KEY = "keyChain";
 
-	private boolean m_switchRole;
-	private String m_switchRoleAccount;
-	private String m_switchRoleName;
-	private static final  String SWITCH_ROLE_KEY = "switchRole";
-	private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
-	private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+    private boolean m_useSSEncryption;
 
-	/**
-	 * Parameterless constructor
-	 */
-	public CloudConnectionInformation() { }
+    private static final String SSE_KEY = "ssencryption";
 
-	/**
-	 * @param model
-	 * @throws InvalidSettingsException
-	 */
-	protected CloudConnectionInformation(final ModelContentRO model) throws InvalidSettingsException {
+    private boolean m_switchRole;
+
+    private String m_switchRoleAccount;
+
+    private String m_switchRoleName;
+
+    private static final String SWITCH_ROLE_KEY = "switchRole";
+
+    private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
+
+    private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+
+    private boolean m_useAnonymous = false;
+
+    private static final String USE_ANONYMOUS_KEY = "useAnonymous";
+
+    /**
+     * Parameterless constructor
+     */
+    public CloudConnectionInformation() {
+    }
+
+    /**
+     * @param model
+     * @throws InvalidSettingsException
+     */
+    protected CloudConnectionInformation(final ModelContentRO model) throws InvalidSettingsException {
         super(model);
-        this.setUseKeyChain(model.getBoolean("keyChain", false));
+        this.setUseKeyChain(model.getBoolean(KEY_CHAIN_KEY, false));
         // New Server Side Encryption AP-8823
         if (model.containsKey(SSE_KEY)) {
-        	this.setUseSSEncryption(model.getBoolean(SSE_KEY));
+            this.setUseSSEncryption(model.getBoolean(SSE_KEY));
         } else {
-        	this.setUseSSEncryption(false);
+            this.setUseSSEncryption(false);
         }
         if (model.containsKey(SWITCH_ROLE_KEY)) {
             this.setSwitchRole(model.getBoolean(SWITCH_ROLE_KEY));
@@ -102,8 +115,9 @@ public class CloudConnectionInformation extends ConnectionInformation {
             this.setSwitchRoleAccount("");
             this.setSwitchRoleName("");
         }
-	}
 
+        m_useAnonymous = model.getBoolean(USE_ANONYMOUS_KEY);
+    }
 
     /**
      * Set whether Switch Role should be used.
@@ -114,9 +128,9 @@ public class CloudConnectionInformation extends ConnectionInformation {
         m_switchRole = switchRole;
     }
 
-	/**
-	 * Set the Switch Role account that should be used.
-	 *
+    /**
+     * Set the Switch Role account that should be used.
+     *
      * @param switchRoleAccount The Switch Role account that should be used
      */
     public void setSwitchRoleAccount(final String switchRoleAccount) {
@@ -132,73 +146,75 @@ public class CloudConnectionInformation extends ConnectionInformation {
         m_switchRoleName = switchRoleName;
     }
 
+    /**
+     * Set whether some key chain should be used when connecting
+     *
+     * @param use <code>true</code> if key chain should be used, <code>false</code> if not
+     */
+    public void setUseKeyChain(final boolean use) {
+        m_useKeyChain = use;
+    }
 
     /**
-	 * Set whether some key chain should be used when connecting
-	 * @param use <code>true</code> if key chain should be used, <code>false</code> if not
-	 */
-	public void setUseKeyChain(final boolean use) {
-		m_useKeyChain = use;
-	}
+     * Returns whether the key chain should be used or not
+     *
+     * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
+     */
+    public boolean useKeyChain() {
+        return m_useKeyChain;
+    }
 
-	/**
-	 * Returns whether the key chain should be used or not
-	 * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
-	 */
-	public boolean useKeyChain() {
-		return m_useKeyChain;
-	}
+    /**
+     * Set whether SSE should be used.
+     *
+     * @param use whether SSE should be used
+     */
+    public void setUseSSEncryption(final boolean use) {
+        m_useSSEncryption = use;
+    }
 
-	/**
-	 * Set whether SSE should be used.
-	 *
-	 * @param use whether SSE should be used
-	 */
-	public void setUseSSEncryption(final boolean use) {
-		m_useSSEncryption = use;
-	}
+    /**
+     * Returns whether SSE should be used.
+     *
+     * @return Whether SSE should be used
+     */
+    public boolean useSSEncryption() {
+        return m_useSSEncryption;
+    }
 
-	/**
-	 * Returns whether SSE should be used.
-	 *
-	 * @return Whether SSE should be used
-	 */
-	public boolean useSSEncryption() {
-		return m_useSSEncryption;
-	}
+    @Override
+    public void save(final ModelContentWO model) {
+        super.save(model);
+        model.addBoolean(KEY_CHAIN_KEY, m_useKeyChain);
+        // New Server Side Encryption AP-8823
+        model.addBoolean(SSE_KEY, m_useSSEncryption);
 
-	@Override
-	public void save(final ModelContentWO model) {
-		super.save(model);
-		model.addBoolean("keyChain", m_useKeyChain);
-		// New Server Side Encryption AP-8823
-		model.addBoolean(SSE_KEY, m_useSSEncryption);
+        // New Switch Role AP-11221
+        model.addBoolean(SWITCH_ROLE_KEY, m_switchRole);
+        model.addString(SWITCH_ROLE_ACCOUNT_KEY, m_switchRoleAccount);
+        model.addString(SWITCH_ROLE_NAME_KEY, m_switchRoleName);
 
-		// New Switch Role AP-11221
-		model.addBoolean(SWITCH_ROLE_KEY, m_switchRole);
-		model.addString(SWITCH_ROLE_ACCOUNT_KEY, m_switchRoleAccount);
-		model.addString(SWITCH_ROLE_NAME_KEY, m_switchRoleName);
-	}
+        model.addBoolean(USE_ANONYMOUS_KEY, m_useAnonymous);
+    }
 
-	public static CloudConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
-		return new CloudConnectionInformation(model);
-	}
+    public static CloudConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
+        return new CloudConnectionInformation(model);
+    }
 
     /**
      * Returns whether a Switch Role should be used.
      *
      * @return Whether a Switch Role should be used
      */
-	public boolean switchRole() {
-	    return m_switchRole;
-	}
+    public boolean switchRole() {
+        return m_switchRole;
+    }
 
-
-	/**
-	 * Returns the Switch Role account that should be used.
-	 *
-	 * @return The Switch Role account that should be used
-	 */
+    /**
+     * Returns the Switch Role account that should be used.
+     *
+     * @return The Switch Role account that should be used
+     */
     public String getSwitchRoleAccount() {
         return m_switchRoleAccount;
     }
@@ -211,4 +227,19 @@ public class CloudConnectionInformation extends ConnectionInformation {
     public String getSwitchRoleName() {
         return m_switchRoleName;
     }
+
+    /**
+     * @return the useAnonymous
+     */
+    public boolean isUseAnonymous() {
+        return m_useAnonymous;
+    }
+
+    /**
+     * @param useAnonymous the useAnonymous to set
+     */
+    public void setUseAnonymous(final boolean useAnonymous) {
+        m_useAnonymous = useAnonymous;
+    }
+
 }

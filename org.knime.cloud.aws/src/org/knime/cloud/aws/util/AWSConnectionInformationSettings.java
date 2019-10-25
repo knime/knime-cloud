@@ -177,6 +177,8 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
         if (getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS)) {
             connectionInformation.setUser("*****");
             connectionInformation.setPassword(null);
+        } else if (getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.NONE)) {
+            connectionInformation.setUseAnonymous(true);
         } else {
             // Put accessKeyId as user and secretAccessKey as password
             if (useWorkflowCredential()) {
