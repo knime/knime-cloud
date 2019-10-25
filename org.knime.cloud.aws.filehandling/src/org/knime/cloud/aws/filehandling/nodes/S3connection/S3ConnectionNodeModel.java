@@ -53,7 +53,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.knime.cloud.aws.filehandling.connections.S3Connection;
-import org.knime.cloud.aws.s3.filehandler.S3RemoteFileHandler;
+import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -89,7 +89,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      * The NodeModel for the S3Connection node
      */
     public S3ConnectionNodeModel() {
-        super(new PortType[]{}, new PortType[]{FlowVariablePortObject.TYPE});
+        super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FlowVariablePortObject.TYPE});
     }
 
     /**
@@ -97,8 +97,10 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      */
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        m_fsconn = new S3Connection(
-            m_config.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL));
+        final AmazonConnectionInformationPortObject awsConnectionInfo =
+            (AmazonConnectionInformationPortObject)inObjects[0];
+
+        m_fsconn = new S3Connection(awsConnectionInfo.getConnectionInformation());
 
         m_connectionKey = FSConnectionRegistry.getInstance().register(m_fsconn);
         final String connectionName = m_config.getConnectionName();
@@ -162,7 +164,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
     @Override
     protected void reset() {
         try {
-            if(m_fsconn != null) {
+            if (m_fsconn != null) {
                 m_fsconn.closeFileSystem();
             }
         } catch (final IOException ex) {
@@ -171,18 +173,16 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
 
         FSConnectionRegistry.getInstance().deregister(m_connectionKey);
 
-
     }
 
     static HashMap<AuthenticationType, Pair<String, String>> getNameMap() {
         final HashMap<AuthenticationType, Pair<String, String>> nameMap = new HashMap<>();
 
-        nameMap.put(AuthenticationType.USER_PWD, new Pair<>("Access Key ID and Secret Key",
-            "Access Key ID and Secret Access Key based authentication"));
+        nameMap.put(AuthenticationType.USER_PWD,
+            new Pair<>("Access Key ID and Secret Key", "Access Key ID and Secret Access Key based authentication"));
         nameMap.put(AuthenticationType.KERBEROS, new Pair<>("Default Credential Provider Chain",
             "Use the Default Credential Provider Chain for authentication"));
-        nameMap.put(AuthenticationType.NONE,
-            new Pair<>("Anonymous Credentials", "Use Anonymous Credentials"));
+        nameMap.put(AuthenticationType.NONE, new Pair<>("Anonymous Credentials", "Use Anonymous Credentials"));
         return nameMap;
     }
 

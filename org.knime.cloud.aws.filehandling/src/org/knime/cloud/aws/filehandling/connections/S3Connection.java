@@ -53,6 +53,7 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.util.HashMap;
 
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
@@ -64,17 +65,17 @@ import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
  */
 public class S3Connection implements FSConnection {
 
-    S3CloudConnectionInformation m_connInfo;
+    CloudConnectionInformation m_connInfo;
 
     S3FileSystemProvider m_provider = new S3FileSystemProvider();
 
     /**
      * Creates a new {@link S3Connection} for the given connection information.
      *
-     * @param connInfo the cloud connection information
+     * @param connectionInformation the cloud connection information
      */
-    public S3Connection(final S3CloudConnectionInformation connInfo) {
-        m_connInfo = connInfo;
+    public S3Connection(final CloudConnectionInformation connectionInformation) {
+        m_connInfo = connectionInformation;
     }
 
     /**
@@ -82,10 +83,10 @@ public class S3Connection implements FSConnection {
      */
     @Override
     public FileSystem getFileSystem() {
-        final HashMap<String, S3CloudConnectionInformation> env = new HashMap<>();
+        final HashMap<String, CloudConnectionInformation> env = new HashMap<>();
         env.put(S3FileSystemProvider.CONNECTION_INFORMATION, m_connInfo);
         try {
-            final URI uri = m_connInfo.getFileSystemURI();
+            final URI uri = m_connInfo.toURI();
             if (m_provider.isOpen(uri)) {
                 return m_provider.getFileSystem(uri);
             } else {
@@ -103,7 +104,7 @@ public class S3Connection implements FSConnection {
      */
     public void closeFileSystem() throws IOException {
         try {
-            m_provider.getFileSystem(m_connInfo.getFileSystemURI()).close();
+            m_provider.getFileSystem(m_connInfo.toURI()).close();
         } catch (final Exception e) {
             throw new IOException(e.getMessage());
         }

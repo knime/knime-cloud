@@ -48,17 +48,11 @@
  */
 package org.knime.cloud.aws.filehandling.nodes.S3connection;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.base.filehandling.remote.files.Protocol;
-import org.knime.cloud.aws.filehandling.connections.S3CloudConnectionInformation;
 import org.knime.cloud.aws.util.AWSConnectionInformationSettings;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
-import org.knime.core.node.workflow.CredentialsProvider;
-import org.knime.core.node.workflow.ICredentials;
 
 /**
  *
@@ -71,7 +65,6 @@ public class S3ConnectionConfig extends AWSConnectionInformationSettings {
      */
     public S3ConnectionConfig(final String prefix) {
         super(prefix);
-
     }
 
     private static final String CONNECTION_NAME = "ConnectionName";
@@ -84,7 +77,6 @@ public class S3ConnectionConfig extends AWSConnectionInformationSettings {
      */
     public SettingsModelString getConnectionNameModel() {
         return m_connectionNameModel;
-
     }
 
     /**
@@ -116,57 +108,4 @@ public class S3ConnectionConfig extends AWSConnectionInformationSettings {
         m_connectionNameModel.loadSettingsFrom(settings);
         super.loadValidatedSettings(settings);
     }
-
-    /**
-     * Copied from AWSConnectionInformationSettings, to use new auth method.
-     *
-     * Returns the {@link ConnectionInformation} resulting from the settings
-     *
-     * @param credentialsProvider the credentials provider
-     * @param protocol the protocol
-     * @return this settings ConnectionInformation
-     */
-    @Override
-    public S3CloudConnectionInformation createConnectionInformation(final CredentialsProvider credentialsProvider,
-        final Protocol protocol) {
-
-        // Create connection information object
-        final S3CloudConnectionInformation connectionInformation = new S3CloudConnectionInformation();
-
-        connectionInformation.setProtocol(protocol.getName());
-        connectionInformation.setHost(getRegion());
-        connectionInformation.setPort(protocol.getPort());
-        connectionInformation.setTimeout(getTimeout());
-
-        // Set the field "useKerberos" to true if "Default Credentials Provider Chain" should be used,
-        // otherwise to false
-        connectionInformation
-            .setUseKeyChain(getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS));
-
-        if (getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.KERBEROS)) {
-            connectionInformation.setUser("*****");
-            connectionInformation.setPassword(null);
-        } else if (getAuthenticationModel().getAuthenticationType().equals(AuthenticationType.NONE)) {
-            connectionInformation.setUseAnonymous(true);
-        } else {
-            // Put accessKeyId as user and secretAccessKey as password
-            if (useWorkflowCredential()) {
-                // Use credentials
-                final ICredentials credentials = credentialsProvider.get(getWorkflowCredential());
-                connectionInformation.setUser(credentials.getLogin());
-                connectionInformation.setPassword(credentials.getPassword());
-            } else {
-                connectionInformation.setUser(getUserValue());
-                connectionInformation.setPassword(getPasswordValue());
-            }
-        }
-
-        connectionInformation.setUseSSEncryption(getSSEncryptionModel().getBooleanValue());
-
-        connectionInformation.setSwitchRole(getSwitchRoleModel().getBooleanValue());
-        connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
-        connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
-        return connectionInformation;
-    }
-
 }

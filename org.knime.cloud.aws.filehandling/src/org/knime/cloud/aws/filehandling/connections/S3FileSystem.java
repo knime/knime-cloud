@@ -106,7 +106,7 @@ public class S3FileSystem extends FileSystem {
      * @param connectionInformation the {@link CloudConnectionInformation}
      */
     public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
-        final S3CloudConnectionInformation connectionInformation) {
+        final CloudConnectionInformation connectionInformation) {
         m_provider = provider;
         try {
             if (connectionInformation.switchRole()) {
@@ -120,7 +120,7 @@ public class S3FileSystem extends FileSystem {
         m_uri = uri;
     }
 
-    private static AmazonS3 getS3Client(final S3CloudConnectionInformation connectionInformation) throws Exception {
+    private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation) throws Exception {
         final ClientConfiguration clientConfig =
             new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
 
@@ -135,7 +135,7 @@ public class S3FileSystem extends FileSystem {
         return builder.build();
     }
 
-    private static AmazonS3 getRoleAssumedS3Client(final S3CloudConnectionInformation connectionInformation)
+    private static AmazonS3 getRoleAssumedS3Client(final CloudConnectionInformation connectionInformation)
         throws Exception {
         final AWSSecurityTokenServiceClientBuilder builder =
             AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
@@ -159,7 +159,7 @@ public class S3FileSystem extends FileSystem {
             .withRegion(connectionInformation.getHost()).build();
     }
 
-    private static AWSCredentials getCredentials(final S3CloudConnectionInformation connectionInformation)
+    private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
         throws Exception {
 
         if (connectionInformation.isUseAnonymous()) {

@@ -75,6 +75,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeView;
 import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
@@ -82,6 +83,7 @@ import org.knime.filehandling.core.connections.base.attributes.BasicFileAttribut
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AccessControlList;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.Grant;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -117,9 +119,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @SuppressWarnings("resource")
     @Override
     public FileSystem newFileSystem(final URI uri, final Map<String, ?> env) throws IOException {
-        S3CloudConnectionInformation connInfo = null;
+        CloudConnectionInformation connInfo = null;
         if (env.containsKey(CONNECTION_INFORMATION)) {
-            connInfo = (S3CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
+            connInfo = (CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
         }
         if (!m_fileSystems.containsKey(uri)) {
             m_fileSystems.put(uri, new S3FileSystem(this, uri, env, connInfo));
@@ -218,8 +220,13 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
         final AmazonS3 client = path.getFileSystem().getClient();
 
+        boolean exists = false;
         if (!path.getKey().isEmpty()) {
-            boolean exists = client.doesObjectExist(path.getBucketName(), path.getKey());
+            try {
+                exists = client.doesObjectExist(path.getBucketName(), path.getKey());
+            } catch (AmazonS3Exception e){
+
+            }
             if (!exists && path.isDirectory()) {
                 final ListObjectsV2Request request = new ListObjectsV2Request();
                 request.withBucketName(path.getBucketName()).withPrefix(path.getKey()).withDelimiter(path.getKey())
