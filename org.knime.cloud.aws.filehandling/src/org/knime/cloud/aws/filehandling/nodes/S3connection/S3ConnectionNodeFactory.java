@@ -87,7 +87,7 @@ public class S3ConnectionNodeFactory extends NodeFactory<S3ConnectionNodeModel> 
      */
     @Override
     protected boolean hasDialog() {
-        return true;
+        return false;
     }
 
     /**
@@ -95,7 +95,7 @@ public class S3ConnectionNodeFactory extends NodeFactory<S3ConnectionNodeModel> 
      */
     @Override
     protected NodeDialogPane createNodeDialogPane() {
-        return new S3ConnectionNodeDialog();
+        return null;
     }
 
 }
