@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -107,23 +108,23 @@ public class S3FileSystem extends FileSystem {
      */
     public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
         final CloudConnectionInformation connectionInformation) {
+        Objects.requireNonNull(provider);
+        Objects.requireNonNull(uri);
         m_provider = provider;
+        m_uri = uri;
         try {
             if (connectionInformation.switchRole()) {
-                m_client = getRoleAssumedS3Client(connectionInformation);
+                m_client = getRoleAssumedS3Client(connectionInformation, m_provider.getClientConfig());
             } else {
-                m_client = getS3Client(connectionInformation);
+                m_client = getS3Client(connectionInformation, m_provider.getClientConfig());
             }
         } catch (final Exception ex) {
             throw new RuntimeException(ex);
         }
-        m_uri = uri;
     }
 
-    private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation) throws Exception {
-        final ClientConfiguration clientConfig =
-            new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
-
+    private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation,
+        final ClientConfiguration clientConfig) throws Exception {
         final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig)
             .withRegion(connectionInformation.getHost());
 
@@ -135,8 +136,8 @@ public class S3FileSystem extends FileSystem {
         return builder.build();
     }
 
-    private static AmazonS3 getRoleAssumedS3Client(final CloudConnectionInformation connectionInformation)
-        throws Exception {
+    private static AmazonS3 getRoleAssumedS3Client(final CloudConnectionInformation connectionInformation,
+        final ClientConfiguration clientConfig) throws Exception {
         final AWSSecurityTokenServiceClientBuilder builder =
             AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
         if (!connectionInformation.useKeyChain()) {
@@ -155,8 +156,8 @@ public class S3FileSystem extends FileSystem {
             new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
                 assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
 
-        return AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
-            .withRegion(connectionInformation.getHost()).build();
+        return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig).withCredentials(
+            new AWSStaticCredentialsProvider(tempCredentials)).withRegion(connectionInformation.getHost()).build();
     }
 
     private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
@@ -182,7 +183,6 @@ public class S3FileSystem extends FileSystem {
      */
     @Override
     public FileSystemProvider provider() {
-
         return m_provider;
     }
 
@@ -224,7 +224,6 @@ public class S3FileSystem extends FileSystem {
      */
     @Override
     public Iterable<Path> getRootDirectories() {
-
         return Collections.singletonList(new S3Path(this, m_fileStore.name()));
     }
 
@@ -235,9 +234,7 @@ public class S3FileSystem extends FileSystem {
     @Override
     public Iterable<FileStore> getFileStores() {
         final List<FileStore> fileStores = new ArrayList<>();
-
         fileStores.add(m_fileStore);
-
         return fileStores;
     }
 
@@ -302,5 +299,4 @@ public class S3FileSystem extends FileSystem {
     public WatchService newWatchService() throws IOException {
         throw new UnsupportedOperationException();
     }
-
 }

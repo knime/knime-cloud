@@ -96,11 +96,10 @@ public class S3Path implements FSPath {
      * @param pathString the string representing the S3 path
      */
     public S3Path(final S3FileSystem fileSystem, final String pathString) {
-
         m_fileSystem = fileSystem;
         m_fullPath = pathString;
         m_isAbsolute = m_fullPath.startsWith(PATH_SEPARATOR);
-        m_blobParts = getPathSplits(m_fullPath);
+        m_blobParts = getPathSplits(m_fullPath, m_isAbsolute);
     }
 
     /**
@@ -114,14 +113,14 @@ public class S3Path implements FSPath {
         m_fileSystem = fileSystem;
         m_fullPath = PATH_SEPARATOR + bucketName + PATH_SEPARATOR + key;
         m_isAbsolute = true;
-        m_blobParts = getPathSplits(m_fullPath);
+        m_blobParts = getPathSplits(m_fullPath, m_isAbsolute);
     }
 
-    private ArrayList<String> getPathSplits(final String pathString) {
+    private static ArrayList<String> getPathSplits(final String pathString, final boolean isAbsolute) {
 
         //Prepare path string for splitting
         String path = pathString;
-        if (isAbsolute()) {
+        if (isAbsolute) {
             path = path.substring(1);
         }
 
@@ -184,7 +183,6 @@ public class S3Path implements FSPath {
         if (m_blobParts.isEmpty()) {
             return null;
         }
-
         return new S3Path(m_fileSystem, m_blobParts.get(m_blobParts.size() - 1));
     }
 
@@ -452,6 +450,14 @@ public class S3Path implements FSPath {
             throw new IllegalArgumentException("Input path must be an S3 Path");
         }
         return (S3Path)other;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return m_fullPath.hashCode();
     }
 
     @Override

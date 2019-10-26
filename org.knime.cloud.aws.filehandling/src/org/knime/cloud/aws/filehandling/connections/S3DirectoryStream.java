@@ -62,7 +62,7 @@ import org.knime.filehandling.core.connections.FSDirectoryStream;
 public class S3DirectoryStream extends FSDirectoryStream {
 
     /**
-     * Constructes a new directory stream for the given path.
+     * Constructs a new directory stream for the given path.
      *
      * @param path the path to be iterated over
      * @param filter the filter to be applied to the content

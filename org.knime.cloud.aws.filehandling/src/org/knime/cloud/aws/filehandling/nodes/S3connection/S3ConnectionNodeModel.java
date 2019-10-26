@@ -71,6 +71,7 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettings;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortObjectSpecZipInputStream;
@@ -84,6 +85,8 @@ import org.knime.filehandling.core.connections.FSConnectionRegistry;
 import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 
+import com.amazonaws.ClientConfiguration;
+
 /**
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
@@ -95,9 +98,11 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
     private static final String FN_CONN_INFO = "connectionInfo";
     private static final String CFG_FILE_SYSTEM_ID = "fileSystemId";
 
-    private static final String FILE_SYSTEM_NAME = "S 3";
+    private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectionNodeModel.class);
+
+    private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
 
     private S3Connection m_fsConn;
 
@@ -110,6 +115,14 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      */
     public S3ConnectionNodeModel() {
     	super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FileSystemPortObject.TYPE});
+    }
+
+    /**
+     * @return the connection timeout in seconds settings model
+     */
+    static SettingsModelIntegerBounded createConnectionTimeoutModel() {
+        return new SettingsModelIntegerBounded("readWriteTimeoutInSeconds",
+            Math.max(1, ClientConfiguration.DEFAULT_SOCKET_TIMEOUT / 1000), 0, Integer.MAX_VALUE);
     }
 
     /**
@@ -138,12 +151,16 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
 //        } catch (Exception ex) {
 //            throw new InvalidSettingsException(ex.getMessage());
 //        }
-
-        m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation());
+        m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation(), getClientConfig());
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
         return new PortObject[]{new FileSystemPortObject(createSpec())};
     }
 
+    private ClientConfiguration getClientConfig() {
+        final int socketTimeout = m_socketTimeout.getIntValue() * 1000;
+        return new ClientConfiguration().withConnectionTimeout(
+            m_awsConnectionInfo.getConnectionInformation().getTimeout()).withSocketTimeout(socketTimeout);
+    }
 
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) {
@@ -186,7 +203,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
                 PortUtil.getPortObjectZipInputStream(new BufferedInputStream(new FileInputStream(file)));) {
             final ConnectionInformationPortObjectSpec spec = specSerializer.loadPortObjectSpec(specIn);
             m_awsConnectionInfo = serializer.loadPortObject(in, spec, exec);
-            m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation());
+            m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation(), getClientConfig());
             FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
         }
     }
@@ -230,7 +247,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
-        //nothing to do
+        m_socketTimeout.saveSettingsTo(settings);
     }
 
     /**
@@ -238,7 +255,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      */
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-        //nothing to do
+        m_socketTimeout.validateSettings(settings);
     }
 
     /**
@@ -246,7 +263,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      */
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-        //nothing to do
+        m_socketTimeout.loadSettingsFrom(settings);
     }
 
     /**

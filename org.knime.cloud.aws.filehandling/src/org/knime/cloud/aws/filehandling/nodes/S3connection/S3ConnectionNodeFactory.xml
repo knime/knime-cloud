@@ -29,8 +29,10 @@
         		For further documentation please take a look at the <a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html">AWS Documentation</a>.
         	</p>
         </intro>
+        <option name="Read/write timeout in seconds">The socket read/write timeout. For further details see the 
+            <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html#setSocketTimeout-int-">S3 documentation</a>.
+        </option>
     </fullDescription>
-    
 	<ports>
 	     <inPort index="0" name="Connection information port">
         	Port object containing the AWS connection information.

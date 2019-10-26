@@ -52,11 +52,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.util.HashMap;
+import java.util.Objects;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
+
+import com.amazonaws.ClientConfiguration;
 
 /**
  * The Amazon S3 implementation of the {@link FSConnection} interface.
@@ -65,17 +68,21 @@ import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
  */
 public class S3Connection implements FSConnection {
 
-    CloudConnectionInformation m_connInfo;
+    private final CloudConnectionInformation m_connInfo;
 
-    S3FileSystemProvider m_provider = new S3FileSystemProvider();
+    private final S3FileSystemProvider m_provider;
 
     /**
      * Creates a new {@link S3Connection} for the given connection information.
      *
      * @param connectionInformation the cloud connection information
+     * @param clientConfig the {@link ClientConfiguration} to use
      */
-    public S3Connection(final CloudConnectionInformation connectionInformation) {
+    public S3Connection(final CloudConnectionInformation connectionInformation,
+        final ClientConfiguration clientConfig) {
+        Objects.requireNonNull(connectionInformation);
         m_connInfo = connectionInformation;
+        m_provider = new S3FileSystemProvider(clientConfig);
     }
 
     /**
@@ -104,7 +111,10 @@ public class S3Connection implements FSConnection {
      */
     public void closeFileSystem() throws IOException {
         try {
-            m_provider.getFileSystem(m_connInfo.toURI()).close();
+            final URI uri = m_connInfo.toURI();
+            if (m_provider.isOpen(uri)) {
+                m_provider.getFileSystem(uri).close();
+            }
         } catch (final Exception e) {
             throw new IOException(e.getMessage());
         }

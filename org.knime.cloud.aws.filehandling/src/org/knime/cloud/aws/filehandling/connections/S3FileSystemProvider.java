@@ -73,6 +73,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -81,6 +82,7 @@ import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeVi
 import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -103,7 +105,24 @@ public class S3FileSystemProvider extends FileSystemProvider {
     /**  */
     public static final String CONNECTION_INFORMATION = "ConnectionInformation";
 
-    HashMap<URI, FileSystem> m_fileSystems = new HashMap<>();
+    private final HashMap<URI, FileSystem> m_fileSystems = new HashMap<>();
+
+    private final ClientConfiguration m_clientConfig;
+
+    /**
+     * @param clientConfig the {@link ClientConfiguration} to use
+     */
+    public S3FileSystemProvider(final ClientConfiguration clientConfig) {
+        Objects.requireNonNull(clientConfig);
+        m_clientConfig = clientConfig;
+    }
+
+    /**
+     * @return the {@link ClientConfiguration}
+     */
+    public ClientConfiguration getClientConfig() {
+        return m_clientConfig;
+    }
 
     /**
      * {@inheritDoc}
@@ -338,7 +357,6 @@ public class S3FileSystemProvider extends FileSystemProvider {
      */
     @Override
     public FileStore getFileStore(final Path path) throws IOException {
-
         return new S3FileStore();
     }
 
@@ -400,13 +418,11 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
         final LinkOption... options) {
-
         try {
             return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
         } catch (final IOException ex) {
             return null;
         }
-
     }
 
     /**
@@ -416,7 +432,6 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <A extends BasicFileAttributes> A readAttributes(final Path path, final Class<A> type,
         final LinkOption... options) throws IOException {
-
         final FSPath fsPath = (FSPath)path;
         if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
             return (A)fsPath.getFileAttributes(type);

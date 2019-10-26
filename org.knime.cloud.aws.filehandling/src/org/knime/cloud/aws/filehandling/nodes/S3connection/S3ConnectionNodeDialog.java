@@ -44,58 +44,22 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
+ *   Oct 26, 2019 (Tobias): created
  */
 package org.knime.cloud.aws.filehandling.nodes.S3connection;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
 
 /**
+ * S3 connector node dialog.
  *
- * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
+ * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectionNodeFactory extends NodeFactory<S3ConnectionNodeModel> {
+public class S3ConnectionNodeDialog extends DefaultNodeSettingsPane {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public S3ConnectionNodeModel createNodeModel() {
-        return new S3ConnectionNodeModel();
+    S3ConnectionNodeDialog() {
+        addDialogComponent(new DialogComponentNumber(S3ConnectionNodeModel.createConnectionTimeoutModel(),
+            "Read/write timeout in seconds: ", 10, 5));
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected int getNrNodeViews() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public NodeView<S3ConnectionNodeModel> createNodeView(final int viewIndex, final S3ConnectionNodeModel nodeModel) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected boolean hasDialog() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected NodeDialogPane createNodeDialogPane() {
-        return new S3ConnectionNodeDialog();
-    }
-
 }
