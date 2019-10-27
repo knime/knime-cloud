@@ -116,7 +116,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
             this.setSwitchRoleName("");
         }
 
-        m_useAnonymous = model.getBoolean(USE_ANONYMOUS_KEY);
+        m_useAnonymous = model.getBoolean(USE_ANONYMOUS_KEY, false);
     }
 
     /**
@@ -157,7 +157,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
 
     /**
      * Returns whether the key chain should be used or not
-     *
+     *isUseAnonymous
      * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
      */
     public boolean useKeyChain() {
