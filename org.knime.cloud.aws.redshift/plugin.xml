@@ -4,7 +4,12 @@
 <!--************************** DB Extensions **************************-->
     <!-- Database Types -->
    <extension point="org.knime.database.DBType">
-      <DBType id="redshift" name="Amazon Redshift"/>
+      <DBType id="redshift" name="Amazon Redshift"
+        urlTemplateValidator="org.knime.database.node.connector.server.ServerUrlTemplateValidator">
+            <UrlTemplateExamples>
+            <UrlTemplateExample template="jdbc:redshift://&lt;host&gt;:&lt;port&gt;/&lt;database&gt;"/>
+        </UrlTemplateExamples>
+      </DBType>
    </extension>
    
    <!-- Agents -->
