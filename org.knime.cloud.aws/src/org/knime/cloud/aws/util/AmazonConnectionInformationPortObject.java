@@ -53,8 +53,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
@@ -80,7 +80,7 @@ public class AmazonConnectionInformationPortObject extends AbstractSimplePortObj
         extends AbstractSimplePortObjectSerializer<AmazonConnectionInformationPortObject> {
     }
 
-    private ConnectionInformationPortObjectSpec m_connectionInformationPOS;
+    private CloudConnectionInformationPortObjectSpec m_connectionInformationPOS;
 
     /**
      * Type of this port.
@@ -109,7 +109,7 @@ public class AmazonConnectionInformationPortObject extends AbstractSimplePortObj
      * @param connectionInformationPOS The spec wrapping the connection information.
      */
     public AmazonConnectionInformationPortObject(
-        final ConnectionInformationPortObjectSpec connectionInformationPOS) {
+        final CloudConnectionInformationPortObjectSpec connectionInformationPOS) {
         if (connectionInformationPOS == null) {
             throw new NullPointerException("Argument must not be null");
         }
@@ -154,7 +154,7 @@ public class AmazonConnectionInformationPortObject extends AbstractSimplePortObj
     @Override
     protected void load(final ModelContentRO model, final PortObjectSpec spec, final ExecutionMonitor exec)
         throws InvalidSettingsException, CanceledExecutionException {
-        m_connectionInformationPOS = (ConnectionInformationPortObjectSpec)spec;
+        m_connectionInformationPOS = (CloudConnectionInformationPortObjectSpec)spec;
     }
 
 }

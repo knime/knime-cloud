@@ -52,7 +52,6 @@ import java.util.Objects;
 
 import javax.swing.JComponent;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
@@ -97,7 +96,7 @@ public class CloudConnectionInformationPortObjectSpec extends ConnectionInformat
      * @return The content of this port object
      */
     @Override
-	public ConnectionInformation getConnectionInformation() {
+	public CloudConnectionInformation getConnectionInformation() {
         return m_connectionInformation;
     }
 

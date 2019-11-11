@@ -76,6 +76,15 @@ public class S3Connection implements FSConnection {
      * Creates a new {@link S3Connection} for the given connection information.
      *
      * @param connectionInformation the cloud connection information
+     */
+    public S3Connection(final CloudConnectionInformation connectionInformation) {
+        this(connectionInformation, new ClientConfiguration());
+    }
+
+    /**
+     * Creates a new {@link S3Connection} for the given connection information.
+     *
+     * @param connectionInformation the cloud connection information
      * @param clientConfig the {@link ClientConfiguration} to use
      */
     public S3Connection(final CloudConnectionInformation connectionInformation,
