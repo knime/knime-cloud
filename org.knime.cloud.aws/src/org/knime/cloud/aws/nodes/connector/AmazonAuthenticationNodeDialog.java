@@ -69,6 +69,8 @@ import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
+import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication;
+import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.AuthenticationType;
 import org.knime.core.node.port.PortObjectSpec;
 
 /**
@@ -78,12 +80,15 @@ import org.knime.core.node.port.PortObjectSpec;
  */
 class AmazonAuthenticationNodeDialog extends NodeDialogPane {
 
+    private final AWSConnectionInformationSettings m_settings =
+        AmazonAuthenticationNodeModel.createAWSConnectionModel();
+
     private final AWSConnectionInformationComponents m_awsComp =
-        new AWSConnectionInformationComponents(AmazonAuthenticationNodeModel.createAWSConnectionModel(),
-            AmazonAuthenticationNodeModel.getNameMap(), false);
+        new AWSConnectionInformationComponents(m_settings, AmazonAuthenticationNodeModel.getNameMap(), false);
 
     /** Constructor */
     AmazonAuthenticationNodeDialog() {
+
         final JPanel panel = new JPanel(new GridBagLayout());
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -104,6 +109,10 @@ class AmazonAuthenticationNodeDialog extends NodeDialogPane {
         testConnectionButton.addActionListener(new TestConnectionListener());
         panel.add(testConnectionButton, gbc);
         addTab("Options", panel);
+        //Disable test connection button for anonymous authentication
+        final SettingsModelAuthentication authModel = m_settings.getAuthenticationModel();
+        authModel.addChangeListener(
+            e -> testConnectionButton.setEnabled(!authModel.getAuthenticationType().equals(AuthenticationType.NONE)));
     }
 
     /**
