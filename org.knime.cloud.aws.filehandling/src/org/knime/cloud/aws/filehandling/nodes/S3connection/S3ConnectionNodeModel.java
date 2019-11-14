@@ -57,11 +57,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Objects;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.aws.filehandling.connections.S3Connection;
+import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject.Serializer;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -86,6 +89,7 @@ import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 /**
  *
@@ -94,8 +98,11 @@ import com.amazonaws.ClientConfiguration;
 public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode {
 
     private static final String FN_FILE_SYSTEM = "fileSystem";
+
     private static final String FN_CONN_INFO_SPEC = "connectionInfoSpec";
+
     private static final String FN_CONN_INFO = "connectionInfo";
+
     private static final String CFG_FILE_SYSTEM_ID = "fileSystemId";
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
@@ -114,7 +121,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
      * The NodeModel for the S3Connection node
      */
     public S3ConnectionNodeModel() {
-    	super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FileSystemPortObject.TYPE});
+        super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FileSystemPortObject.TYPE});
     }
 
     /**
@@ -128,38 +135,43 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("resource")
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         m_awsConnectionInfo = (AmazonConnectionInformationPortObject)inObjects[0];
 
-
         //TODO: Test if connection is available and if switch role is required!!!
 
-//        final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-//        URI resolve = conInfo.toURI().resolve("/");
-//        try {
-//            RemoteFile<S3Connection> s3RemoteFile = RemoteFileFactory.createRemoteFile(resolve, conInfo,
-//                new ConnectionMonitor<S3Connection>());
-//            S3Connection connection = s3RemoteFile.getConnection();
-//            if (connection.restrictedPermissions()) {
-//                setWarningMessage("The credentials provided have restricted permissions. "
-//                    + "File browsing in the Remote File nodes might not work as expected.\n"
-//                    + "All buckets will be assumed existing, as they cannot be listed.");
-//            }
-//        } catch (InvalidSettingsException ex) {
-//            throw ex;
-//        } catch (Exception ex) {
-//            throw new InvalidSettingsException(ex.getMessage());
-//        }
-        m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation(), getClientConfig());
+        final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
+        m_fsConn = new S3Connection(conInfo, getClientConfig());
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
+        if (conInfo.isUseAnonymous()) {
+            setWarningMessage("You are using anonymous credentials." + "File browsing might not work as expected.\n"
+                + "Browsing will only be available when bucket name is given in file/URL field.");
+        } else {
+            final S3FileSystem fileSystem = (S3FileSystem)m_fsConn.getFileSystem();
+            try {
+                fileSystem.getClient().listBuckets();
+            } catch (final AmazonS3Exception e) {
+                if (Objects.equals(e.getErrorCode(), "InvalidAccessKeyId")) {
+                    throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
+                } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
+                    setWarningMessage("The credentials provided have restricted permissions. "
+                        + "File browsing might not work as expected.\n"
+                        + "All buckets will be assumed existing, as they cannot be listed.");
+                }
+            }
+        }
         return new PortObject[]{new FileSystemPortObject(createSpec())};
     }
 
     private ClientConfiguration getClientConfig() {
         final int socketTimeout = m_socketTimeout.getIntValue() * 1000;
-        return new ClientConfiguration().withConnectionTimeout(
-            m_awsConnectionInfo.getConnectionInformation().getTimeout()).withSocketTimeout(socketTimeout);
+        return new ClientConfiguration()
+            .withConnectionTimeout(m_awsConnectionInfo.getConnectionInformation().getTimeout())
+            .withSocketTimeout(socketTimeout)
+            .withConnectionTTL(socketTimeout);
+
     }
 
     @Override
@@ -182,7 +194,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
         try (InputStream inStream = Files.newInputStream(settingsFile.toPath())) {
             final NodeSettingsRO settings = NodeSettings.loadFromXML(inStream);
             m_fsId = settings.getString(CFG_FILE_SYSTEM_ID);
-        }  catch (InvalidSettingsException e) {
+        } catch (final InvalidSettingsException e) {
             throw new IOException(e);
         }
 
@@ -196,11 +208,11 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
         }
         final File file = new File(nodeInternDir, FN_CONN_INFO);
         try (@SuppressWarnings("resource")
-            PortObjectSpecZipInputStream specIn =
-                PortUtil.getPortObjectSpecZipInputStream(new BufferedInputStream(new FileInputStream(specFile)));
-            @SuppressWarnings("resource")
-            PortObjectZipInputStream in =
-                PortUtil.getPortObjectZipInputStream(new BufferedInputStream(new FileInputStream(file)));) {
+        PortObjectSpecZipInputStream specIn =
+            PortUtil.getPortObjectSpecZipInputStream(new BufferedInputStream(new FileInputStream(specFile)));
+                @SuppressWarnings("resource")
+                PortObjectZipInputStream in =
+                    PortUtil.getPortObjectZipInputStream(new BufferedInputStream(new FileInputStream(file)));) {
             final ConnectionInformationPortObjectSpec spec = specSerializer.loadPortObjectSpec(specIn);
             m_awsConnectionInfo = serializer.loadPortObject(in, spec, exec);
             m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation(), getClientConfig());
@@ -225,17 +237,17 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
             //nothing to save
             return;
         }
-        final org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec
-        .Serializer specSerializer = new ConnectionInformationPortObjectSpec.Serializer();
+        final org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec.Serializer specSerializer =
+            new ConnectionInformationPortObjectSpec.Serializer();
         final Serializer serializer = new AmazonConnectionInformationPortObject.Serializer();
         final File specFile = new File(nodeInternDir, FN_CONN_INFO_SPEC);
         final File file = new File(nodeInternDir, FN_CONN_INFO);
         try (@SuppressWarnings("resource")
-            PortObjectSpecZipOutputStream specOut = PortUtil.getPortObjectSpecZipOutputStream(
-                new BufferedOutputStream(new FileOutputStream(specFile)));
-            @SuppressWarnings("resource")
-            PortObjectZipOutputStream out =
-                PortUtil.getPortObjectZipOutputStream(new BufferedOutputStream(new FileOutputStream(file)));) {
+        PortObjectSpecZipOutputStream specOut =
+            PortUtil.getPortObjectSpecZipOutputStream(new BufferedOutputStream(new FileOutputStream(specFile)));
+                @SuppressWarnings("resource")
+                PortObjectZipOutputStream out =
+                    PortUtil.getPortObjectZipOutputStream(new BufferedOutputStream(new FileOutputStream(file)));) {
             specSerializer.savePortObjectSpec((ConnectionInformationPortObjectSpec)m_awsConnectionInfo.getSpec(),
                 specOut);
             serializer.savePortObject(m_awsConnectionInfo, out, exec);

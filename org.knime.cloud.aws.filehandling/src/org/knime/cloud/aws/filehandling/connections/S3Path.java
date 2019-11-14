@@ -97,7 +97,7 @@ public class S3Path implements FSPath {
      */
     public S3Path(final S3FileSystem fileSystem, final String pathString) {
         m_fileSystem = fileSystem;
-        m_fullPath = pathString;
+        m_fullPath = pathString.isEmpty() ? PATH_SEPARATOR : pathString;
         m_isAbsolute = m_fullPath.startsWith(PATH_SEPARATOR);
         m_blobParts = getPathSplits(m_fullPath, m_isAbsolute);
     }

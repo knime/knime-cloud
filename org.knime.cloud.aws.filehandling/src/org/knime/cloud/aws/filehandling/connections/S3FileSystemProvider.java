@@ -77,6 +77,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeView;
 import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
@@ -96,11 +97,13 @@ import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.S3Object;
 
 /**
- * File system provider for {@link S3FileSystem}s
+ * File system provider for {@link S3FileSystem}s.
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
 public class S3FileSystemProvider extends FileSystemProvider {
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
     /**  */
     public static final String CONNECTION_INFORMATION = "ConnectionInformation";
@@ -110,6 +113,8 @@ public class S3FileSystemProvider extends FileSystemProvider {
     private final ClientConfiguration m_clientConfig;
 
     /**
+     * Constructs a file system provider for {@link S3FileSystem}s.
+     *
      * @param clientConfig the {@link ClientConfiguration} to use
      */
     public S3FileSystemProvider(final ClientConfiguration clientConfig) {
@@ -244,7 +249,7 @@ public class S3FileSystemProvider extends FileSystemProvider {
             try {
                 exists = client.doesObjectExist(path.getBucketName(), path.getKey());
             } catch (AmazonS3Exception e){
-
+                LOGGER.warn(e);
             }
             if (!exists && path.isDirectory()) {
                 final ListObjectsV2Request request = new ListObjectsV2Request();
@@ -257,13 +262,18 @@ public class S3FileSystemProvider extends FileSystemProvider {
                     listObjects = client.listObjects(path.getBucketName(), path.getKey());
                     exists = !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
                 } catch (final AmazonServiceException ex) {
-
+                    LOGGER.warn(ex);
                 }
             }
 
             return exists;
         } else {
-            return client.doesBucketExistV2(path.getBucketName());
+            try {
+                return client.doesBucketExistV2(path.getBucketName());
+            } catch (AmazonS3Exception e) {
+                LOGGER.warn(e);
+                return false;
+            }
         }
     }
 
@@ -421,6 +431,7 @@ public class S3FileSystemProvider extends FileSystemProvider {
         try {
             return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
         } catch (final IOException ex) {
+            LOGGER.warn(ex);
             return null;
         }
     }
