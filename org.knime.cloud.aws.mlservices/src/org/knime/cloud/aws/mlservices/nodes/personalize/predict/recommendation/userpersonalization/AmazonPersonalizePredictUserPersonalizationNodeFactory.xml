@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Manipulator"
+	icon="../../amazon_personalize_predict.png">
+	<name>Amazon Personalize User Personalization</name>
+	<shortDescription>Returns item recommendations for specific users by
+		calling the Amazon Personalize service.
+	</shortDescription>
+	<fullDescription>
+		<intro>
+			This node returns item recommendations for a specific user by calling
+			the Amazon Personalize service. At least one campaign must be
+			available that was created using a recipe of type
+			<i>User
+				personalization</i>
+			. As input,
+			the node takes a user ID and,
+			optionally, an
+			item
+			ID. The
+			output will be a
+			list of recommended
+			items.
+			<br />
+			More
+			information is available on the
+			<a href="https://aws.amazon.com/personalize/">website</a>
+			or in the
+			<a
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
+			.
+		</intro>
+		<tab name="Options">
+			<option name="Campaign">
+				Specify the the campaign. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="User ID column">
+				Select the column that contains user IDs. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Item ID column (optional)">
+				Optionally, select the column that contains item IDs. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Number of results">
+				Specify the number of recommended items. Valid range is from 1 to
+				500. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Missing value handling">
+				Specify the action if a missing value is in the input. If
+				<i>Fail</i>
+				is selected, the node will fail. Otherwise, the node just gives a
+				warning and puts missing values in the output for the corresponding
+				rows.
+			</option>
+		</tab>
+	</fullDescription>
+	<ports>
+		<inPort name="AWS connection information" index="0">The AWS
+			connection information.
+		</inPort>
+		<inPort name="Input data" index="1">The input table containing user
+			IDs (and item IDs).
+		</inPort>
+		<outPort name="Recommended items" index="0">The input table with
+			one appended column containing a list of recommended items. The list
+			is sorted in ascending order by prediction score.
+		</outPort>
+	</ports>
+</knimeNode>

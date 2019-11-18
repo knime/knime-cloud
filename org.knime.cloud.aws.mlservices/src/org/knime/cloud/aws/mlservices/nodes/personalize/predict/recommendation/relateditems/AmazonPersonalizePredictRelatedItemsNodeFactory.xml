@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Manipulator"
+	icon="../../amazon_personalize_predict.png">
+	<name>Amazon Personalize Related Items</name>
+	<shortDescription>Returns similar items for a specific item by calling
+		the Amazon Personalize service.
+	</shortDescription>
+	<fullDescription>
+		<intro>
+			This node returns related items for a specific item by calling
+			the
+			Amazon Personalize service. At least one campaign must be
+			available
+			that was created using a recipe of type
+			<i>Related items</i>
+			. As input,
+			the node takes an
+			item
+			id. The
+			output will be a
+			list of
+			similar
+			items.
+			<br />
+			More
+			information is available on the
+			<a href="https://aws.amazon.com/personalize/">website</a>
+			or in the
+			<a
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
+			.
+		</intro>
+		<tab name="Options">
+			<option name="Campaign">
+				Specify the the campaign. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Item ID column">
+				Select the column that contains item IDs. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Number of results">
+				Specify the number of related items. Valid range is from 1 to
+				500.
+				See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
+				.
+			</option>
+			<option name="Missing value handling">
+				Specify the action if a missing value is in the input. If
+				<i>Fail</i>
+				is selected, the node will fail. Otherwise, the node just gives a
+				warning and puts missing values in the output for the corresponding
+				rows.
+			</option>
+		</tab>
+	</fullDescription>
+	<ports>
+		<inPort name="AWS connection information" index="0">The AWS
+			connection information.
+		</inPort>
+		<inPort name="Input data" index="1">The input table containing item
+			IDs.
+		</inPort>
+		<outPort name="Related items" index="0">The input table with
+			one
+			appended column containing a list of related items. The list
+			is
+			sorted
+			in ascending order by prediction score.
+		</outPort>
+	</ports>
+</knimeNode>

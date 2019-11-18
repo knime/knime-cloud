@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Other"
+	icon="amazon_personalize_create_campaign.png">
+	<name>Amazon Personalize Create Campaign</name>
+	<shortDescription>Creates a new Amazon Personalize solution version.
+	</shortDescription>
+	<fullDescription>
+		<intro>
+			This node deploys a solution version by creating a new campaign. The
+			created campaign can then be used to make predictions. You need to
+			have at least one solution version created to create a campaign. You
+			can use the
+			<i>Amazon Personalize Create Solution Version</i>
+			node for this.
+			<br />
+			More
+			information is available on the
+			<a href="https://aws.amazon.com/personalize/">website</a>
+			or in the
+			<a
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
+			.
+			<br />
+			<br />
+			<i>Note:
+				If
+				the
+				node execution is interrupted
+				during
+				the
+				creation, e.g. by
+				the user or due to lost of internet connection, the creation
+				will
+				still
+				be
+				completed
+				on
+				AWS,
+				although the node does not execute
+				successfully.
+			</i>
+		</intro>
+		<tab name="Options">
+			<option name="Campaign name">
+				Specify the name of the campaign. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
+				.
+			</option>
+			<option name="Solution version">
+				Select the solution version to deploy. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
+				.
+			</option>
+			<option name="Minimum provisioned transactions per second">
+				Specify the requested minimum provisioned
+				transactions
+				(recommendations) per second that Amazon Personalize
+				will support.
+				Valid range is from 1 to 500.
+				See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
+				.
+			</option>
+			<option name="Provide the campaign ARN as flow variable">If enabled, the ARN of the created campaign will
+				be
+				pushed
+				out as flow variable. This can be convenient if
+				you, e.g.,
+				want to
+				control the campaign used for predictions afterwards.
+			</option>
+		</tab>
+	</fullDescription>
+	<ports>
+		<inPort name="AWS connection information" index="0">The AWS
+			connection information.
+		</inPort>
+	</ports>
+</knimeNode>

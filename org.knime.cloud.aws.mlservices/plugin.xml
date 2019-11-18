@@ -15,6 +15,12 @@
             name="Amazon Translate"
             path="/labs/aws/">
       </category>
+      <category
+            icon="icons/missing.gif"
+            level-id="personalize"
+            name="Amazon Personalize"
+            path="/labs/aws/">
+      </category>
    </extension>
    <extension point="org.knime.workbench.repository.nodes">
 	<node 
@@ -35,6 +41,46 @@
       <node 
       	category-path="/labs/aws/translate" 
       	factory-class="org.knime.cloud.aws.mlservices.nodes.translate.TranslateNodeFactory"/>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.upload.user.AmazonPersonalizeUploadUserDataNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.upload.item.AmazonPersonalizeUploadItemDataNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.upload.interaction.AmazonPersonalizeUploadInteractionDataNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.train.AmazonPersonalizeCreateSolutionVersionNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.deploy.AmazonPersonalizeCreateCampaignNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.userpersonalization.AmazonPersonalizePredictUserPersonalizationNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.relateditems.AmazonPersonalizePredictRelatedItemsNodeFactory">
+      </node>
+      <node
+            category-path="/labs/aws/personalize"
+            deprecated="false"
+            factory-class="org.knime.cloud.aws.mlservices.nodes.personalize.predict.personalizedranking.AmazonPersonalizePersonalizedRankingNodeFactory">
+      </node>
    </extension>
    <extension
          point="org.knime.ext.textprocessing.TagSet">

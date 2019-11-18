@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Other"
+	icon="amazon_personalize_upload_item_data.png">
+	<name>Amazon Personalize Upload Items</name>
+	<shortDescription>Uploads items data to the Amazon Personalize space.
+	</shortDescription>
+	<fullDescription>
+		<intro>
+			This node uploads items data to the Amazon Personalize space. The
+			input table must contain at least one string column that contains
+			item IDs and one additional metadata column (string or numeric).
+			First, this node uploads the data to a specified S3 location. From
+			there, it will be imported to Personalize. The import may take
+			several minutes. If the import is done, the file will be
+			deleted
+			from
+			S3 afterwards since it is not needed anymore.
+			<br />
+			To
+			create a model with Amazon Personalize, you can also upload
+			users
+			and
+			interactions data to the same data group. Only the interactions
+			data is
+			required. Once you have
+			uploaded
+			all the data, you can
+			create a
+			solution
+			with the
+			<i>Amazon Personalize Create Solution Version</i>
+			node and afterwards deploy the solution by creating a campaign with
+			the
+			<i>Amazon Personalize Create Campaign</i>
+			node.
+			<br />
+			More
+			information is available on the
+			<a href="https://aws.amazon.com/personalize/">website</a>
+			or in the
+			<a
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
+			.
+			<br />
+			<br />
+			<i>Note:
+				If
+				the
+				node execution is interrupted
+				during
+				the
+				import, e.g. by
+				the user or due to lost of internet connection, the import
+				will
+				still
+				be
+				completed
+				on
+				AWS,
+				although the node does not execute
+				successfully. The
+				file on S3 may not be deleted in this case.
+			</i>
+		</intro>
+		<tab name="Options">
+			<option name="Target on S3">Specify the location on S3 which will be used to
+				store the
+				dataset while it gets imported to Personalize. The file is
+				just
+				temporarily stored and will be deleted after the node has been
+				executed. If the execution of the node is interrupted or the
+				internet connection gets lost while importing is in progress, the
+				file may not be deleted.
+			</option>
+			<option name="Enter custom IAM role ARN">
+				Enter a custom AWS IAM role. The role must have
+				access to the
+				previously defined S3 bucket. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>
+				.
+			</option>
+			<option name="Select existing IAM role">
+				Select one of the available AWS IAM role. The
+				role must have
+				access to
+				the previously defined S3 bucket. See also
+				<a
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>
+				.
+			</option>
+			<option name="Upload to new dataset group">Enter a custom AWS IAM role. The role must have
+				access to the previously defined S3 bucket.
+			</option>
+			<option name="Upload to existing dataset group">Select one of the available AWS IAM role. The
+				role must have
+				access to the previously defined S3 bucket.
+			</option>
+			<option name="Item ID column">Select the column that contains item IDs.
+			</option>
+			<option name="Metadata columns">Select at least one and up to 5 metadata columns.
+			</option>
+			<option name="Dataset name">Specify the dataset name.</option>
+			<option name="Prefix of import job name">Specify a prefix for the name of the import job.
+				The full name will consist of this prefix and a timestamp.
+			</option>
+			<option name="Prefix of schema name">Specify a prefix for the name of the schema. The
+				full name will consist of this prefix and information about the
+				metadata types.
+			</option>
+			<option name="If a items dataset already exists...">
+				Select the policy to apply if the selected dataset group already
+				contains a items dataset. If
+				<i>Overwrite</i>
+				is selected, the existing dataset will be deleted and a new one
+				created. Otherwise, the node will fail.
+			</option>
+		</tab>
+	</fullDescription>
+	<ports>
+		<inPort name="AWS connection information" index="0">The AWS
+			connection information.
+		</inPort>
+		<inPort name="Input data" index="1">The input table
+			containing the
+			items data.
+		</inPort>
+	</ports>
+</knimeNode>

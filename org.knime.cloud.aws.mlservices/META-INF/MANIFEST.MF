@@ -20,8 +20,16 @@ Require-Bundle: org.eclipse.ui;bundle-version="[3.109.0,4.0.0)",
  org.knime.cloud.aws;bundle-version="[4.0.0,5.0.0)",
  org.knime.cloud.core;bundle-version="[4.0.0,5.0.0)",
  com.amazonaws.aws-java-sdk-comprehend;bundle-version="[1.11.490,2.0.0)",
- com.amazonaws.aws-java-sdk-translate;bundle-version="[1.11.490,2.0.0)"
+ com.amazonaws.aws-java-sdk-translate;bundle-version="[1.11.490,2.0.0)",
+ com.fasterxml.jackson.core.jackson-annotations;bundle-version="[2.8.9,3.0.0)",
+ com.fasterxml.jackson.core.jackson-databind;bundle-version="[2.8.9,3.0.0)",
+ org.apache.commons.lang;bundle-version="[2.6.0,3.0.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: org.knime.cloud.aws.comprehend
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .
+Bundle-ClassPath: .,
+ lib/aws-java-sdk-personalize-1.11.602.jar,
+ lib/aws-java-sdk-personalizeruntime-1.11.602.jar,
+ lib/aws-java-sdk-1.11.602.jar,
+ lib/aws-java-sdk-iam-1.11.602.jar,
+ lib/avro-1.9.1.jar
