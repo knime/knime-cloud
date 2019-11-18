@@ -48,22 +48,13 @@
  */
 package org.knime.cloud.aws.filehandling.nodes.S3connection;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.Objects;
 
-import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
 import org.knime.cloud.aws.filehandling.connections.S3Connection;
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
-import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject.Serializer;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
@@ -71,18 +62,12 @@ import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
-import org.knime.core.node.NodeSettings;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.port.PortObjectSpecZipInputStream;
-import org.knime.core.node.port.PortObjectSpecZipOutputStream;
-import org.knime.core.node.port.PortObjectZipInputStream;
-import org.knime.core.node.port.PortObjectZipOutputStream;
 import org.knime.core.node.port.PortType;
-import org.knime.core.node.port.PortUtil;
 import org.knime.core.node.workflow.FSConnectionNode;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
 import org.knime.filehandling.core.port.FileSystemPortObject;
@@ -96,14 +81,6 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
 public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode {
-
-    private static final String FN_FILE_SYSTEM = "fileSystem";
-
-    private static final String FN_CONN_INFO_SPEC = "connectionInfoSpec";
-
-    private static final String FN_CONN_INFO = "connectionInfo";
-
-    private static final String CFG_FILE_SYSTEM_ID = "fileSystemId";
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
@@ -190,34 +167,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
     @Override
     protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
-        final File settingsFile = new File(nodeInternDir, FN_FILE_SYSTEM);
-        try (InputStream inStream = Files.newInputStream(settingsFile.toPath())) {
-            final NodeSettingsRO settings = NodeSettings.loadFromXML(inStream);
-            m_fsId = settings.getString(CFG_FILE_SYSTEM_ID);
-        } catch (final InvalidSettingsException e) {
-            throw new IOException(e);
-        }
-
-        final org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec
-            .Serializer specSerializer = new ConnectionInformationPortObjectSpec.Serializer();
-        final Serializer serializer = new AmazonConnectionInformationPortObject.Serializer();
-        final File specFile = new File(nodeInternDir, FN_CONN_INFO_SPEC);
-        if (!specFile.exists()) {
-            //nothing to load
-            return;
-        }
-        final File file = new File(nodeInternDir, FN_CONN_INFO);
-        try (@SuppressWarnings("resource")
-        PortObjectSpecZipInputStream specIn =
-            PortUtil.getPortObjectSpecZipInputStream(new BufferedInputStream(new FileInputStream(specFile)));
-                @SuppressWarnings("resource")
-                PortObjectZipInputStream in =
-                    PortUtil.getPortObjectZipInputStream(new BufferedInputStream(new FileInputStream(file)));) {
-            final ConnectionInformationPortObjectSpec spec = specSerializer.loadPortObjectSpec(specIn);
-            m_awsConnectionInfo = serializer.loadPortObject(in, spec, exec);
-            m_fsConn = new S3Connection(m_awsConnectionInfo.getConnectionInformation(), getClientConfig());
-            FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
-        }
+        setWarningMessage("S3 connection no longer available. Please re-execute the node.");
     }
 
     /**
@@ -226,32 +176,7 @@ public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode
     @Override
     protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
-        final NodeSettings settings = new NodeSettings(FN_FILE_SYSTEM);
-        settings.addString(CFG_FILE_SYSTEM_ID, m_fsId);
-        final File settingsFile = new File(nodeInternDir, FN_FILE_SYSTEM);
-        try (OutputStream outStream = Files.newOutputStream(settingsFile.toPath())) {
-            settings.saveToXML(outStream);
-        }
-
-        if (m_awsConnectionInfo == null) {
-            //nothing to save
-            return;
-        }
-        final org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec.Serializer specSerializer =
-            new ConnectionInformationPortObjectSpec.Serializer();
-        final Serializer serializer = new AmazonConnectionInformationPortObject.Serializer();
-        final File specFile = new File(nodeInternDir, FN_CONN_INFO_SPEC);
-        final File file = new File(nodeInternDir, FN_CONN_INFO);
-        try (@SuppressWarnings("resource")
-        PortObjectSpecZipOutputStream specOut =
-            PortUtil.getPortObjectSpecZipOutputStream(new BufferedOutputStream(new FileOutputStream(specFile)));
-                @SuppressWarnings("resource")
-                PortObjectZipOutputStream out =
-                    PortUtil.getPortObjectZipOutputStream(new BufferedOutputStream(new FileOutputStream(file)));) {
-            specSerializer.savePortObjectSpec((ConnectionInformationPortObjectSpec)m_awsConnectionInfo.getSpec(),
-                specOut);
-            serializer.savePortObject(m_awsConnectionInfo, out, exec);
-        }
+        //nothing to save
     }
 
     /**
