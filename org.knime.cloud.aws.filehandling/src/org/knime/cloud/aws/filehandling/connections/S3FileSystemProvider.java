@@ -186,18 +186,24 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @SuppressWarnings("resource")
     public InputStream newInputStream(final Path path, final OpenOption... options) throws IOException {
 
+        InputStream inputStream;
         final S3Path s3path = toS3Path(path);
-        final S3Object object = s3path.getFileSystem().getClient().getObject(s3path.getBucketName(), s3path.getKey());
+        try {
 
-        final InputStream inputStream = object.getObjectContent();
+            final S3Object object =
+                s3path.getFileSystem().getClient().getObject(s3path.getBucketName(), s3path.getKey());
+            inputStream = object.getObjectContent();
 
-        if (inputStream == null) {
-            object.close();
-            throw new IOException(String.format("Could not read path %s", s3path));
+            if (inputStream == null) {
+                object.close();
+                throw new IOException(String.format("Could not read path %s", s3path));
+            }
+
+        } catch (Exception ex) {
+            throw new IOException(ex);
         }
 
         return inputStream;
-
     }
 
     /**
@@ -432,7 +438,7 @@ public class S3FileSystemProvider extends FileSystemProvider {
             return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
         } catch (final IOException ex) {
             LOGGER.warn(ex);
-            return null;
+            return (V)new FSBasicFileAttributeView(path.toString(), null);
         }
     }
 
@@ -444,6 +450,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     public <A extends BasicFileAttributes> A readAttributes(final Path path, final Class<A> type,
         final LinkOption... options) throws IOException {
         final FSPath fsPath = (FSPath)path;
+        if(!exists((S3Path)path)) {
+            throw new IOException(String.format("No such file %s", path.toString()));
+        }
         if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
             return (A)fsPath.getFileAttributes(type);
         }
