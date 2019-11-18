@@ -87,8 +87,7 @@ final class AmazonPersonalizeCreateSolutionVersionNodeSettings {
 
     private static final RecipeSelection DEF_RECIPE_SELECTION = RecipeSelection.PREDEFINED;
 
-    private static final NameArnPair DEF_PREDEFINED_RECIPE =
-        AmazonPersonalizeCreateSolutionVersionNodeModel.DEFAULT_PREDEFINED_RECIPE;
+    private static final NameArnPair DEF_PREDEFINED_RECIPE = null;
 
     private static final RecipeType DEF_PREDEFINED_RECIPE_TYPE = RecipeType.USER_PERSONALIZATION;
 

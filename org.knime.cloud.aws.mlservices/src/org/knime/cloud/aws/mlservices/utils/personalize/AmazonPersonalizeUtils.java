@@ -65,10 +65,13 @@ import com.amazonaws.services.personalize.model.ListCampaignsRequest;
 import com.amazonaws.services.personalize.model.ListCampaignsResult;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsRequest;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsResult;
+import com.amazonaws.services.personalize.model.ListRecipesRequest;
+import com.amazonaws.services.personalize.model.ListRecipesResult;
 import com.amazonaws.services.personalize.model.ListSolutionVersionsRequest;
 import com.amazonaws.services.personalize.model.ListSolutionVersionsResult;
 import com.amazonaws.services.personalize.model.ListSolutionsRequest;
 import com.amazonaws.services.personalize.model.ListSolutionsResult;
+import com.amazonaws.services.personalize.model.RecipeSummary;
 import com.amazonaws.services.personalize.model.SolutionSummary;
 import com.amazonaws.services.personalize.model.SolutionVersionSummary;
 
@@ -116,6 +119,22 @@ public class AmazonPersonalizeUtils {
             datasetGroups.addAll(listDatasetGroups.getDatasetGroups());
         }
         return datasetGroups;
+    }
+
+    /**
+     * @param personalize the amazon personalize client
+     * @return all recipes
+     */
+    public static List<RecipeSummary> listAllRecipes(final AmazonPersonalize personalize) {
+        final ListRecipesRequest request = new ListRecipesRequest().withMaxResults(100);
+        ListRecipesResult result = personalize.listRecipes(request);
+        List<RecipeSummary> list = result.getRecipes();
+        String nextToken;
+        while ((nextToken = result.getNextToken()) != null) {
+            result = personalize.listRecipes(request.withNextToken(nextToken));
+            list.addAll(result.getRecipes());
+        }
+        return list;
     }
 
     /**

@@ -46,7 +46,7 @@
  * History
  *   May 28, 2019 (julian): created
  */
-package org.knime.cloud.aws.mlservices.personalize;
+package org.knime.cloud.aws.mlservices.nodes.personalize;
 
 import org.knime.base.filehandling.remote.files.Connection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -58,8 +58,8 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.services.personalize.AmazonPersonalize;
-import com.amazonaws.services.personalize.AmazonPersonalizeClientBuilder;
+import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntime;
+import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntimeClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
@@ -71,36 +71,36 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  * @author Jim Falgout, KNIME Inc., Austin, TX, USA
  * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  */
-public class AmazonPersonalizeConnection extends Connection implements AutoCloseable {
+public final class AmazonPersonalizeRuntimeConnection extends Connection {
 
     /** Logger instance. */
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(AmazonPersonalizeConnection.class);
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(AmazonPersonalizeRuntimeConnection.class);
 
     /** AWS connection information */
     private final CloudConnectionInformation m_connectionInformation;
 
-    /** The Amazon Personalize client */
-    private AmazonPersonalize m_client;
+    /** The Amazon Personalize Runtime client */
+    private AmazonPersonalizeRuntime m_client;
 
     /**
      * Creates a new instance of {@code PersonalizeConnection}.
      *
      * @param connectionInformation The connection information
      */
-    public AmazonPersonalizeConnection(final CloudConnectionInformation connectionInformation) {
+    public AmazonPersonalizeRuntimeConnection(final CloudConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
     }
 
     @Override
     public void open() throws Exception {
         if (!isOpen()) {
-            LOGGER.info("Create a new AmazonPersonalizeClient in Region \"" + m_connectionInformation.getHost()
+            LOGGER.info("Create a new AmazonPersonalizeRuntimeClient in Region \"" + m_connectionInformation.getHost()
                 + "\" with connection timeout " + m_connectionInformation.getTimeout() + " milliseconds");
             try {
                 if (m_connectionInformation.switchRole()) {
-                    m_client = getRoleAssumedPersonalizeClient(m_connectionInformation);
+                    m_client = getRoleAssumedPersonalizeRuntimeClient(m_connectionInformation);
                 } else {
-                    m_client = getPersonalizeClient(m_connectionInformation);
+                    m_client = getPersonalizeRuntimeClient(m_connectionInformation);
                 }
             } catch (final Exception ex) {
                 close();
@@ -111,18 +111,18 @@ public class AmazonPersonalizeConnection extends Connection implements AutoClose
     }
 
     /**
-     * Creates and returns a new instance of the {@link AmazonPersonalize} client.
+     * Creates and returns a new instance of the {@link AmazonPersonalizeRuntime} client.
      *
      * @param connectionInformation The connection information
-     * @return AmazonPersonalize client
+     * @return AmazonPersonalizeRuntime client
      * @throws Exception thrown if client could not be instantiated
      */
-    private static final AmazonPersonalize getPersonalizeClient(final CloudConnectionInformation connectionInformation)
-        throws Exception {
+    private static final AmazonPersonalizeRuntime
+        getPersonalizeRuntimeClient(final CloudConnectionInformation connectionInformation) throws Exception {
         final ClientConfiguration clientConfig =
             new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
 
-        final AmazonPersonalizeClientBuilder builder = AmazonPersonalizeClientBuilder.standard()
+        final AmazonPersonalizeRuntimeClientBuilder builder = AmazonPersonalizeRuntimeClientBuilder.standard()
             .withClientConfiguration(clientConfig).withRegion(connectionInformation.getHost());
 
         if (!connectionInformation.useKeyChain()) {
@@ -134,14 +134,14 @@ public class AmazonPersonalizeConnection extends Connection implements AutoClose
     }
 
     /**
-     * Creates and returns a new instance of the {@link AmazonPersonalize} client using rule assumption.
+     * Creates and returns a new instance of the {@link AmazonPersonalizeRuntime} client using rule assumption.
      *
      * @param connectionInformation The connection information
-     * @return AmazonPersonalize client
+     * @return AmazonPersonalizeRuntime client
      * @throws Exception thrown if client could not be instantiated
      */
-    private static final AmazonPersonalize
-        getRoleAssumedPersonalizeClient(final CloudConnectionInformation connectionInformation) throws Exception {
+    private static final AmazonPersonalizeRuntime getRoleAssumedPersonalizeRuntimeClient(
+        final CloudConnectionInformation connectionInformation) throws Exception {
 
         final AWSSecurityTokenServiceClientBuilder builder =
             AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
@@ -161,7 +161,7 @@ public class AmazonPersonalizeConnection extends Connection implements AutoClose
             new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
                 assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
 
-        return AmazonPersonalizeClientBuilder.standard()
+        return AmazonPersonalizeRuntimeClientBuilder.standard()
             .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
             .withRegion(connectionInformation.getHost()).build();
     }
@@ -202,12 +202,12 @@ public class AmazonPersonalizeConnection extends Connection implements AutoClose
     }
 
     /**
-     * Returns an {@code AmazonPersonalize} client-
+     * Returns an {@code AmazonPersonalizeRuntime} client-
      *
-     * @return Returns an AmazonPersonalize client
+     * @return Returns an AmazonPersonalizeRuntime client
      * @throws Exception Thrown if client could not be created
      */
-    public final AmazonPersonalize getClient() throws Exception {
+    public final AmazonPersonalizeRuntime getClient() throws Exception {
         if (!isOpen()) {
             open();
         }

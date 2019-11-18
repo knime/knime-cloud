@@ -53,7 +53,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
-import org.knime.cloud.aws.mlservices.personalize.AmazonPersonalizeRuntimeConnection;
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonPersonalizeRuntimeConnection;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.data.DataCell;

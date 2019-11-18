@@ -95,7 +95,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeSettings {
     private final String DEF_DATASET_NAME = StringUtils.lowerCase(getDatasetType()) + "-data";
 
     private final String DEF_PREFIX_IMPORT_JOB_NAME =
-        "KNIME-import-" + StringUtils.lowerCase(getDatasetType()) + "-dataset-job-";
+        "KNIME-import-" + StringUtils.lowerCase(getDatasetType()) + "-dataset-job";
 
     private final String DEF_PREFIX_SCHEMA_NAME = "KNIME-schema-" + StringUtils.lowerCase(getDatasetType());
 

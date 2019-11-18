@@ -51,7 +51,7 @@ package org.knime.cloud.aws.mlservices.nodes.personalize.deploy;
 import java.io.File;
 import java.io.IOException;
 
-import org.knime.cloud.aws.mlservices.personalize.AmazonPersonalizeConnection;
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonPersonalizeConnection;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils.Status;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;

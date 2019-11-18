@@ -12,8 +12,8 @@
 			solution or an existing one with Amazon Personalize. It outputs
 			metrics of the created solution version whereby higher values are
 			better for each of the metrics. To create a solution, you can either
-			use one of the (by Amazon) predefined recipes, use a user-defined
-			recipe, or use AutoML. There are three types of recipes.
+			use one of the predefined recipes or use AutoML. There are three
+			types of recipes.
 			<i>User
 				personalization</i>
 			recipes build models that give item
@@ -97,7 +97,7 @@
 				.
 			</option>
 			<option name="Use a predefined recipe">
-				If selected, you can select one of Amazons
+				If selected, you can select one of the
 				predefined recipes to use.
 				<i>User
 					personalization</i>
@@ -117,23 +117,14 @@
 					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
 				.
 			</option>
-			<option name="Use a user-defined recipe">
-				If selected, specify the ARN of a user-defined
-				recipe. It can
-				be of
-				any of the three recipe types. In the output you
-				will find
-				information about the type of recipe that has been used. See also
-				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
-			</option>
 			<option name="Use AutoML">
-				If selected, Amazon automatically runs several
-				recipes to find the
-				one that fits the best. Only user
-				personalization recipes are used.
-				In the output you will find
+				If selected, Amazon automatically runs the
+				<i>aws-hrnn</i>
+				and
+				<i>aws-hrnn-metadata</i>
+				recipes and finds the better one.
+				In the output you will
+				find
 				information about the best recipe. See
 				also
 				<a

@@ -50,13 +50,10 @@ package org.knime.cloud.aws.mlservices.nodes.personalize.train;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.knime.cloud.aws.mlservices.personalize.AmazonPersonalizeConnection;
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonPersonalizeConnection;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils.Status;
 import org.knime.cloud.aws.mlservices.utils.personalize.NameArnPair;
@@ -105,44 +102,14 @@ import com.amazonaws.services.personalize.model.SolutionConfig;
  */
 final class AmazonPersonalizeCreateSolutionVersionNodeModel extends NodeModel {
 
-    static final NameArnPair DEFAULT_PREDEFINED_RECIPE =
-        NameArnPair.of("aws-hrnn", "arn:aws:personalize:::recipe/aws-hrnn");
-
     static final String[] METRICS = new String[]{"coverage", "mean_reciprocal_rank_at_25",
         "normalized_discounted_cumulative_gain_at_5", "normalized_discounted_cumulative_gain_at_10",
         "normalized_discounted_cumulative_gain_at_25", "precision_at_5", "precision_at_10", "precision_at_25"};
 
-    static final List<NameArnPair> USER_PERSONALIZATION_RECIPES;
-
-    static final List<NameArnPair> PERSONALIZED_RANKING_RECIPES;
-
-    static final List<NameArnPair> RELATED_ITEMS_RECIPES;
-
-    static final List<NameArnPair> AUTOML_RECIPES;
-
-    // List of available recipes here p.51: https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf
-    static {
-        USER_PERSONALIZATION_RECIPES = new ArrayList<>();
-        USER_PERSONALIZATION_RECIPES.add(DEFAULT_PREDEFINED_RECIPE);
-        final NameArnPair awshrnnmetadata =
-            NameArnPair.of("aws-hrnn-metadata", "arn:aws:personalize:::recipe/aws-hrnn-metadata");
-        USER_PERSONALIZATION_RECIPES.add(awshrnnmetadata);
-        USER_PERSONALIZATION_RECIPES
-            .add(NameArnPair.of("aws-hrnn-coldstart", "arn:aws:personalize:::recipe/aws-hrnn-coldstart"));
-        USER_PERSONALIZATION_RECIPES
-            .add(NameArnPair.of("aws-popularity-count", "arn:aws:personalize:::recipe/aws-popularity-count"));
-
-        PERSONALIZED_RANKING_RECIPES = new ArrayList<>();
-        PERSONALIZED_RANKING_RECIPES
-            .add(NameArnPair.of("aws-personalized-ranking", "arn:aws:personalize:::recipe/aws-personalized-ranking"));
-
-        RELATED_ITEMS_RECIPES = new ArrayList<>();
-        RELATED_ITEMS_RECIPES.add(NameArnPair.of("aws-sims", "arn:aws:personalize:::recipe/aws-sims"));
-
-        AUTOML_RECIPES = new ArrayList<>();
-        AUTOML_RECIPES.add(DEFAULT_PREDEFINED_RECIPE);
-        AUTOML_RECIPES.add(awshrnnmetadata);
-    }
+    // we need to define which recipes will be used for AutoML, these are default ones when used in the Amazon console
+    // TODO add an option for the user to select which ones should be used
+    private static final String[] AUTOML_RECIPES =
+        new String[]{"arn:aws:personalize:::recipe/aws-hrnn", "arn:aws:personalize:::recipe/aws-hrnn-metadata"};
 
     private AmazonPersonalizeCreateSolutionVersionNodeSettings m_settings;
 
@@ -250,8 +217,7 @@ final class AmazonPersonalizeCreateSolutionVersionNodeModel extends NodeModel {
         } else if (recipeSelection == RecipeSelection.AUTOML) {
             createSolutionRequest.setPerformAutoML(true);
             final SolutionConfig solutionConfig = new SolutionConfig();
-            solutionConfig.setAutoMLConfig(new AutoMLConfig()
-                .withRecipeList(AUTOML_RECIPES.stream().map(e -> e.getARN()).collect(Collectors.toList())));
+            solutionConfig.setAutoMLConfig(new AutoMLConfig().withRecipeList(AUTOML_RECIPES));
             createSolutionRequest.setSolutionConfig(solutionConfig);
         } else {
             throw new IllegalStateException("Unexpected recipe selection: " + recipeSelection.name());

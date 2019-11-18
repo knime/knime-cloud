@@ -68,7 +68,7 @@ import org.knime.base.filehandling.remote.files.RemoteFile;
 import org.knime.base.filehandling.remote.files.RemoteFileFactory;
 import org.knime.base.node.io.csvwriter.CSVWriter;
 import org.knime.base.node.io.csvwriter.FileWriterSettings;
-import org.knime.cloud.aws.mlservices.personalize.AmazonPersonalizeConnection;
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonPersonalizeConnection;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils.Status;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
@@ -287,7 +287,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
 
         // Start the job that imports the dataset from S3
         final DataSource dataSource = new DataSource().withDataLocation(s3FilePath);
-        final String jobName = m_settings.getPrefixImportJobName() + System.currentTimeMillis();
+        final String jobName = m_settings.getPrefixImportJobName() + "-" + System.currentTimeMillis();
         final String datasetImportJobArn = personalizeClient
             .createDatasetImportJob(new CreateDatasetImportJobRequest().withDatasetArn(datasetArn)
                 .withRoleArn(m_settings.getIamServiceRoleArn()).withDataSource(dataSource).withJobName(jobName))

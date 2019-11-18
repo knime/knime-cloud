@@ -48,6 +48,8 @@
  */
 package org.knime.cloud.aws.mlservices.utils.personalize;
 
+import com.amazonaws.services.personalize.model.Recipe;
+
 /**
  * Enumeration of available recipe types.
  *
@@ -83,5 +85,23 @@ public enum RecipeType {
      */
     public String getType() {
         return m_type;
+    }
+
+    /**
+     * @param recipe the {@link Recipe}
+     * @return the corresponding {@link RecipeType}
+     */
+    public static RecipeType ofRecipeType(final Recipe recipe) {
+        final String recipeType = recipe.getRecipeType();
+        if (recipeType.equals(USER_PERSONALIZATION.getType())) {
+            return USER_PERSONALIZATION;
+        }
+        if (recipeType.equals(PERSONALIZED_RANKING.getType())) {
+            return PERSONALIZED_RANKING;
+        }
+        if (recipeType.equals(RELATED_ITEMS.getType())) {
+            return RELATED_ITEMS;
+        }
+        throw new IllegalStateException("Unknown recipe type: " + recipeType);
     }
 }

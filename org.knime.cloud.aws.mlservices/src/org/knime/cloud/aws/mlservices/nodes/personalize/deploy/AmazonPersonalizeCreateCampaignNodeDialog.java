@@ -63,7 +63,7 @@ import javax.swing.SpinnerNumberModel;
 
 import org.knime.base.filehandling.NodeUtils;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformationPortObjectSpec;
-import org.knime.cloud.aws.mlservices.personalize.AmazonPersonalizeConnection;
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonPersonalizeConnection;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils;
 import org.knime.cloud.aws.mlservices.utils.personalize.NameArnPair;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
