@@ -68,7 +68,6 @@ import org.knime.cloud.aws.mlservices.utils.personalize.NameArnPair;
 import org.knime.cloud.aws.mlservices.utils.personalize.RecipeType;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.LongValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
@@ -110,8 +109,8 @@ public abstract class AbstractAmazonPersonalizePredictNodeDialog<S extends Amazo
         new ColumnSelectionPanel(null, new DataValueColumnFilter(StringValue.class), false);
 
     @SuppressWarnings("unchecked")
-    private final ColumnSelectionPanel m_colSelectionItemID = new ColumnSelectionPanel(null,
-        new DataValueColumnFilter(StringValue.class, LongValue.class), !isItemIDRequired());
+    private final ColumnSelectionPanel m_colSelectionItemID =
+        new ColumnSelectionPanel(null, new DataValueColumnFilter(StringValue.class), !isItemIDRequired());
 
     /**
      *

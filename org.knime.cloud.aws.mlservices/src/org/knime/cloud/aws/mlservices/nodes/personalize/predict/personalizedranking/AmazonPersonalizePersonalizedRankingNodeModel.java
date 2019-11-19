@@ -56,9 +56,12 @@ import org.knime.cloud.aws.mlservices.nodes.personalize.predict.AbstractAmazonPe
 import org.knime.cloud.aws.mlservices.nodes.personalize.predict.AmazonPersonalizePredictNodeSettings;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataRow;
+import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.collection.ListDataValue;
+import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.node.InvalidSettingsException;
 
 import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntime;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
@@ -70,6 +73,17 @@ import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRes
  */
 public class AmazonPersonalizePersonalizedRankingNodeModel
     extends AbstractAmazonPersonalizePredictNodeModel<AmazonPersonalizePredictNodeSettings> {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected ColumnRearranger createColumnRearranger(final DataTableSpec spec) throws InvalidSettingsException {
+        if (spec.findColumnIndex(m_settings.getUserIDCol()) < 0) {
+            throw new InvalidSettingsException("No valid user ID column selected.");
+        }
+        return super.createColumnRearranger(spec);
+    }
 
     /**
      * {@inheritDoc}

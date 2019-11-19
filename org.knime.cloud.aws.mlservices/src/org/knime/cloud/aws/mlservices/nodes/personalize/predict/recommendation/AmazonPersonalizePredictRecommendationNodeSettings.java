@@ -58,7 +58,7 @@ import org.knime.core.node.NodeSettingsWO;
  *
  * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  */
-final class AmazonPersonalizePredictRecommendationNodeSettings extends AmazonPersonalizePredictNodeSettings {
+public final class AmazonPersonalizePredictRecommendationNodeSettings extends AmazonPersonalizePredictNodeSettings {
 
     private static final String CFG_KEY_NUM_RESULTS = "num_results";
 

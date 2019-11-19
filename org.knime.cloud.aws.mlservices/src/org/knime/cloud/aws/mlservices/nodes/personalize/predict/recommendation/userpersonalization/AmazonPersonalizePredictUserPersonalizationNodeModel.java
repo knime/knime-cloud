@@ -49,6 +49,9 @@
 package org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.userpersonalization;
 
 import org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.AmazonPersonalizePredictRecommendationNodeModel;
+import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.container.ColumnRearranger;
+import org.knime.core.node.InvalidSettingsException;
 
 /**
  *
@@ -56,6 +59,20 @@ import org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.A
  */
 public class AmazonPersonalizePredictUserPersonalizationNodeModel
     extends AmazonPersonalizePredictRecommendationNodeModel {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected ColumnRearranger createColumnRearranger(final DataTableSpec spec) throws InvalidSettingsException {
+        if (spec.findColumnIndex(m_settings.getUserIDCol()) < 0) {
+            throw new InvalidSettingsException("No valid user ID column selected.");
+        }
+        if (m_settings.getItemIDCol() != null && spec.findColumnIndex(m_settings.getItemIDCol()) < 0) {
+            throw new InvalidSettingsException("No valid item ID column selected.");
+        }
+        return super.createColumnRearranger(spec);
+    }
 
     /**
      * {@inheritDoc}

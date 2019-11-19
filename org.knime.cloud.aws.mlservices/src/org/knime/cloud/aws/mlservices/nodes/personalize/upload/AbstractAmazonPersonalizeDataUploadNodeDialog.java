@@ -105,7 +105,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeDialog<S extends Ab
 
     private final JRadioButton m_radioButtonCustomRole = new JRadioButton("Enter custom IAM role ARN");
 
-    private final JRadioButton m_radioButtonAvailableRole = new JRadioButton("Select existing IAM role");
+    private final JRadioButton m_radioButtonAvailableRole = new JRadioButton("Select IAM role ARN");
 
     private final JLabel m_labelNoListRolePermissions;
 

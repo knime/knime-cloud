@@ -77,6 +77,8 @@ final class AmazonPersonalizeUploadItemDataNodeDialog
 
     private ColumnSelectionComboxBox m_columnSelectionItemID;
 
+    private boolean m_loaded = false;
+
     @SuppressWarnings("unchecked")
     @Override
     protected JPanel layoutRequiredColumnMapping() {
@@ -109,7 +111,9 @@ final class AmazonPersonalizeUploadItemDataNodeDialog
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
         super.loadSettingsFrom(settings, specs);
+        m_loaded = false;
         m_columnSelectionItemID.update((DataTableSpec)specs[1], m_settings.getItemIDColumnName());
+        m_loaded = true;
         updateFilterPanel();
     }
 
@@ -122,8 +126,10 @@ final class AmazonPersonalizeUploadItemDataNodeDialog
     }
 
     private void updateFilterPanel() {
-        final DataColumnSpec itemIDSpec = (DataColumnSpec)m_columnSelectionItemID.getSelectedItem();
-        m_columnFilterPanel.resetHiding();
-        m_columnFilterPanel.hideNames(itemIDSpec);
+        if (m_loaded) {
+            final DataColumnSpec itemIDSpec = (DataColumnSpec)m_columnSelectionItemID.getSelectedItem();
+            m_columnFilterPanel.resetHiding();
+            m_columnFilterPanel.hideNames(itemIDSpec);
+        }
     }
 }

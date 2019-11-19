@@ -49,12 +49,27 @@
 package org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.relateditems;
 
 import org.knime.cloud.aws.mlservices.nodes.personalize.predict.recommendation.AmazonPersonalizePredictRecommendationNodeModel;
+import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.container.ColumnRearranger;
+import org.knime.core.node.InvalidSettingsException;
 
 /**
  *
  * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  */
 public class AmazonPersonalizePredictRelatedItemsNodeModel extends AmazonPersonalizePredictRecommendationNodeModel {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected ColumnRearranger createColumnRearranger(final DataTableSpec spec) throws InvalidSettingsException {
+        if (spec.findColumnIndex(m_settings.getItemIDCol()) < 0) {
+            throw new InvalidSettingsException("No valid item ID column selected.");
+        }
+        return super.createColumnRearranger(spec);
+    }
+
     /**
      * {@inheritDoc}
      */

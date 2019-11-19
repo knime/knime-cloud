@@ -61,12 +61,15 @@ import com.amazonaws.services.identitymanagement.model.Role;
 import com.amazonaws.services.personalize.AmazonPersonalize;
 import com.amazonaws.services.personalize.model.CampaignSummary;
 import com.amazonaws.services.personalize.model.DatasetGroupSummary;
+import com.amazonaws.services.personalize.model.DatasetSchemaSummary;
 import com.amazonaws.services.personalize.model.ListCampaignsRequest;
 import com.amazonaws.services.personalize.model.ListCampaignsResult;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsRequest;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsResult;
 import com.amazonaws.services.personalize.model.ListRecipesRequest;
 import com.amazonaws.services.personalize.model.ListRecipesResult;
+import com.amazonaws.services.personalize.model.ListSchemasRequest;
+import com.amazonaws.services.personalize.model.ListSchemasResult;
 import com.amazonaws.services.personalize.model.ListSolutionVersionsRequest;
 import com.amazonaws.services.personalize.model.ListSolutionVersionsResult;
 import com.amazonaws.services.personalize.model.ListSolutionsRequest;
@@ -133,6 +136,22 @@ public class AmazonPersonalizeUtils {
         while ((nextToken = result.getNextToken()) != null) {
             result = personalize.listRecipes(request.withNextToken(nextToken));
             list.addAll(result.getRecipes());
+        }
+        return list;
+    }
+
+    /**
+     * @param personalize the amazon personalize client
+     * @return all schemas
+     */
+    public static List<DatasetSchemaSummary> listAllSchemas(final AmazonPersonalize personalize) {
+        final ListSchemasRequest request = new ListSchemasRequest().withMaxResults(100);
+        ListSchemasResult result = personalize.listSchemas(request);
+        List<DatasetSchemaSummary> list = result.getSchemas();
+        String nextToken;
+        while ((nextToken = result.getNextToken()) != null) {
+            result = personalize.listSchemas(request.withNextToken(nextToken));
+            list.addAll(result.getSchemas());
         }
         return list;
     }

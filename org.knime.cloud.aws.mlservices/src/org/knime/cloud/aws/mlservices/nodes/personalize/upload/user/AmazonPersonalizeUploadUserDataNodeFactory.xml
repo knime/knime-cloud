@@ -81,7 +81,7 @@
 					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>
 				.
 			</option>
-			<option name="Select existing IAM role">
+			<option name="Select IAM role ARN">
 				Select one of the available AWS IAM role. The
 				role must have
 				access to

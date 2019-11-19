@@ -112,7 +112,6 @@ import com.amazonaws.services.personalize.model.ListDatasetGroupsRequest;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsResult;
 import com.amazonaws.services.personalize.model.ListDatasetsRequest;
 import com.amazonaws.services.personalize.model.ListDatasetsResult;
-import com.amazonaws.services.personalize.model.ListSchemasRequest;
 import com.amazonaws.util.StringUtils;
 
 /**
@@ -205,8 +204,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
         final String schemaName = schemaNameBuilder.toString();
 
         // check if the same schema has been created before
-        final List<DatasetSchemaSummary> existingSchemas =
-            personalizeClient.listSchemas(new ListSchemasRequest()).getSchemas();
+        final List<DatasetSchemaSummary> existingSchemas = AmazonPersonalizeUtils.listAllSchemas(personalizeClient);
         final Optional<DatasetSchemaSummary> schemaSummary =
             existingSchemas.stream().filter(e -> e.getName().equals(schemaName)).findAny();
         // if so, use this one again
