@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="./googlecsconnection16x16.png" type="Source" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Google Cloud Storage Connection</name>
+    
+    <shortDescription>
+        Configures the connection information used to
+        connect to Google Cloud Storage.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>
+        	<p>
+        		This node configures the connection information that will be used to connect to the Google Cloud Storage. Using this 
+        		connection, the other KNIME remote file handling nodes can be used to create directory, list, delete, 
+        		download and upload files from and to Google Cloud Storage. 
+        	</p>
+        	<p>
+        		The connection information is encoded in the format <i>gs://&lt;project&gt;/&lt;bucket&gt;/&lt;path&gt;</i>. The protocol is 
+        		<i>gs</i> and the host the project identifier. The first folder is the bucket name and the rest is the 
+        		object name, e.g. <i>gs://123456/my-bucket/data/iris.data</i> defines the object 
+        		<i>data/iris.data</i> in the bucket <i>my-bucket</i>. 
+        	</p>
+        </intro>
+        
+        <option name="Project identifier">
+        	Google Cloud project identifier.
+        	See <a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects">Google Cloud Documentation</a> for more informations.
+        </option>
+               
+    </fullDescription>
+    
+    <ports>
+    	<inPort index="0" name="Google API Connection">
+    		The Google API connection that will be used.
+   		</inPort>
+        <outPort index="0" name="Connection information port">
+        	Port object containing the Google Cloud Storage connection information.
+        </outPort>        
+    </ports>        
+</knimeNode>

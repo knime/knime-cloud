@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="./googlecsfilepicker16x16.png" type="Manipulator" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10.xsd">
+    <name>Google Cloud Storage File Picker</name>
+    
+    <shortDescription>
+        Generates a pre-signed URL for a storage object.
+    </shortDescription>
+    
+    <fullDescription>
+        <intro>
+	        This node reads the Google Cloud Storage connection and generates a signed URL that references a storage object. 
+	        The URL is only valid for a specific period of time. Upon expiry, 
+	        the URL will no longer remain active and an attempt to access the URL will generate an error. 
+	        Google Cloud Storage objects do not have to have their permissions set to public in order to access them. 
+	        Using the generated signed URL, any KNIME reader can be utilized to directly read the blob without having to fetch the blob locally first.
+        </intro>
+        
+        <option name="Remote File">
+        	The storage object, for which the signed URL should be created.
+        </option>
+        <option name="Expiration Time">
+        	The duration or UTC time after the signed URL becomes invalid. 
+        	The maximum expiration time on Google Cloud Storage is <i>7 days</i>.
+        </option>        
+    </fullDescription>
+    
+    <ports>
+        <inPort index="0" name="Connection Information Port">
+        	Port object containing the connection information to Google Cloud Storage.
+        </inPort>        
+        <outPort index="0" name="Pre-signed URL Variable">
+        	Variable port object containing the pre-signed URL to a storage object.
+        </outPort>        
+    </ports>        
+</knimeNode>

@@ -12,6 +12,8 @@ This extension provides nodes for interacting with Amazon Redshift.
 This extension contains the Amazon Athena connector node.
 * [KNIME Azure Cloud Connectors](https://hub.knime.com/knime/extensions/org.knime.features.cloud.azure/latest)  
 This extension enables the use of the KNIME filehandling nodes with the Microsoft Azure Blob Storage.
+* [KNIME Google Cloud Storage Connectors](https://hub.knime.com/knime/extensions/org.knime.features.cloud.google/latest)  
+This extension enables the use of the KNIME filehandling nodes with the Google Cloud Storage.
 
 
 ## Example Workflows on the KNIME Hub
