@@ -64,6 +64,8 @@ public class GoogleCloudStorageConnectionInformation extends CloudConnectionInfo
 
     private static final long serialVersionUID = 1L;
 
+    private static final String SERVICE_NAME = "Google Cloud Storage";
+
     private GoogleApiConnection m_googleApiConnection;
 
     private static final String CFG_PROJECT = "googleCloudProjectId";
@@ -118,6 +120,11 @@ public class GoogleCloudStorageConnectionInformation extends CloudConnectionInfo
      */
     public static GoogleCloudStorageConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
         return new GoogleCloudStorageConnectionInformation(model);
+    }
+
+    @Override
+    public String getServiceName() {
+        return SERVICE_NAME;
     }
 
     @Override

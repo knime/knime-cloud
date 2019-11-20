@@ -64,6 +64,8 @@ import org.knime.core.node.workflow.ICredentials;
  */
 public class AzureConnectionInformationSettings extends ConnectionInformationCloudSettings{
 
+    private static final String SERVICE_NAME = "Azure Blob Store";
+
 	public static final int DEFAULT_TIMEOUT = 30000;
 
 	/**
@@ -108,6 +110,8 @@ public class AzureConnectionInformationSettings extends ConnectionInformationClo
 			connectionInformation.setUser(getUserValue());
 			connectionInformation.setPassword(getPasswordValue());
 		}
+
+		connectionInformation.setServiceName(SERVICE_NAME);
 
 		return connectionInformation;
 	}

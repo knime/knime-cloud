@@ -74,6 +74,8 @@ import com.amazonaws.regions.Regions;
  */
 public class AWSConnectionInformationSettings extends ConnectionInformationCloudSettings {
 
+    private static final String SERVICE_NAME = "Amazon S3";
+
     private final SettingsModelString m_region = createRegionModel();
 
     private final SettingsModelBoolean m_sSEncryption = createSSEncrpyionModel();
@@ -197,6 +199,9 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
         connectionInformation.setSwitchRole(getSwitchRoleModel().getBooleanValue());
         connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
         connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
+
+        connectionInformation.setServiceName(SERVICE_NAME);
+
         return connectionInformation;
     }
 

@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.core.util.port;
 
+import org.apache.commons.lang3.StringUtils;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
@@ -88,6 +89,13 @@ public class CloudConnectionInformation extends ConnectionInformation {
     private static final String USE_ANONYMOUS_KEY = "useAnonymous";
 
     /**
+     * Optional human readable service name (e.g. Amazon S3).
+     */
+    private String m_serviceName = "";
+
+    private static final String CFG_SERVICE_NAME = "serviceName";
+
+    /**
      * Parameterless constructor
      */
     public CloudConnectionInformation() {
@@ -117,6 +125,9 @@ public class CloudConnectionInformation extends ConnectionInformation {
         }
 
         m_useAnonymous = model.getBoolean(USE_ANONYMOUS_KEY, false);
+
+        // added in 4.1, use protocol as fallback
+        m_serviceName = model.getString(CFG_SERVICE_NAME, getProtocol());
     }
 
     /**
@@ -195,6 +206,8 @@ public class CloudConnectionInformation extends ConnectionInformation {
         model.addString(SWITCH_ROLE_NAME_KEY, m_switchRoleName);
 
         model.addBoolean(USE_ANONYMOUS_KEY, m_useAnonymous);
+
+        model.addString(CFG_SERVICE_NAME, m_serviceName);
     }
 
     public static CloudConnectionInformation load(final ModelContentRO model) throws InvalidSettingsException {
@@ -242,4 +255,19 @@ public class CloudConnectionInformation extends ConnectionInformation {
         m_useAnonymous = useAnonymous;
     }
 
+    /**
+     * Set a human readable service name.
+     *
+     * @param serviceName human readable service name
+     */
+    public void setServiceName(final String serviceName) {
+        m_serviceName = serviceName;
+    }
+
+    /**
+     * @return human readable service name
+     */
+    public String getServiceName() {
+        return m_serviceName;
+    }
 }
