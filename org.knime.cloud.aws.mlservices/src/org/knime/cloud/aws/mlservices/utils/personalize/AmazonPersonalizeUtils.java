@@ -50,11 +50,10 @@ package org.knime.cloud.aws.mlservices.utils.personalize;
 
 import java.util.List;
 
+import org.knime.cloud.aws.mlservices.nodes.personalize.AmazonIdentityManagementConnection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.identitymanagement.model.ListRolesRequest;
 import com.amazonaws.services.identitymanagement.model.ListRolesResult;
 import com.amazonaws.services.identitymanagement.model.Role;
@@ -205,25 +204,25 @@ public class AmazonPersonalizeUtils {
     }
 
     /**
-     * @param m_connectionInformation the cloud connection information
+     * @param connectionInformation the cloud connection information
      * @return all dataset groups
+     * @throws Exception if an exception occurs during establishing the connection to Amazon
      */
-    public static List<Role> listAllRoles(final CloudConnectionInformation m_connectionInformation) {
-        final ClientConfiguration clientConfig =
-            new ClientConfiguration().withConnectionTimeout(m_connectionInformation.getTimeout());
-        final AmazonIdentityManagement client = AmazonIdentityManagementClientBuilder.standard()
-            .withClientConfiguration(clientConfig).withRegion(m_connectionInformation.getHost()).build();
+    public static List<Role> listAllRoles(final CloudConnectionInformation connectionInformation) throws Exception {
+        try (final AmazonIdentityManagementConnection connection =
+            new AmazonIdentityManagementConnection(connectionInformation)) {
+            final AmazonIdentityManagement client = connection.getClient();
 
-        final ListRolesRequest listRolesRequest = new ListRolesRequest().withMaxItems(1000);
-        ListRolesResult listRoles = client.listRoles(listRolesRequest);
-        List<Role> roles = listRoles.getRoles();
-        String nextToken;
-        while ((nextToken = listRoles.getMarker()) != null) {
-            System.out.println(roles.size());
-            listRoles = client.listRoles(listRolesRequest.withMarker(nextToken));
-            roles.addAll(listRoles.getRoles());
+            final ListRolesRequest listRolesRequest = new ListRolesRequest().withMaxItems(1000);
+            ListRolesResult listRoles = client.listRoles(listRolesRequest);
+            List<Role> roles = listRoles.getRoles();
+            String nextToken;
+            while ((nextToken = listRoles.getMarker()) != null) {
+                listRoles = client.listRoles(listRolesRequest.withMarker(nextToken));
+                roles.addAll(listRoles.getRoles());
+            }
+            return roles;
         }
-        return roles;
     }
 
     /**

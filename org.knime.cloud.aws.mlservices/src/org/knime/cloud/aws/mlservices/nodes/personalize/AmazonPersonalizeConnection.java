@@ -161,7 +161,9 @@ public final class AmazonPersonalizeConnection extends Connection implements Aut
             new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
                 assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
 
-        return AmazonPersonalizeClientBuilder.standard()
+        final ClientConfiguration clientConfig =
+            new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
+        return AmazonPersonalizeClientBuilder.standard().withClientConfiguration(clientConfig)
             .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
             .withRegion(connectionInformation.getHost()).build();
     }
@@ -198,11 +200,14 @@ public final class AmazonPersonalizeConnection extends Connection implements Aut
 
     @Override
     public void close() throws Exception {
-        m_client.shutdown();
+        if (isOpen()) {
+            m_client.shutdown();
+            m_client = null;
+        }
     }
 
     /**
-     * Returns an {@code AmazonPersonalize} client-
+     * Returns an {@code AmazonPersonalize} client.
      *
      * @return Returns an AmazonPersonalize client
      * @throws Exception Thrown if client could not be created

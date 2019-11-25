@@ -44,7 +44,7 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   May 28, 2019 (julian): created
+ *   Nov 26, 2019 (simon): created
  */
 package org.knime.cloud.aws.mlservices.nodes.personalize;
 
@@ -58,49 +58,48 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntime;
-import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntimeClientBuilder;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 
 /**
- * Class used to establish a connection to the Amazon Personalize Runtime service.
+ * Class used to establish a connection to the Amazon Identity Management.
  *
- * @author Jim Falgout, KNIME Inc., Austin, TX, USA
  * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  */
-public final class AmazonPersonalizeRuntimeConnection extends Connection {
+public final class AmazonIdentityManagementConnection extends Connection implements AutoCloseable {
 
     /** Logger instance. */
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(AmazonPersonalizeRuntimeConnection.class);
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(AmazonIdentityManagementConnection.class);
 
     /** AWS connection information */
     private final CloudConnectionInformation m_connectionInformation;
 
-    /** The Amazon Personalize Runtime client */
-    private AmazonPersonalizeRuntime m_client;
+    /** The Amazon Identity Management client */
+    private AmazonIdentityManagement m_client;
 
     /**
-     * Creates a new instance of {@code PersonalizeConnection}.
+     * Creates a new instance of {@code AmazonIdentityManagementConnection}.
      *
      * @param connectionInformation The connection information
      */
-    public AmazonPersonalizeRuntimeConnection(final CloudConnectionInformation connectionInformation) {
+    public AmazonIdentityManagementConnection(final CloudConnectionInformation connectionInformation) {
         m_connectionInformation = connectionInformation;
     }
 
     @Override
     public void open() throws Exception {
         if (!isOpen()) {
-            LOGGER.info("Create a new AmazonPersonalizeRuntimeClient in Region \"" + m_connectionInformation.getHost()
+            LOGGER.info("Create a new AmazonIdentityManagement in Region \"" + m_connectionInformation.getHost()
                 + "\" with connection timeout " + m_connectionInformation.getTimeout() + " milliseconds");
             try {
                 if (m_connectionInformation.switchRole()) {
-                    m_client = getRoleAssumedPersonalizeRuntimeClient(m_connectionInformation);
+                    m_client = getRoleAssumedIdentityManagementClient(m_connectionInformation);
                 } else {
-                    m_client = getPersonalizeRuntimeClient(m_connectionInformation);
+                    m_client = getIdentityManagementClient(m_connectionInformation);
                 }
             } catch (final Exception ex) {
                 close();
@@ -111,18 +110,18 @@ public final class AmazonPersonalizeRuntimeConnection extends Connection {
     }
 
     /**
-     * Creates and returns a new instance of the {@link AmazonPersonalizeRuntime} client.
+     * Creates and returns a new instance of the {@link AmazonIdentityManagement} client.
      *
      * @param connectionInformation The connection information
-     * @return AmazonPersonalizeRuntime client
+     * @return AmazonIdentityManagement client
      * @throws Exception thrown if client could not be instantiated
      */
-    private static final AmazonPersonalizeRuntime
-        getPersonalizeRuntimeClient(final CloudConnectionInformation connectionInformation) throws Exception {
+    private static final AmazonIdentityManagement
+        getIdentityManagementClient(final CloudConnectionInformation connectionInformation) throws Exception {
         final ClientConfiguration clientConfig =
             new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
 
-        final AmazonPersonalizeRuntimeClientBuilder builder = AmazonPersonalizeRuntimeClientBuilder.standard()
+        final AmazonIdentityManagementClientBuilder builder = AmazonIdentityManagementClientBuilder.standard()
             .withClientConfiguration(clientConfig).withRegion(connectionInformation.getHost());
 
         if (!connectionInformation.useKeyChain()) {
@@ -134,14 +133,14 @@ public final class AmazonPersonalizeRuntimeConnection extends Connection {
     }
 
     /**
-     * Creates and returns a new instance of the {@link AmazonPersonalizeRuntime} client using rule assumption.
+     * Creates and returns a new instance of the {@link AmazonIdentityManagement} client using rule assumption.
      *
      * @param connectionInformation The connection information
-     * @return AmazonPersonalizeRuntime client
+     * @return AmazonIdentityManagement client
      * @throws Exception thrown if client could not be instantiated
      */
-    private static final AmazonPersonalizeRuntime getRoleAssumedPersonalizeRuntimeClient(
-        final CloudConnectionInformation connectionInformation) throws Exception {
+    private static final AmazonIdentityManagement
+        getRoleAssumedIdentityManagementClient(final CloudConnectionInformation connectionInformation) throws Exception {
 
         final AWSSecurityTokenServiceClientBuilder builder =
             AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
@@ -153,7 +152,7 @@ public final class AmazonPersonalizeRuntimeConnection extends Connection {
         final AWSSecurityTokenService stsClient = builder.build();
 
         final AssumeRoleRequest assumeRoleRequest = new AssumeRoleRequest().withRoleArn(buildARN(connectionInformation))
-            .withDurationSeconds(3600).withRoleSessionName("KNIME_PersonalizeRuntime_Connection");
+            .withDurationSeconds(3600).withRoleSessionName("KNIME_AmazonIdentityManagement_Connection");
 
         final AssumeRoleResult assumeResult = stsClient.assumeRole(assumeRoleRequest);
 
@@ -163,7 +162,7 @@ public final class AmazonPersonalizeRuntimeConnection extends Connection {
 
         final ClientConfiguration clientConfig =
             new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
-        return AmazonPersonalizeRuntimeClientBuilder.standard().withClientConfiguration(clientConfig)
+        return AmazonIdentityManagementClientBuilder.standard().withClientConfiguration(clientConfig)
             .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
             .withRegion(connectionInformation.getHost()).build();
     }
@@ -207,12 +206,12 @@ public final class AmazonPersonalizeRuntimeConnection extends Connection {
     }
 
     /**
-     * Returns an {@code AmazonPersonalizeRuntime} client.
+     * Returns an {@code AmazonIdentityManagement} client.
      *
-     * @return Returns an AmazonPersonalizeRuntime client
+     * @return Returns an AmazonIdentityManagement client
      * @throws Exception Thrown if client could not be created
      */
-    public final AmazonPersonalizeRuntime getClient() throws Exception {
+    public final AmazonIdentityManagement getClient() throws Exception {
         if (!isOpen()) {
             open();
         }

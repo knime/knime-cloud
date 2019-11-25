@@ -381,6 +381,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeDialog<S extends Ab
                 .listAllRoles(m_connectionInformation).stream().map(e -> e.getArn()).toArray(String[]::new));
             m_comboBoxRoleList.setModel(comboBoxModel);
             m_labelNoListRolePermissions.setVisible(false);
+            m_radioButtonAvailableRole.setEnabled(true);
         } catch (Exception e) {
             if (!(e instanceof AmazonIdentityManagementException)) {
                 throw new NotConfigurableException(e.getMessage());
