@@ -107,7 +107,12 @@ public final class NameArnPair extends SimpleEntry<String, String> {
     public static NameArnPair loadSettings(final NodeSettingsRO settings, final String configKey)
         throws InvalidSettingsException {
         final Config config = settings.getConfig(configKey);
-        return new NameArnPair(config.getString("name"), config.getString("arn"));
+        final String name = config.getString("name");
+        final String arn = config.getString("arn");
+        if (name == null && arn == null) {
+            return null;
+        }
+        return new NameArnPair(name, arn);
     }
 
     /**
@@ -132,11 +137,13 @@ public final class NameArnPair extends SimpleEntry<String, String> {
      *
      * @param settings a node settings object
      * @param configKey config key
+     * @param nameArnPair the {@link NameArnPair} to save
      */
-    public void saveSettings(final NodeSettingsWO settings, final String configKey) {
+    public static void saveSettings(final NodeSettingsWO settings, final String configKey,
+        final NameArnPair nameArnPair) {
         final Config config = settings.addConfig(configKey);
-        config.addString("name", getKey());
-        config.addString("arn", getValue());
+        config.addString("name", nameArnPair != null ? nameArnPair.getKey() : null);
+        config.addString("arn", nameArnPair != null ? nameArnPair.getValue() : null);
     }
 
     /**

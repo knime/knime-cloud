@@ -261,8 +261,12 @@ final class AmazonPersonalizeCreateSolutionVersionNodeSettings {
 
     /**
      * @param existingSolution the existingSolution to set
+     * @throws InvalidSettingsException if existingSolution is null
      */
-    public void setExistingSolution(final NameArnPair existingSolution) {
+    public void setExistingSolution(final NameArnPair existingSolution) throws InvalidSettingsException {
+        if (existingSolution == null) {
+            throw new InvalidSettingsException("The selected existing solution must not be empty.");
+        }
         m_existingSolution = existingSolution;
     }
 
@@ -315,24 +319,15 @@ final class AmazonPersonalizeCreateSolutionVersionNodeSettings {
      */
     public void saveSettings(final NodeSettingsWO settings) {
         settings.addBoolean(CFG_KEY_CREATE_NEW_SOLUTION, m_createNewSolution);
-        if (m_datasetGroup != null) {
-            m_datasetGroup.saveSettings(settings, CFG_KEY_DATASET_GROUP);
-        }
+        NameArnPair.saveSettings(settings, CFG_KEY_DATASET_GROUP, m_datasetGroup);
         settings.addString(CFG_KEY_RECIPE_SELECTION, m_recipeSelection.name());
         settings.addString(CFG_KEY_PREDEFINED_RECIPE_TYPE, m_predefinedRecipeType.name());
-        if (m_predefinedRecipe != null) {
-            m_predefinedRecipe.saveSettings(settings, CFG_KEY_PREDEFINED_RECIPE);
-        }
+        NameArnPair.saveSettings(settings, CFG_KEY_PREDEFINED_RECIPE, m_predefinedRecipe);
         settings.addString(CFG_KEY_USER_DEFINED_RECIPE_ARN, m_userDefinedRecipeArn);
         settings.addBoolean(CFG_KEY_HYPERPARAMETER_OPT, m_hyperparameterOpt);
         settings.addString(CFG_KEY_SOLUTION_NAME, m_solutionName);
         settings.addBoolean(CFG_KEY_OUTPUT_ARN_AS_VARIABLE, m_outputSolutionVersionArnAsVar);
-        if (m_predefinedRecipe != null) {
-            m_predefinedRecipe.saveSettings(settings, CFG_KEY_PREDEFINED_RECIPE);
-        }
-        if (m_existingSolution != null) {
-            m_existingSolution.saveSettings(settings, CFG_KEY_EXISTING_SOLUTION);
-        }
+        NameArnPair.saveSettings(settings, CFG_KEY_EXISTING_SOLUTION, m_existingSolution);
     }
 
 }

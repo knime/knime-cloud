@@ -194,9 +194,7 @@ public class AmazonPersonalizePredictNodeSettings {
      * @param settings a node settings object
      */
     public void saveSettings(final NodeSettingsWO settings) {
-        if (m_campaign != null) {
-            m_campaign.saveSettings(settings, CFG_KEY_CAMPAIGN);
-        }
+        NameArnPair.saveSettings(settings, CFG_KEY_CAMPAIGN, m_campaign);
         settings.addString(CFG_KEY_USERID, m_userIDCol);
         settings.addString(CFG_KEY_ITEMID, m_itemIDCol);
         settings.addString(CFG_KEY_ITEM_LIST_COL, m_itemsCol);

@@ -179,9 +179,7 @@ final class AmazonPersonalizeCreateCampaignNodeSettings {
      * @param settings a node settings object
      */
     public void saveSettings(final NodeSettingsWO settings) {
-        if (m_solutionVersion != null) {
-            m_solutionVersion.saveSettings(settings, CFG_KEY_SOLUTION_VERSION);
-        }
+        NameArnPair.saveSettings(settings, CFG_KEY_SOLUTION_VERSION, m_solutionVersion);
         settings.addString(CFG_KEY_CAMPAIGN_NAME, m_campaignName);
         settings.addInt(CFG_KEY_MIN_PROVISIONED_TPS, m_minProvisionedTPS);
         settings.addBoolean(CFG_KEY_OUTPUT_ARN_AS_VARIABLE, m_outputCampaignArnAsVar);

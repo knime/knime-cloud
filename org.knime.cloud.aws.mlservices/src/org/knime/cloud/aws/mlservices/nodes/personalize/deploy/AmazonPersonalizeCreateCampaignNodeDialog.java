@@ -164,6 +164,11 @@ final class AmazonPersonalizeCreateCampaignNodeDialog extends NodeDialogPane {
                 new DefaultComboBoxModel<NameArnPair>(AmazonPersonalizeUtils.listAllSolutionVersions(personalize)
                     .stream().map(e -> new NameArnPair(shortARN(e.getSolutionVersionArn()), e.getSolutionVersionArn()))
                     .toArray(NameArnPair[]::new));
+            if (comboBoxModel.getSize() == 0) {
+                throw new InvalidSettingsException(
+                    "No solution version available. You can create one using the 'Amazon Personalize Create Solution "
+                        + "Version' node.");
+            }
             m_comboBoxSolutionVersionList.setModel(comboBoxModel);
 
             // Save the campaign names to check later if the specified name already exists

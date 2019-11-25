@@ -324,6 +324,11 @@ final class AmazonPersonalizeCreateSolutionVersionNodeDialog extends NodeDialogP
     }
 
     private void enableComponents() {
+        if (m_comboBoxExistingSolutions.getModel().getSize() == 0) {
+            m_comboBoxExistingSolutions.setEnabled(false);
+            m_radioButtonUseExistingSolution.setEnabled(false);
+            m_radioButtonCreateNewSolution.setSelected(true);
+        }
         boolean selected = m_radioButtonCreateNewSolution.isSelected();
         m_comboBoxExistingSolutions.setEnabled(!selected);
         if (selected) {
@@ -405,7 +410,7 @@ final class AmazonPersonalizeCreateSolutionVersionNodeDialog extends NodeDialogP
         try (final AmazonPersonalizeConnection personalizeConnection =
             new AmazonPersonalizeConnection(connectionInformation)) {
             final AmazonPersonalize personalizeClient = personalizeConnection.getClient();
-            List<DatasetGroupSummary> listAllDatasetGroups =
+            final List<DatasetGroupSummary> listAllDatasetGroups =
                 AmazonPersonalizeUtils.listAllDatasetGroups(personalizeClient);
             if (listAllDatasetGroups.size() == 0) {
                 throw new NotConfigurableException("No existing dataset group found. Upload datasets first.");

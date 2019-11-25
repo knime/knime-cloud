@@ -245,8 +245,8 @@ public abstract class AbstractAmazonPersonalizePredictNodeDialog<S extends Amazo
                 }).map(e -> new NameArnPair(e.getName(), e.getCampaignArn())).toArray(NameArnPair[]::new));
             m_comboBoxCampaigns.setModel(comboBoxModel);
             if (comboBoxModel.getSize() == 0) {
-                throw new NotConfigurableException(
-                    "No campaign of type '" + getRecipeType().toString() + "' found. Create one first.");
+                throw new NotConfigurableException("No campaign of type '" + getRecipeType().toString()
+                    + "' found. You can create one using the 'Amazon Personalize Create Campaign' node.");
             }
         } catch (Exception e) {
             throw new NotConfigurableException(e.getMessage());
