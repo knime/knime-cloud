@@ -19,19 +19,19 @@
 			recipes build models that give item
 			recommendations for
 			specific users,
-			<i>Personalized ranking</i>
+			<i>personalized ranking</i>
 			recipes build models that
 			can be used to do a personalized ranking of
 			a
 			list of items for a specific user, and
-			<i>Related items</i>
+			<i>related items</i>
 			recipes build models that can be used to find items that are similar
 			to a specific item. If you are using AutoML, Amazon automatically
 			finds the best
-			<i>User personalization</i>
+			<i>user personalization</i>
 			recipe for you by trying several recipes out.
 			<br />
-			You need to have at least one dataset group with interactions data to
+			You need to have at least one dataset group that contains interactions data to
 			be able to create a solution. Use the
 			<i>Amazon Personalize Upload Interactions</i>
 			node to upload such data.
@@ -46,8 +46,7 @@
 			<a href="https://aws.amazon.com/personalize/">website</a>
 			or in the
 			<a
-				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
-			.
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>.
 			<br />
 			<br />
 			<i>Note:
@@ -75,16 +74,14 @@
 			</option>
 			<option name="Dataset group">
 				Specify the dataset group to create a solution
-				from. See also
+				with. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>.
 			</option>
 			<option name="Solution name">
 				Specify the name of the solution. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>.
 			</option>
 			<option name="Perform hyperparameter optimization">
 				If enabled, Amazon will automatically try to find
@@ -93,8 +90,7 @@
 				will also
 				take more time. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>.
 			</option>
 			<option name="Use a predefined recipe">
 				If selected, you can select one of the
@@ -105,31 +101,29 @@
 				recommendations for
 				specific
 				users,
-				<i>Personalized ranking</i>
+				<i>personalized ranking</i>
 				recipes build models that
 				can be used to do a personalized ranking of
 				a
 				list of items for a specific user, and
-				<i>Related items</i>
+				<i>related items</i>
 				recipes build models that can be used to find items that are similar
 				to a specific item. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>.
 			</option>
 			<option name="Use AutoML">
 				If selected, Amazon automatically runs the
 				<i>aws-hrnn</i>
 				and
 				<i>aws-hrnn-metadata</i>
-				recipes and finds the better one.
+				recipes and finds the one that performs the best.
 				In the output you will
 				find
 				information about the best recipe. See
 				also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolution.html">here</a>.
 			</option>
 
 			<option name="Create a new solution of an existing solution">

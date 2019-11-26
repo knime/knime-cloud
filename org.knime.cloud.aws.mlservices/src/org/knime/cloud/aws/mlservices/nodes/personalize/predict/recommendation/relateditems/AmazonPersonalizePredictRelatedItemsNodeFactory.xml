@@ -13,8 +13,7 @@
 			Amazon Personalize service. At least one campaign must be
 			available
 			that was created using a recipe of type
-			<i>Related items</i>
-			. As input,
+			<i>related items</i>. As input,
 			the node takes an
 			item
 			id. The
@@ -28,29 +27,25 @@
 			<a href="https://aws.amazon.com/personalize/">website</a>
 			or in the
 			<a
-				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
-			.
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>.
 		</intro>
 		<tab name="Options">
 			<option name="Campaign">
 				Specify the the campaign. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>.
 			</option>
 			<option name="Item ID column">
 				Select the column that contains item IDs. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>.
 			</option>
 			<option name="Number of results">
 				Specify the number of related items. Valid range is from 1 to
 				500.
 				See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">here</a>.
 			</option>
 			<option name="Missing value handling">
 				Specify the action if a missing value is in the input. If
@@ -71,9 +66,7 @@
 		<outPort name="Related items" index="0">The input table with
 			one
 			appended column containing a list of related items. The list
-			is
-			sorted
-			in ascending order by prediction score.
+			is sorted. The first element is the most recommended item.
 		</outPort>
 	</ports>
 </knimeNode>

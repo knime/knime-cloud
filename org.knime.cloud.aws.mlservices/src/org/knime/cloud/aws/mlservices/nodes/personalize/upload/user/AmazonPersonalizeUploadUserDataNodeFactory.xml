@@ -40,8 +40,7 @@
 			<a href="https://aws.amazon.com/personalize/">website</a>
 			or in the
 			<a
-				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
-			.
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>.
 			<br />
 			<br />
 			<i>Note:
@@ -78,38 +77,36 @@
 				access to the
 				previously defined S3 bucket. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>.
 			</option>
 			<option name="Select IAM role ARN">
-				Select one of the available AWS IAM role. The
+				Select one of the available AWS IAM roles. The
 				role must have
 				access to
 				the previously defined S3 bucket. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateDatasetImportJob.html">here</a>.
 			</option>
-			<option name="Upload to new dataset group">Enter a custom AWS IAM role. The role must have
-				access to the previously defined S3 bucket.
+			<option name="Upload to new dataset group">Enter the name of the dataset group to be created.
 			</option>
-			<option name="Upload to existing dataset group">Select one of the available AWS IAM role. The
-				role must have
-				access to the previously defined S3 bucket.
+			<option name="Upload to existing dataset group">Select one of the already existing dataset
+				groups.
 			</option>
-			<option name="User ID column">Select the column that contains user IDs.
+			<option name="User ID column">Select the column that contains user IDs. The maximum length of an ID is 256
+			characters.
 			</option>
-			<option name="Metadata columns">Select at least one and up to 5 metadata columns.
+			<option name="Metadata columns">Select at least 1 and up to 5 metadata columns. The maximum length of a
+			metadata entry is 1000 characters.
 			</option>
 			<option name="Dataset name">Specify the dataset name.</option>
 			<option name="Prefix of import job name">Specify a prefix for the name of the import job.
-				The full name will consist of this prefix and a timestamp.
+				During execution, to this prefix a timestamp of the execution time will be appended.
 			</option>
 			<option name="Prefix of schema name">Specify a prefix for the name of the schema. The
 				full name will consist of this prefix and information about the
 				metadata types.
 			</option>
-			<option name="If a users dataset already exists...">
+			<option name="If the dataset group already contains an users dataset...">
 				Select the policy to apply if the selected dataset group already
 				contains a users dataset. If
 				<i>Overwrite</i>

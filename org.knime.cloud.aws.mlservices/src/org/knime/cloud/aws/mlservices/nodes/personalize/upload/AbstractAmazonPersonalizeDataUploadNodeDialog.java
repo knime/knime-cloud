@@ -84,6 +84,7 @@ import org.knime.core.node.workflow.FlowVariable;
 
 import com.amazonaws.services.identitymanagement.model.AmazonIdentityManagementException;
 import com.amazonaws.services.personalize.AmazonPersonalize;
+import com.amazonaws.util.StringUtils;
 
 /**
  * Abstract node dialog for Amazon Personalize data upload nodes.
@@ -279,7 +280,8 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeDialog<S extends Ab
         gbcOverwritePolicy.gridx++;
         gbcOverwritePolicy.weightx = 1;
         overwritePolicyPanel.add(m_radioButtonAbortOnExistingDataset, gbcOverwritePolicy);
-        overwritePolicyPanel.setBorder(new TitledBorder(new EtchedBorder(), "If a users dataset already exists..."));
+        overwritePolicyPanel.setBorder(new TitledBorder(new EtchedBorder(), "If the dataset group already contains an "
+            + StringUtils.lowerCase(m_settings.getDatasetType()) + " dataset..."));
         gbc.gridy++;
         gbc.gridx = 0;
         panelAdditionalSettings.add(overwritePolicyPanel, gbc);

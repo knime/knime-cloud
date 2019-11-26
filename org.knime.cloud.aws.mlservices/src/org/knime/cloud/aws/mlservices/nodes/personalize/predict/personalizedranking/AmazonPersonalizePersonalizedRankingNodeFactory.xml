@@ -14,11 +14,10 @@
 			Amazon Personalize service. At least one campaign must be
 			available
 			that was created using a recipe of type
-			<i>Personalized ranking</i>
-			. As input,
+			<i>personalized ranking</i>. As input,
 			the node takes an
 			item
-			id and a item list that should be
+			id and an item list that should be
 			ranked. The
 			output will be a list that is a ranked/sorted input list.
 			<br />
@@ -27,28 +26,24 @@
 			<a href="https://aws.amazon.com/personalize/">website</a>
 			or in the
 			<a
-				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
-			.
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>.
 		</intro>
 		<tab name="Options">
 			<option name="Campaign">
 				Specify the the campaign. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>.
 			</option>
 			<option name="Item ID column">
 				Select the column that contains item IDs. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>.
 			</option>
 			<option name="Item list column">
 				Select the column that contains item lists that should be ranked.
 				See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">here</a>.
 			</option>
 			<option name="Missing value handling">
 				Specify the action if a missing value is in the input. If

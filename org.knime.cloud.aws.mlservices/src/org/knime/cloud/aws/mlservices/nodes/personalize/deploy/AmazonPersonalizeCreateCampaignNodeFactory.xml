@@ -19,8 +19,7 @@
 			<a href="https://aws.amazon.com/personalize/">website</a>
 			or in the
 			<a
-				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>
-			.
+				href="https://docs.aws.amazon.com/personalize/latest/dg/personalize-dg.pdf">documentation</a>.
 			<br />
 			<br />
 			<i>Note:
@@ -45,14 +44,12 @@
 			<option name="Campaign name">
 				Specify the name of the campaign. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>.
 			</option>
 			<option name="Solution version">
 				Select the solution version to deploy. See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>.
 			</option>
 			<option name="Minimum provisioned transactions per second">
 				Specify the requested minimum provisioned
@@ -62,8 +59,7 @@
 				Valid range is from 1 to 500.
 				See also
 				<a
-					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>
-				.
+					href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">here</a>.
 			</option>
 			<option name="Provide the campaign ARN as flow variable">If enabled, the ARN of the created campaign will
 				be
