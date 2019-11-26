@@ -56,6 +56,7 @@ import org.knime.core.data.StringValue;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.filter.InputFilter;
 import org.knime.core.node.util.filter.column.DataColumnSpecFilterConfiguration;
 
@@ -153,13 +154,9 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeSettings {
      * @throws InvalidSettingsException if the dataset group name is empty or has more than 63 characters
      */
     public void setSelectedDatasetGroup(final String selectedDatasetGroup) throws InvalidSettingsException {
-        if (selectedDatasetGroup.trim().isEmpty()) {
-            throw new InvalidSettingsException("The dataset group name must not be empty.");
-        }
-        if (selectedDatasetGroup.length() > 63) {
-            throw new InvalidSettingsException("The dataset group name must have at most 63 characters, but has "
-                + selectedDatasetGroup.length() + ".");
-        }
+        CheckUtils.checkSetting(!selectedDatasetGroup.trim().isEmpty(), "The dataset group name must not be empty.");
+        CheckUtils.checkSetting(selectedDatasetGroup.length() < 64,
+            "The dataset group name must have less than 64 characters, but has %s.", selectedDatasetGroup.length());
         m_selectedDatasetGroup = selectedDatasetGroup;
     }
 

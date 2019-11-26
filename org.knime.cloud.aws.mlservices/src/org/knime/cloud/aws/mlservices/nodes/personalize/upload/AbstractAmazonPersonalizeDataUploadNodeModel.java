@@ -56,6 +56,7 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -130,6 +131,33 @@ import com.amazonaws.util.StringUtils;
 public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends AbstractAmazonPersonalizeDataUploadNodeSettings>
     extends NodeModel {
 
+    /** The index of the data table input port. */
+    protected static final int TABLE_INPUT_PORT_IDX = 1;
+
+    /** Max. number of characters for required fields. */
+    protected static final int MAX_CHARACTERS_REQUIRED_FIELDS = 256;
+
+    /** Max. number of characters for optional and metadata fields. */
+    protected static final int MAX_CHARACTERS_METADATA_COLS = 1000;
+
+    /** The Amazon identifier for item id. */
+    protected static final String ITEM_ID = "ITEM_ID";
+
+    /** The Amazon identifier for user id. */
+    protected static final String USER_ID = "USER_ID";
+
+    /** The Amazon identifier for event type. */
+    protected static final String EVENT_TYPE = "EVENT_TYPE";
+
+    private static final Map<String, String> MAP_COL_IDENTIFIER_LABEL;
+
+    static {
+        MAP_COL_IDENTIFIER_LABEL = new HashMap<>();
+        MAP_COL_IDENTIFIER_LABEL.put(USER_ID, "user id");
+        MAP_COL_IDENTIFIER_LABEL.put(ITEM_ID, "item id");
+        MAP_COL_IDENTIFIER_LABEL.put(EVENT_TYPE, "event type");
+    }
+
     private static final String SCHEMA_NAMESPACE = "com.amazonaws.personalize.schema";
 
     /** */
@@ -175,13 +203,15 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
 
     /**
      * @param spec the table spec of the already filtered and adapted table
-     * @return a map containing column indices of the required columns and corresponding column descriptions
+     * @return a map containing column identifiers and corresponding character limits
      */
-    protected abstract Map<Integer, String> getColumnIdxMap(final DataTableSpec spec);
+    protected abstract Map<String, Integer> getColumnCharLimitMap(final DataTableSpec spec);
 
-    private void checkTableContent(final BufferedDataTable table) {
+    private void validateInputTableContent(final BufferedDataTable table) {
         final DataTableSpec spec = table.getSpec();
-        final Map<Integer, String> colIdxMap = getColumnIdxMap(spec);
+        final Map<String, Integer> requiredColLimitMap = getColumnCharLimitMap(spec);
+        final Map<String, Integer> requiredColIdxMap =
+            requiredColLimitMap.keySet().stream().collect(Collectors.toMap(e -> e, e -> spec.findColumnIndex(e)));
         final List<Integer> metaColIdxList = Arrays.stream(spec.getColumnNames())
             .filter(e -> e.startsWith(AbstractAmazonPersonalizeDataUploadNodeModel.PREFIX_METADATA_FIELD))
             .map(e -> spec.findColumnIndex(e)).collect(Collectors.toList());
@@ -190,24 +220,26 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
             while (iterator.hasNext()) {
                 final DataRow row = iterator.next();
                 // check length of required (and optional) columns
-                for (final Integer idx : colIdxMap.keySet()) {
-                    final DataCell cell = row.getCell(idx);
+                for (final String colName : requiredColIdxMap.keySet()) {
+                    final DataCell cell = row.getCell(requiredColIdxMap.get(colName));
                     if (!cell.isMissing()) {
                         final String stringValue = ((StringValue)cell).getStringValue();
-                        if (stringValue.length() > 256) {
-                            throw new IllegalArgumentException("The " + colIdxMap.get(idx) + " in row '" + row.getKey()
-                                + "' has too many characters. Maximum is 256.");
+                        final Integer limit = requiredColLimitMap.get(colName);
+                        if (stringValue.length() > limit) {
+                            throw new IllegalArgumentException("The " + MAP_COL_IDENTIFIER_LABEL.get(colName)
+                                + " in row '" + row.getKey() + "' has too many characters. Maximum is " + limit + ".");
                         }
                     }
                 }
                 // check length of metadata columns
                 for (final Integer idx : metaColIdxList) {
                     final DataCell cell = row.getCell(idx);
-                    if (!cell.isMissing()) {
+                    if (!cell.isMissing() && cell instanceof StringValue) {
                         final String stringValue = ((StringValue)cell).getStringValue();
-                        if (stringValue.length() > 1000) {
-                            throw new IllegalArgumentException("One of the included metadata columns in row '"
-                                + row.getKey() + "' has too many characters. Maximum is 1000.");
+                        if (stringValue.length() > MAX_CHARACTERS_METADATA_COLS) {
+                            throw new IllegalArgumentException(
+                                "One of the included metadata columns in row '" + row.getKey()
+                                    + "' has too many characters. Maximum is " + MAX_CHARACTERS_METADATA_COLS + ".");
                         }
                     }
                 }
@@ -275,13 +307,15 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
 
         // === Write table out as CSV ===  (TODO we may be able to write it directly to S3)
         // Filter included columns
-        final BufferedDataTable filterTable = filterTable((BufferedDataTable)inObjects[1], exec);
+        final BufferedDataTable filterTable = filterTable((BufferedDataTable)inObjects[TABLE_INPUT_PORT_IDX], exec);
 
         // Rename columns to fit the later created schema
         final BufferedDataTable adaptedTable = renameColumns(filterTable, exec);
 
         // Check if the input is valid (just a shallow check, there is no clear documentation by Amazon)
-        checkTableContent(adaptedTable);
+        exec.setMessage("Validating input");
+        validateInputTableContent(adaptedTable);
+        exec.setProgress(0.05);
 
         // Write the table as CSV to disc
         final URI sourceURI = writeCSV(adaptedTable, exec.createSubExecutionContext(0.1));

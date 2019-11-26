@@ -72,8 +72,6 @@ import org.knime.core.node.port.PortObjectSpec;
 final class AmazonPersonalizeUploadUserDataNodeModel
     extends AbstractAmazonPersonalizeDataUploadNodeModel<AmazonPersonalizeUploadUserDataNodeSettings> {
 
-    private static final String USER_ID = "USER_ID";
-
     static final String DATATYPE = "USERS";
 
     /**
@@ -82,7 +80,8 @@ final class AmazonPersonalizeUploadUserDataNodeModel
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
         final PortObjectSpec[] configure = super.configure(inSpecs);
-        final DataTableSpec spec = (DataTableSpec)inSpecs[1];
+        final DataTableSpec spec =
+            (DataTableSpec)inSpecs[AbstractAmazonPersonalizeDataUploadNodeModel.TABLE_INPUT_PORT_IDX];
         if (spec.findColumnIndex(getSettings().getUserIDColumnName()) < 0) {
             throw new InvalidSettingsException("No valid user ID column selected.");
         }
@@ -141,9 +140,9 @@ final class AmazonPersonalizeUploadUserDataNodeModel
      * {@inheritDoc}
      */
     @Override
-    protected Map<Integer, String> getColumnIdxMap(final DataTableSpec spec) {
-        final Map<Integer, String> map = new HashMap<>();
-        map.put(spec.findColumnIndex(USER_ID), "user ID");
+    protected Map<String, Integer> getColumnCharLimitMap(final DataTableSpec spec) {
+        final Map<String, Integer> map = new HashMap<>();
+        map.put(USER_ID, MAX_CHARACTERS_REQUIRED_FIELDS);
         return map;
     }
 

@@ -72,8 +72,6 @@ import org.knime.core.node.port.PortObjectSpec;
 final class AmazonPersonalizeUploadItemDataNodeModel
     extends AbstractAmazonPersonalizeDataUploadNodeModel<AmazonPersonalizeUploadItemDataNodeSettings> {
 
-    private static final String ITEM_ID = "ITEM_ID";
-
     static final String DATATYPE = "ITEMS";
 
     /**
@@ -82,7 +80,8 @@ final class AmazonPersonalizeUploadItemDataNodeModel
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
         final PortObjectSpec[] configure = super.configure(inSpecs);
-        final DataTableSpec spec = (DataTableSpec)inSpecs[1];
+        final DataTableSpec spec =
+            (DataTableSpec)inSpecs[AbstractAmazonPersonalizeDataUploadNodeModel.TABLE_INPUT_PORT_IDX];
         if (spec.findColumnIndex(getSettings().getItemIDColumnName()) < 0) {
             throw new InvalidSettingsException("No valid item ID column selected.");
         }
@@ -141,9 +140,9 @@ final class AmazonPersonalizeUploadItemDataNodeModel
      * {@inheritDoc}
      */
     @Override
-    protected Map<Integer, String> getColumnIdxMap(final DataTableSpec spec) {
-        final Map<Integer, String> map = new HashMap<>();
-        map.put(spec.findColumnIndex(ITEM_ID), "item ID");
+    protected Map<String, Integer> getColumnCharLimitMap(final DataTableSpec spec) {
+        final Map<String, Integer> map = new HashMap<>();
+        map.put(ITEM_ID, MAX_CHARACTERS_REQUIRED_FIELDS);
         return map;
     }
 }

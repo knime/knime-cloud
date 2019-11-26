@@ -73,15 +73,11 @@ import org.knime.core.node.port.PortObjectSpec;
 final class AmazonPersonalizeUploadInteractionDataNodeModel
     extends AbstractAmazonPersonalizeDataUploadNodeModel<AmazonPersonalizeUploadInteractionDataNodeSettings> {
 
+    private static final int MIN_NUM_ROWS = 1000;
+
     private static final String EVENT_VALUE = "EVENT_VALUE";
 
-    private static final String EVENT_TYPE = "EVENT_TYPE";
-
     private static final String TIMESTAMP = "TIMESTAMP";
-
-    private static final String ITEM_ID = "ITEM_ID";
-
-    private static final String USER_ID = "USER_ID";
 
     static final String DATATYPE = "INTERACTIONS";
 
@@ -91,7 +87,8 @@ final class AmazonPersonalizeUploadInteractionDataNodeModel
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
         final PortObjectSpec[] configure = super.configure(inSpecs);
-        final DataTableSpec spec = (DataTableSpec)inSpecs[1];
+        final DataTableSpec spec =
+            (DataTableSpec)inSpecs[AbstractAmazonPersonalizeDataUploadNodeModel.TABLE_INPUT_PORT_IDX];
         if (spec.findColumnIndex(getSettings().getUserIDColumnName()) < 0) {
             throw new InvalidSettingsException("No valid user ID column selected.");
         }
@@ -117,7 +114,8 @@ final class AmazonPersonalizeUploadInteractionDataNodeModel
      */
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        if (((BufferedDataTable)inObjects[1]).size() < 1000) {
+        if (((BufferedDataTable)inObjects[AbstractAmazonPersonalizeDataUploadNodeModel.TABLE_INPUT_PORT_IDX])
+            .size() < MIN_NUM_ROWS) {
             throw new IllegalArgumentException("The input table must have at least 1000 rows.");
         }
         return super.execute(inObjects, exec);
@@ -216,13 +214,12 @@ final class AmazonPersonalizeUploadInteractionDataNodeModel
      * {@inheritDoc}
      */
     @Override
-    protected Map<Integer, String> getColumnIdxMap(final DataTableSpec spec) {
-        final Map<Integer, String> map = new HashMap<>();
-        map.put(spec.findColumnIndex(USER_ID), "user ID");
-        map.put(spec.findColumnIndex(ITEM_ID), "item ID");
-        final int eventTypeColIdx = spec.findColumnIndex(EVENT_TYPE);
-        if (eventTypeColIdx >= 0) {
-            map.put(eventTypeColIdx, "event type");
+    protected Map<String, Integer> getColumnCharLimitMap(final DataTableSpec spec) {
+        final Map<String, Integer> map = new HashMap<>();
+        map.put(USER_ID, MAX_CHARACTERS_REQUIRED_FIELDS);
+        map.put(ITEM_ID, MAX_CHARACTERS_REQUIRED_FIELDS);
+        if (m_settings.getEventTypeColumnName() != null) {
+            map.put(EVENT_TYPE, MAX_CHARACTERS_METADATA_COLS);
         }
         return map;
     }
