@@ -48,6 +48,9 @@
  */
 package org.knime.cloud.aws.mlservices.nodes.personalize.upload.interaction;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
@@ -58,7 +61,9 @@ import org.knime.core.data.DataTableSpec;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.port.PortObject;
+import org.knime.core.node.port.PortObjectSpec;
 
 /**
  * Node model for Amazon Personalize interaction data upload node.
@@ -79,6 +84,33 @@ final class AmazonPersonalizeUploadInteractionDataNodeModel
     private static final String USER_ID = "USER_ID";
 
     static final String DATATYPE = "INTERACTIONS";
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        final PortObjectSpec[] configure = super.configure(inSpecs);
+        final DataTableSpec spec = (DataTableSpec)inSpecs[1];
+        if (spec.findColumnIndex(getSettings().getUserIDColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid user ID column selected.");
+        }
+        if (spec.findColumnIndex(getSettings().getItemIDColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid item ID column selected.");
+        }
+        if (spec.findColumnIndex(getSettings().getTimestampColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid timestamp column selected.");
+        }
+        if (getSettings().getEventTypeColumnName() != null
+            && spec.findColumnIndex(getSettings().getEventTypeColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid event type column selected.");
+        }
+        if (getSettings().getEventValueColumnName() != null
+            && spec.findColumnIndex(getSettings().getEventValueColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid event value column selected.");
+        }
+        return configure;
+    }
 
     /**
      * {@inheritDoc}
@@ -178,5 +210,20 @@ final class AmazonPersonalizeUploadInteractionDataNodeModel
             schemaNamePrefix += "- " + EVENT_VALUE;
         }
         return schemaNamePrefix;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Map<Integer, String> getColumnIdxMap(final DataTableSpec spec) {
+        final Map<Integer, String> map = new HashMap<>();
+        map.put(spec.findColumnIndex(USER_ID), "user ID");
+        map.put(spec.findColumnIndex(ITEM_ID), "item ID");
+        final int eventTypeColIdx = spec.findColumnIndex(EVENT_TYPE);
+        if (eventTypeColIdx >= 0) {
+            map.put(eventTypeColIdx, "event type");
+        }
+        return map;
     }
 }

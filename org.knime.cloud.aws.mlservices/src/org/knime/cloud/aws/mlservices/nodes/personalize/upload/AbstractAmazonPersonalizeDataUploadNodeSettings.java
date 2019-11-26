@@ -150,11 +150,15 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeSettings {
 
     /**
      * @param selectedDatasetGroup the selectedDatasetGroup to set
-     * @throws InvalidSettingsException if the dataset group name is empty
+     * @throws InvalidSettingsException if the dataset group name is empty or has more than 63 characters
      */
     public void setSelectedDatasetGroup(final String selectedDatasetGroup) throws InvalidSettingsException {
         if (selectedDatasetGroup.trim().isEmpty()) {
             throw new InvalidSettingsException("The dataset group name must not be empty.");
+        }
+        if (selectedDatasetGroup.length() > 63) {
+            throw new InvalidSettingsException("The dataset group name must have at most 63 characters, but has "
+                + selectedDatasetGroup.length() + ".");
         }
         m_selectedDatasetGroup = selectedDatasetGroup;
     }

@@ -55,8 +55,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
@@ -73,11 +76,14 @@ import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils;
 import org.knime.cloud.aws.mlservices.utils.personalize.AmazonPersonalizeUtils.Status;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
+import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.IntValue;
 import org.knime.core.data.LongValue;
 import org.knime.core.data.StringValue;
+import org.knime.core.data.container.CloseableRowIterator;
 import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -108,6 +114,7 @@ import com.amazonaws.services.personalize.model.DescribeDatasetGroupRequest;
 import com.amazonaws.services.personalize.model.DescribeDatasetGroupResult;
 import com.amazonaws.services.personalize.model.DescribeDatasetImportJobRequest;
 import com.amazonaws.services.personalize.model.DescribeDatasetImportJobResult;
+import com.amazonaws.services.personalize.model.InvalidInputException;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsRequest;
 import com.amazonaws.services.personalize.model.ListDatasetGroupsResult;
 import com.amazonaws.services.personalize.model.ListDatasetsRequest;
@@ -165,6 +172,48 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
      * @return the field assembler created with the proper properties
      */
     protected abstract FieldAssembler<Schema> createFieldAssembler(final String namespace);
+
+    /**
+     * @param spec the table spec of the already filtered and adapted table
+     * @return a map containing column indices of the required columns and corresponding column descriptions
+     */
+    protected abstract Map<Integer, String> getColumnIdxMap(final DataTableSpec spec);
+
+    private void checkTableContent(final BufferedDataTable table) {
+        final DataTableSpec spec = table.getSpec();
+        final Map<Integer, String> colIdxMap = getColumnIdxMap(spec);
+        final List<Integer> metaColIdxList = Arrays.stream(spec.getColumnNames())
+            .filter(e -> e.startsWith(AbstractAmazonPersonalizeDataUploadNodeModel.PREFIX_METADATA_FIELD))
+            .map(e -> spec.findColumnIndex(e)).collect(Collectors.toList());
+        // iterate over the whole table and check content
+        try (CloseableRowIterator iterator = table.iterator()) {
+            while (iterator.hasNext()) {
+                final DataRow row = iterator.next();
+                // check length of required (and optional) columns
+                for (final Integer idx : colIdxMap.keySet()) {
+                    final DataCell cell = row.getCell(idx);
+                    if (!cell.isMissing()) {
+                        final String stringValue = ((StringValue)cell).getStringValue();
+                        if (stringValue.length() > 256) {
+                            throw new IllegalArgumentException("The " + colIdxMap.get(idx) + " in row '" + row.getKey()
+                                + "' has too many characters. Maximum is 256.");
+                        }
+                    }
+                }
+                // check length of metadata columns
+                for (final Integer idx : metaColIdxList) {
+                    final DataCell cell = row.getCell(idx);
+                    if (!cell.isMissing()) {
+                        final String stringValue = ((StringValue)cell).getStringValue();
+                        if (stringValue.length() > 1000) {
+                            throw new IllegalArgumentException("One of the included metadata columns in row '"
+                                + row.getKey() + "' has too many characters. Maximum is 1000.");
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * @return the prefix of the schema name
@@ -227,8 +276,13 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
         // === Write table out as CSV ===  (TODO we may be able to write it directly to S3)
         // Filter included columns
         final BufferedDataTable filterTable = filterTable((BufferedDataTable)inObjects[1], exec);
+
         // Rename columns to fit the later created schema
         final BufferedDataTable adaptedTable = renameColumns(filterTable, exec);
+
+        // Check if the input is valid (just a shallow check, there is no clear documentation by Amazon)
+        checkTableContent(adaptedTable);
+
         // Write the table as CSV to disc
         final URI sourceURI = writeCSV(adaptedTable, exec.createSubExecutionContext(0.1));
 
@@ -249,6 +303,7 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
 
             // Check if the respective dataset already exists and either delete it or abort
             checkAlreadyExistingDataset(personalizeClient, datasetGroupArn, exec.createSubExecutionContext(0.1));
+            exec.setProgress(0.5);
 
             // Create the data set (container)
             exec.setMessage("Importing dataset from S3");
@@ -286,10 +341,19 @@ public abstract class AbstractAmazonPersonalizeDataUploadNodeModel<S extends Abs
         // Start the job that imports the dataset from S3
         final DataSource dataSource = new DataSource().withDataLocation(s3FilePath);
         final String jobName = m_settings.getPrefixImportJobName() + "-" + System.currentTimeMillis();
-        final String datasetImportJobArn = personalizeClient
-            .createDatasetImportJob(new CreateDatasetImportJobRequest().withDatasetArn(datasetArn)
-                .withRoleArn(m_settings.getIamServiceRoleArn()).withDataSource(dataSource).withJobName(jobName))
-            .getDatasetImportJobArn();
+        final String datasetImportJobArn;
+        try {
+            datasetImportJobArn = personalizeClient
+                .createDatasetImportJob(new CreateDatasetImportJobRequest().withDatasetArn(datasetArn)
+                    .withRoleArn(m_settings.getIamServiceRoleArn()).withDataSource(dataSource).withJobName(jobName))
+                .getDatasetImportJobArn();
+
+        } catch (InvalidInputException e) {
+            throw new IllegalArgumentException(
+                "The input is invalid. The reason could be too many missing values in one of the input columns. Error "
+                    + "message from Amazon: " + e.getErrorMessage(),
+                e);
+        }
 
         // Wait until status of dataset is ACTIVE
         final DescribeDatasetImportJobRequest describeDatasetImportJobRequest =

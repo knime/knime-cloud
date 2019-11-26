@@ -48,6 +48,9 @@
  */
 package org.knime.cloud.aws.mlservices.nodes.personalize.upload.user;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
@@ -58,6 +61,8 @@ import org.knime.core.data.DataTableSpec;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.port.PortObjectSpec;
 
 /**
  * Node model for Amazon Personalize user data upload node.
@@ -70,6 +75,19 @@ final class AmazonPersonalizeUploadUserDataNodeModel
     private static final String USER_ID = "USER_ID";
 
     static final String DATATYPE = "USERS";
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        final PortObjectSpec[] configure = super.configure(inSpecs);
+        final DataTableSpec spec = (DataTableSpec)inSpecs[1];
+        if (spec.findColumnIndex(getSettings().getUserIDColumnName()) < 0) {
+            throw new InvalidSettingsException("No valid user ID column selected.");
+        }
+        return configure;
+    }
 
     @Override
     protected BufferedDataTable renameColumns(final BufferedDataTable table, final ExecutionContext exec)
@@ -118,4 +136,15 @@ final class AmazonPersonalizeUploadUserDataNodeModel
     protected FieldAssembler<Schema> createFieldAssembler(final String namespace) {
         return SchemaBuilder.record("Users").namespace(namespace).fields().requiredString(USER_ID);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Map<Integer, String> getColumnIdxMap(final DataTableSpec spec) {
+        final Map<Integer, String> map = new HashMap<>();
+        map.put(spec.findColumnIndex(USER_ID), "user ID");
+        return map;
+    }
+
 }
