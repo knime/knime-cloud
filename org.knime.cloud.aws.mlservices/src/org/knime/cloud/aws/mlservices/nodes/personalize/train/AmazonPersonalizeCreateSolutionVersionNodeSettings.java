@@ -53,6 +53,7 @@ import org.knime.cloud.aws.mlservices.utils.personalize.RecipeType;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.util.CheckUtils;
 
 /**
  * Node settings for Amazon Personalize solution version creator node.
@@ -264,9 +265,8 @@ final class AmazonPersonalizeCreateSolutionVersionNodeSettings {
      * @throws InvalidSettingsException if existingSolution is null
      */
     public void setExistingSolution(final NameArnPair existingSolution) throws InvalidSettingsException {
-        if (existingSolution == null) {
-            throw new InvalidSettingsException("The selected existing solution must not be empty.");
-        }
+        CheckUtils.checkSetting(isCreateNewSolution() || existingSolution != null,
+            "The selected existing solution must not be empty.");
         m_existingSolution = existingSolution;
     }
 

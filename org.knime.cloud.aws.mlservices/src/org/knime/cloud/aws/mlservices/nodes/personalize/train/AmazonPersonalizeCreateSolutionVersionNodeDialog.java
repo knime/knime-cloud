@@ -328,6 +328,8 @@ final class AmazonPersonalizeCreateSolutionVersionNodeDialog extends NodeDialogP
             m_comboBoxExistingSolutions.setEnabled(false);
             m_radioButtonUseExistingSolution.setEnabled(false);
             m_radioButtonCreateNewSolution.setSelected(true);
+        } else {
+            m_radioButtonUseExistingSolution.setEnabled(true);
         }
         boolean selected = m_radioButtonCreateNewSolution.isSelected();
         m_comboBoxExistingSolutions.setEnabled(!selected);
