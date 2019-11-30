@@ -15,44 +15,21 @@ xsi:schemaLocation="http://knime.org/node/v3.6 http://knime.org/node/v3.6.xsd">
             For more information visit <a href="https://aws.amazon.com/redshift/">Amazon Redshift</a> and also the 
             <a href="https://forums.aws.amazon.com/forum.jspa?forumID=155&amp;start=0">AWS Forums</a>.
             </p>
-            <hr/>
-            <h3>Driver URL template:</h3>
-            <p>This node uses the selected driver's URL template for creating the concrete database URL.
-            For additional drivers, which are not provided by the KNIME database modules, the <i>URL template</i>
-            is to be specified on the driver preferences page under KNIME/Databases. E.g.</p>
-            <tt>jdbc:redshift://&lt;host&gt;:&lt;port&gt;/[database]</tt>
-            <p>is a possible Redshift driver URL template.</p>
-            <h4>Tokens:</h4>
-            <ul>
-            <li><b>Mandatory value</b> (e.g. <tt>&lt;database&gt;</tt>)<b>:</b><br/>
-            The referenced variable must have a non-blank value.
-            The name between the brackets must be a valid variable name.
-            Please refer to the variable descriptions below.</li>
-            <li><b>Optional value</b> (e.g. <tt>[database]</tt>)<b>:</b><br/>
-            The referenced variable may have a blank value.
-            The name between the brackets must be a valid variable name.
-            Please refer to the variable descriptions below.</li>
-            </ul>
-            <h4>Variables:</h4>
-            <ul>
-            <li><tt>host</tt>:<br/>
-            The value of the <b>Hostname</b> field on the <b>Connection Settings</b> tab.</li>
-            <li><tt>port</tt>:<br/>
-            The value of the <b>Port</b> field on the <b>Connection Settings</b> tab.</li>
-            <li><tt>database</tt>:<br/>
-            The value of the <b>Database name</b> field on the <b>Connection Settings</b> tab.</li>
-            </ul>
-            <p>Field validation in the dialog depends on whether the (included) tokens referencing them are mandatory or
-            optional.</p>
+            <p>
+            This node uses the selected driver's 
+            <a href="https://docs.knime.com/latest/db_extension_guide/index.html#url_template">JDBC URL template</a> 
+            to create the concrete database URL. Field validation in the dialog depends on whether the (included) 
+            tokens referencing them are mandatory or optional in the template.
+            </p>
         </intro>
         <tab name="Connection settings">
             <option name="Database Dialect">
                 Choose the registered database dialect here.
             </option>
             <option name="Driver Name">
-                Choose the registered database driver here.
-                Additional drivers can be registered via KNIME's preference 
-                page "KNIME -> Databases".
+                Choose the registered database driver here. Additional drivers can be registered via KNIME's preference 
+                page "KNIME -> Databases". For more details on how to register a new driver see the
+                <a href="https://docs.knime.com/latest/db_extension_guide/index.html#register_jdbc">database documentation</a>.
             </option>
             <option name="Hostname">
                 The hostname (or IP address) of an Amazon Redshift server. The corresponding driver URL template
