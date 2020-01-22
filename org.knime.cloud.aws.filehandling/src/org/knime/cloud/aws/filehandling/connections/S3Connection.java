@@ -49,6 +49,7 @@
 package org.knime.cloud.aws.filehandling.connections;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.util.HashMap;
@@ -72,6 +73,8 @@ public class S3Connection implements FSConnection {
 
     private final S3FileSystemProvider m_provider;
 
+    private final long m_cacheTimeToLive = 60000;
+
     /**
      * Creates a new {@link S3Connection} for the given connection information.
      *
@@ -91,7 +94,7 @@ public class S3Connection implements FSConnection {
         final ClientConfiguration clientConfig) {
         Objects.requireNonNull(connectionInformation);
         m_connInfo = connectionInformation;
-        m_provider = new S3FileSystemProvider(clientConfig);
+        m_provider = new S3FileSystemProvider(clientConfig, m_connInfo.toURI(), m_cacheTimeToLive);
     }
 
     /**
@@ -101,15 +104,12 @@ public class S3Connection implements FSConnection {
     public FileSystem getFileSystem() {
         final HashMap<String, CloudConnectionInformation> env = new HashMap<>();
         env.put(S3FileSystemProvider.CONNECTION_INFORMATION, m_connInfo);
+
+        final URI uri = m_connInfo.toURI();
         try {
-            final URI uri = m_connInfo.toURI();
-            if (m_provider.isOpen(uri)) {
-                return m_provider.getFileSystem(uri);
-            } else {
-                return m_provider.newFileSystem(uri, env);
-            }
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+            return m_provider.getOrCreateFileSystem(uri, env);
+        } catch (final IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -119,13 +119,9 @@ public class S3Connection implements FSConnection {
      * @throws IOException if an I/O error occurs
      */
     public void closeFileSystem() throws IOException {
-        try {
-            final URI uri = m_connInfo.toURI();
-            if (m_provider.isOpen(uri)) {
-                m_provider.getFileSystem(uri).close();
-            }
-        } catch (final Exception e) {
-            throw new IOException(e.getMessage());
+        final URI uri = m_connInfo.toURI();
+        if (m_provider.isOpen(uri)) {
+            m_provider.getFileSystem(uri).close();
         }
     }
 

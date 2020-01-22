@@ -80,7 +80,7 @@ public class S3SeekableByteChannel extends FSTempFileSeekableByteChannel<S3Path>
      */
     @Override
     public void copyFromRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-        Files.copy(tempFile, tempFile);
+        Files.copy(remoteFile, tempFile);
     }
 
     /**

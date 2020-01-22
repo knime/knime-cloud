@@ -57,26 +57,22 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 
-import org.knime.filehandling.core.connections.FSPath;
-import org.knime.filehandling.core.connections.attributes.FSBasicAttributes;
-import org.knime.filehandling.core.connections.attributes.FSFileAttributes;
+import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
+import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
 import org.knime.filehandling.core.filechooser.NioFile;
 
 import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 
 /**
  * {@link Path} implementation for {@link S3FileSystem}
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3Path implements FSPath {
+public class S3Path implements Path {
 
     /** Path separator for {@link S3FileSystem} */
     public static final String PATH_SEPARATOR = "/";
@@ -534,41 +530,37 @@ public class S3Path implements FSPath {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public FSFileAttributes getFileAttributes(final Class<?> type) {
-        if (type == BasicFileAttributes.class) {
-            return new FSFileAttributes(!isDirectory(), this, p -> {
-
-                FileTime lastmod = FileTime.fromMillis(0L);
-                long size = 0;
-
-                final S3Path s3Path = (S3Path)p;
-                try {
-                    final ObjectMetadata objectMetadata =
-                        s3Path.getFileSystem().getClient().getObjectMetadata(s3Path.getBucketName(), s3Path.getKey());
-
-                    final Date metaDataLastMod = objectMetadata.getLastModified();
-
-                    lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
-                        : FileTime.from(s3Path.getBucket().getCreationDate().toInstant());
-                    size = objectMetadata.getContentLength();
-
-                } catch (final Exception e) {
-                    // If we do not have metadata we use fall back values
-                }
-
-                return new FSBasicAttributes(lastmod, lastmod, lastmod, size, false, false);
-            });
-        }
-        throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
-    }
-
-    /**
      * @return whether this is the virtual S3 root "/"
      */
     public boolean isVirtualRoot() {
         return m_blobParts.isEmpty();
+    }
+
+    /**
+     * Caches the given attributes in the providers cache.
+     *
+     * @param attributes the attributes to cache
+     */
+    public void cacheFileAttributes(final FSFileAttributes attributes) {
+
+        final FileSystemProvider provider = getFileSystem().provider();
+        if (provider instanceof BaseFileSystemProvider) {
+            m_fileSystem.addToAttributeCache(normalize().toAbsolutePath().toString(), attributes);
+        }
+
+    }
+
+    /**
+     * Whether this paths attributes are cached in the providers cache.
+     *
+     * @return Whether this paths attributes are cached in the providers cache.
+     */
+    public boolean isCached() {
+
+        final FileSystemProvider provider = getFileSystem().provider();
+        if (provider instanceof BaseFileSystemProvider) {
+            return m_fileSystem.hasCachedAttributes(normalize().toAbsolutePath().toString());
+        }
+        return false;
     }
 }

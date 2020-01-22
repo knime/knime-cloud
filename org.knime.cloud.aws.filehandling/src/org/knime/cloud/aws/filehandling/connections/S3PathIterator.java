@@ -51,10 +51,14 @@ package org.knime.cloud.aws.filehandling.connections;
 import java.io.IOException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+
+import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
+import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -102,6 +106,7 @@ public class S3PathIterator implements Iterator<Path> {
             throw new IllegalArgumentException(String.format("Path has to be of instance %s", S3Path.class.getName()));
         }
         final S3Path s3Path = (S3Path)path;
+
         m_fileSystem = s3Path.getFileSystem();
         m_client = m_fileSystem.getClient();
         m_filter = filter;
@@ -131,7 +136,6 @@ public class S3PathIterator implements Iterator<Path> {
             }
 
         }
-
         m_nextPath = m_objectsListing == null && m_roots == null ? null : getNextPath();
 
     }
@@ -209,11 +213,21 @@ public class S3PathIterator implements Iterator<Path> {
     }
 
     private Path getPathFromPrefix(final String commonPrefix) {
-        return new S3Path(m_fileSystem, m_bucketName, commonPrefix);
+        final S3Path path = new S3Path(m_fileSystem, m_bucketName, commonPrefix);
+        final FileTime lastModified = FileTime.fromMillis(0L);
+        final FSFileAttributes attributes = new FSFileAttributes(false, path,
+            p -> new FSBasicAttributes(lastModified, lastModified, lastModified, 0, false, false));
+        path.cacheFileAttributes(attributes);
+        return path;
     }
 
     private S3Path getPathFromSummary(final S3ObjectSummary nextSummary) {
-        return new S3Path(m_fileSystem, nextSummary.getBucketName(), nextSummary.getKey());
+        final S3Path path = new S3Path(m_fileSystem, nextSummary.getBucketName(), nextSummary.getKey());
+        final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
+        final FSFileAttributes attributes = new FSFileAttributes(!path.isDirectory(), path,
+            p -> new FSBasicAttributes(lastModified, lastModified, lastModified, nextSummary.getSize(), false, false));
+        path.cacheFileAttributes(attributes);
+        return path;
     }
 
 }

@@ -51,36 +51,39 @@ package org.knime.cloud.aws.filehandling.connections;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
-import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.spi.FileSystemProvider;
+import java.nio.file.attribute.FileTime;
+import java.util.Date;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
-import org.knime.filehandling.core.connections.FSPath;
-import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeView;
-import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
+import org.knime.filehandling.core.connections.base.BaseFileSystem;
+import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
+import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
+import org.knime.filehandling.core.connections.base.attributes.FSFileAttributeView;
+import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -101,25 +104,33 @@ import com.amazonaws.services.s3.model.S3Object;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FileSystemProvider extends FileSystemProvider {
+public class S3FileSystemProvider extends BaseFileSystemProvider {
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
-    /**  */
+    /**
+     *
+     */
     public static final String CONNECTION_INFORMATION = "ConnectionInformation";
 
-    private final HashMap<URI, FileSystem> m_fileSystems = new HashMap<>();
-
     private final ClientConfiguration m_clientConfig;
+
+    private final URI m_uri;
+
+    private final long m_cacheTimeToLive;
 
     /**
      * Constructs a file system provider for {@link S3FileSystem}s.
      *
      * @param clientConfig the {@link ClientConfiguration} to use
+     * @param uri
+     * @param cacheTimeToLive the timeToLive for the attributes cache.
      */
-    public S3FileSystemProvider(final ClientConfiguration clientConfig) {
+    public S3FileSystemProvider(final ClientConfiguration clientConfig, final URI uri, final long cacheTimeToLive) {
         Objects.requireNonNull(clientConfig);
         m_clientConfig = clientConfig;
+        m_uri = uri;
+        m_cacheTimeToLive = cacheTimeToLive;
     }
 
     /**
@@ -140,37 +151,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("resource")
-    @Override
-    public FileSystem newFileSystem(final URI uri, final Map<String, ?> env) throws IOException {
-        CloudConnectionInformation connInfo = null;
-        if (env.containsKey(CONNECTION_INFORMATION)) {
-            connInfo = (CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
-        }
-        if (!m_fileSystems.containsKey(uri)) {
-            m_fileSystems.put(uri, new S3FileSystem(this, uri, env, connInfo));
-        }
-
-        return m_fileSystems.get(uri);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public FileSystem getFileSystem(final URI uri) {
-        if (!m_fileSystems.containsKey(uri)) {
-            throw new FileSystemNotFoundException(String.format("No filesystem for uri %s", uri));
-        }
-        return m_fileSystems.get(uri);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Path getPath(final URI uri) {
-        return getFileSystem(uri).getPath(uri.getPath());
+        return new S3Path((S3FileSystem)getFileSystem(m_uri), uri.getPath());
     }
 
     /**
@@ -180,40 +163,6 @@ public class S3FileSystemProvider extends FileSystemProvider {
     public SeekableByteChannel newByteChannel(final Path path, final Set<? extends OpenOption> options,
         final FileAttribute<?>... attrs) throws IOException {
         return new S3SeekableByteChannel(toS3Path(path), options);
-    }
-
-    @Override
-    @SuppressWarnings("resource")
-    public InputStream newInputStream(final Path path, final OpenOption... options) throws IOException {
-
-        InputStream inputStream;
-        final S3Path s3path = toS3Path(path);
-        try {
-
-            final S3Object object =
-                s3path.getFileSystem().getClient().getObject(s3path.getBucketName(), s3path.getKey());
-            inputStream = object.getObjectContent();
-
-            if (inputStream == null) {
-                object.close();
-                throw new IOException(String.format("Could not read path %s", s3path));
-            }
-
-        } catch (Exception ex) {
-            throw new IOException(ex);
-        }
-
-        return inputStream;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DirectoryStream<Path> newDirectoryStream(final Path dir, final Filter<? super Path> filter)
-        throws IOException {
-        final S3Path path = toS3Path(dir);
-        return new S3DirectoryStream(path, filter);
     }
 
     /**
@@ -241,46 +190,6 @@ public class S3FileSystemProvider extends FileSystemProvider {
         s3Path.getFileSystem().getClient().putObject(bucketName, objectKey, new ByteArrayInputStream(new byte[0]),
             metadata);
 
-    }
-
-    boolean exists(final S3Path path) {
-        if (path.getBucketName() == null) {
-            //This is the fake S3 root.
-            return true;
-        }
-        final AmazonS3 client = path.getFileSystem().getClient();
-
-        boolean exists = false;
-        if (!path.getKey().isEmpty()) {
-            try {
-                exists = client.doesObjectExist(path.getBucketName(), path.getKey());
-            } catch (AmazonS3Exception e){
-                LOGGER.warn(e);
-            }
-            if (!exists && path.isDirectory()) {
-                final ListObjectsV2Request request = new ListObjectsV2Request();
-                request.withBucketName(path.getBucketName()).withPrefix(path.getKey()).withDelimiter(path.getKey())
-                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(path.getKey())
-                    .setMaxKeys(1);
-
-                ObjectListing listObjects;
-                try {
-                    listObjects = client.listObjects(path.getBucketName(), path.getKey());
-                    exists = !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
-                } catch (final AmazonServiceException ex) {
-                    LOGGER.warn(ex);
-                }
-            }
-
-            return exists;
-        } else {
-            try {
-                return client.doesBucketExistV2(path.getBucketName());
-            } catch (AmazonS3Exception e) {
-                LOGGER.warn(e);
-                return false;
-            }
-        }
     }
 
     /**
@@ -373,7 +282,7 @@ public class S3FileSystemProvider extends FileSystemProvider {
      */
     @Override
     public FileStore getFileStore(final Path path) throws IOException {
-        return new S3FileStore();
+        return path.getFileSystem().getFileStores().iterator().next();
     }
 
     /**
@@ -434,40 +343,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
         final LinkOption... options) {
-        try {
-            return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
-        } catch (final IOException ex) {
-            LOGGER.warn(ex);
-            return (V)new FSBasicFileAttributeView(path.toString(), null);
-        }
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <A extends BasicFileAttributes> A readAttributes(final Path path, final Class<A> type,
-        final LinkOption... options) throws IOException {
-        final FSPath fsPath = (FSPath)path;
-        if(!exists((S3Path)path)) {
-            throw new IOException(String.format("No such file %s", path.toString()));
-        }
-        if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
-            return (A)fsPath.getFileAttributes(type);
-        }
-
-        throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Map<String, Object> readAttributes(final Path path, final String attributes, final LinkOption... options)
-        throws IOException {
-        return BasicFileAttributesUtil.attributesToMap(readAttributes(path, BasicFileAttributes.class, options),
-            attributes);
+        return (V)new FSFileAttributeView(path.toString(),
+            () -> (FSFileAttributes)readAttributes(path, BasicFileAttributes.class));
     }
 
     /**
@@ -476,28 +354,9 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public void setAttribute(final Path path, final String attribute, final Object value, final LinkOption... options)
         throws IOException {
-        // TODO implement
+
         throw new UnsupportedOperationException();
 
-    }
-
-    /**
-     * Returns whether the file system for the given URI is open
-     *
-     * @param uri the URI to the file system
-     * @return whether the file system for the given URI is open
-     */
-    public boolean isOpen(final URI uri) {
-        return m_fileSystems.containsKey(uri);
-    }
-
-    /**
-     * Removes the file system for the given URI from the list of file systems
-     *
-     * @param uri the URI to the file system
-     */
-    public void removeFileSystem(final URI uri) {
-        m_fileSystems.remove(uri);
     }
 
     private static S3Path toS3Path(final Path path) {
@@ -507,4 +366,152 @@ public class S3FileSystemProvider extends FileSystemProvider {
         }
         return (S3Path)path;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BaseFileSystem createFileSystem(final URI uri, final Map<String, ?> env) {
+        CloudConnectionInformation connInfo = null;
+        if (env.containsKey(CONNECTION_INFORMATION)) {
+            connInfo = (CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
+        }
+        return new S3FileSystem(this, uri, env, connInfo, m_cacheTimeToLive);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean exists(final Path path) {
+        final S3Path s3Path = toS3Path(path);
+        if (s3Path.getBucketName() == null || s3Path.isCached()) {
+            //This is the fake S3 root, or we have valid data in the cache.
+            return true;
+        }
+        final AmazonS3 client = s3Path.getFileSystem().getClient();
+
+        boolean exists = false;
+        if (!s3Path.getKey().isEmpty()) {
+            try {
+                exists = client.doesObjectExist(s3Path.getBucketName(), s3Path.getKey());
+            } catch (final AmazonS3Exception e) {
+                LOGGER.warn(e);
+            }
+            if (!exists && s3Path.isDirectory()) {
+                final ListObjectsV2Request request = new ListObjectsV2Request();
+                request.withBucketName(s3Path.getBucketName()).withPrefix(s3Path.getKey())
+                    .withDelimiter(s3Path.getKey()).withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url")
+                    .withStartAfter(s3Path.getKey()).setMaxKeys(1);
+
+                ObjectListing listObjects;
+                try {
+                    listObjects = client.listObjects(s3Path.getBucketName(), s3Path.getKey());
+                    exists = !listObjects.getObjectSummaries().isEmpty() || !listObjects.getCommonPrefixes().isEmpty();
+                } catch (final AmazonServiceException ex) {
+                    LOGGER.warn(ex);
+                }
+            }
+
+            return exists;
+        } else {
+            try {
+                return client.doesBucketExistV2(s3Path.getBucketName());
+            } catch (final AmazonS3Exception e) {
+                LOGGER.warn(e);
+                return false;
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStream newInputStreamInternal(final Path path, final OpenOption... options) throws IOException {
+        InputStream inputStream;
+        final S3Path s3path = toS3Path(path);
+        try {
+
+            final S3Object object =
+                s3path.getFileSystem().getClient().getObject(s3path.getBucketName(), s3path.getKey());
+            inputStream = object.getObjectContent();
+
+            if (inputStream == null) {
+                object.close();
+                throw new IOException(String.format("Could not read path %s", s3path));
+            }
+
+        } catch (final Exception ex) {
+            throw new IOException(ex);
+        }
+
+        return inputStream;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OutputStream newOutputStreamInternal(final Path path, final OpenOption... options) throws IOException {
+        final int len = options.length;
+        final Set<OpenOption> opts = new HashSet<>(len + 3);
+        if (len == 0) {
+            opts.add(StandardOpenOption.CREATE);
+            opts.add(StandardOpenOption.TRUNCATE_EXISTING);
+        } else {
+            for (final OpenOption opt : options) {
+                if (opt == StandardOpenOption.READ) {
+                    throw new IllegalArgumentException("READ not allowed");
+                }
+                opts.add(opt);
+            }
+        }
+        opts.add(StandardOpenOption.WRITE);
+        return Channels.newOutputStream(newByteChannel(path, opts));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Iterator<Path> createPathIterator(final Path dir, final Filter<? super Path> filter) throws IOException {
+        return new S3PathIterator(dir, filter);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected FSFileAttributes fetchAttributesInternal(final Path path, final Class<?> type) throws IOException {
+        final S3Path pathS3 = toS3Path(path);
+        if (type == BasicFileAttributes.class) {
+            final FSFileAttributes attributes = new FSFileAttributes(!pathS3.isDirectory(), pathS3, p -> {
+
+                FileTime lastmod = FileTime.fromMillis(0L);
+                long size = 0;
+
+                final S3Path s3Path = (S3Path)p;
+                try {
+                    final ObjectMetadata objectMetadata =
+                        s3Path.getFileSystem().getClient().getObjectMetadata(s3Path.getBucketName(), s3Path.getKey());
+
+                    final Date metaDataLastMod = objectMetadata.getLastModified();
+
+                    lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
+                        : FileTime.from(s3Path.getBucket().getCreationDate().toInstant());
+                    size = objectMetadata.getContentLength();
+
+                } catch (final Exception e) {
+                    // If we do not have metadata we use fall back values
+                }
+
+                return new FSBasicAttributes(lastmod, lastmod, lastmod, size, false, false);
+            });
+            pathS3.cacheFileAttributes(attributes);
+            return attributes;
+        }
+        throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
+    }
+
 }

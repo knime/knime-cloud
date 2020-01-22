@@ -48,25 +48,15 @@
  */
 package org.knime.cloud.aws.filehandling.connections;
 
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.WatchService;
-import java.nio.file.attribute.UserPrincipalLookupService;
-import java.nio.file.spi.FileSystemProvider;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
+import org.knime.filehandling.core.connections.base.BaseFileSystem;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -86,15 +76,9 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FileSystem extends FileSystem {
-
-    private final S3FileSystemProvider m_provider;
+public class S3FileSystem extends BaseFileSystem {
 
     private final AmazonS3 m_client;
-
-    private final URI m_uri;
-
-    private final FileStore m_fileStore = new S3FileStore();
 
     private static final String PATH_SEPARATOR = S3Path.PATH_SEPARATOR;
 
@@ -105,21 +89,19 @@ public class S3FileSystem extends FileSystem {
      * @param uri the URI for the file system
      * @param env the environment map
      * @param connectionInformation the {@link CloudConnectionInformation}
+     * @param timeToLive the time to live for cache entries in the attributes cache
      */
     public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
-        final CloudConnectionInformation connectionInformation) {
-        Objects.requireNonNull(provider);
-        Objects.requireNonNull(uri);
-        m_provider = provider;
-        m_uri = uri;
+        final CloudConnectionInformation connectionInformation, final long timeToLive) {
+        super(provider, uri, "S3 file system", "S3 file system", timeToLive);
         try {
             if (connectionInformation.switchRole()) {
-                m_client = getRoleAssumedS3Client(connectionInformation, m_provider.getClientConfig());
+                m_client = getRoleAssumedS3Client(connectionInformation, provider.getClientConfig());
             } else {
-                m_client = getS3Client(connectionInformation, m_provider.getClientConfig());
+                m_client = getS3Client(connectionInformation, provider.getClientConfig());
             }
         } catch (final Exception ex) {
-            throw new RuntimeException(ex);
+            throw new IllegalArgumentException(ex);
         }
     }
 
@@ -182,39 +164,6 @@ public class S3FileSystem extends FileSystem {
      * {@inheritDoc}
      */
     @Override
-    public FileSystemProvider provider() {
-        return m_provider;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() throws IOException {
-        m_client.shutdown();
-        m_provider.removeFileSystem(m_uri);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isOpen() {
-        return m_provider.isOpen(m_uri);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isReadOnly() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String getSeparator() {
         return PATH_SEPARATOR;
     }
@@ -224,18 +173,7 @@ public class S3FileSystem extends FileSystem {
      */
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singletonList(new S3Path(this, m_fileStore.name()));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-
-    @Override
-    public Iterable<FileStore> getFileStores() {
-        final List<FileStore> fileStores = new ArrayList<>();
-        fileStores.add(m_fileStore);
-        return fileStores;
+        return Collections.singletonList(new S3Path(this, PATH_SEPARATOR));
     }
 
     /**
@@ -243,17 +181,6 @@ public class S3FileSystem extends FileSystem {
      */
     public AmazonS3 getClient() {
         return m_client;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Set<String> supportedFileAttributeViews() {
-        final Set<String> set = new HashSet<>();
-        set.add("basic");
-        set.add("posix");
-        return set;
     }
 
     /**
@@ -280,23 +207,7 @@ public class S3FileSystem extends FileSystem {
      * {@inheritDoc}
      */
     @Override
-    public PathMatcher getPathMatcher(final String syntaxAndPattern) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public UserPrincipalLookupService getUserPrincipalLookupService() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public WatchService newWatchService() throws IOException {
-        throw new UnsupportedOperationException();
+    public void prepareClose() {
+        m_client.shutdown();
     }
 }
