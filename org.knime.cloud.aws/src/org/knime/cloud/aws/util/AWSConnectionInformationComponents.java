@@ -189,7 +189,7 @@ public final class AWSConnectionInformationComponents
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
         auth.add(getAuthenticationComponent().getComponentPanel());
-        getAuthenticationComponent().getModel().addChangeListener(e -> updateEnabledStatus());
+        m_settings.getAuthenticationModel().addChangeListener(e -> updateEnabledStatus());
         gbc.gridy++;
         auth.add(getSwitchRolePanel(), gbc);
         gbc.fill = GridBagConstraints.NONE;
