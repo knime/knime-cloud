@@ -57,6 +57,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.knime.base.filehandling.remote.connectioninformation.node.TestConnectionDialog;
@@ -141,10 +142,17 @@ class AmazonAuthenticationNodeDialog extends NodeDialogPane {
 
             // Get connection information to current settings
             final AWSConnectionInformationSettings model = m_awsComp.getSettings();
-            final ConnectionInformation connectionInformation =
-                model.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
+            try {
+                final ConnectionInformation connectionInformation =
+                    model.createConnectionInformation(getCredentialsProvider(), S3RemoteFileHandler.PROTOCOL);
 
-            new TestConnectionDialog(connectionInformation).open(frame);
+                new TestConnectionDialog(connectionInformation).open(frame);
+
+            } catch (IllegalArgumentException ex) {
+                //If current input does is not valid for connection information creation (e.g. credentials variable does not exists)
+                JOptionPane.showMessageDialog(frame, ex.getMessage(), "Connection error", JOptionPane.ERROR_MESSAGE);
+            }
+
         }
 
     }
