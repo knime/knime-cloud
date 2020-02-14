@@ -10,5 +10,10 @@
       </node>
 
    </extension>
+   <extension
+         point="org.knime.filehandling.FSTestInitializerProvider">
+      <FSTestInitializerProvider
+            ProviderClass="org.knime.cloud.aws.filehandling.testing.S3FSTestInitializerProvider"></FSTestInitializerProvider>
+   </extension>
 
 </plugin>
