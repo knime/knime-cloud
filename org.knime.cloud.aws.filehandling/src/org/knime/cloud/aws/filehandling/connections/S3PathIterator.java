@@ -52,10 +52,10 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
 import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
@@ -115,10 +115,20 @@ public class S3PathIterator implements Iterator<Path> {
         if (path.getNameCount() == 0) {
             try {
                 final List<Bucket> buckets = m_client.listBuckets();
-                m_roots = buckets.stream() //
-                    .map(bucket -> (Path)new S3Path(m_fileSystem,
-                        S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
-                    .collect(Collectors.toList()).iterator();
+                final ArrayList<Path> rootPaths = new ArrayList<>();
+                for (final Bucket thebucket : buckets) {
+
+                    final S3Path bucketPath =
+                        new S3Path(m_fileSystem, S3Path.PATH_SEPARATOR + thebucket.getName() + S3Path.PATH_SEPARATOR);
+
+                    final FileTime time = FileTime.fromMillis(thebucket.getCreationDate().getTime());
+                    final FSFileAttributes attributes = new FSFileAttributes(false, bucketPath,
+                        p -> new FSBasicAttributes(time, time, time, 0L, false, false));
+                    bucketPath.cacheFileAttributes(attributes);
+
+                    rootPaths.add(bucketPath);
+                }
+                m_roots = rootPaths.iterator();
             } catch (final SdkClientException e) {
                 // In case of anonymous browsing listBuckets() will fail.
             }
