@@ -119,12 +119,13 @@ public class S3PathIterator implements Iterator<Path> {
                 for (final Bucket thebucket : buckets) {
 
                     final S3Path bucketPath =
-                        new S3Path(m_fileSystem, S3Path.PATH_SEPARATOR + thebucket.getName() + S3Path.PATH_SEPARATOR);
+                        new S3Path(m_fileSystem, m_fileSystem.getSeparator() + thebucket.getName() + m_fileSystem.getSeparator());
 
                     final FileTime time = FileTime.fromMillis(thebucket.getCreationDate().getTime());
                     final FSFileAttributes attributes = new FSFileAttributes(false, bucketPath,
                         p -> new FSBasicAttributes(time, time, time, 0L, false, false));
-                    bucketPath.cacheFileAttributes(attributes);
+
+                    m_fileSystem.addToAttributeCache(bucketPath.toString(), attributes);
 
                     rootPaths.add(bucketPath);
                 }
