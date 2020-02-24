@@ -88,11 +88,9 @@ public class S3SeekableByteChannel extends FSTempFileSeekableByteChannel<S3Path>
      */
     @Override
     public void copyToRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-
         S3Path s3Path = remoteFile;
-        s3Path.getFileSystem().getClient().putObject(s3Path.getBucketName(), s3Path.getKey(),
+        s3Path.getFileSystem().getClient().putObject(s3Path.getBucketName(), s3Path.getBlobName(),
             Files.newInputStream(tempFile), new ObjectMetadata());
-
     }
 
 }

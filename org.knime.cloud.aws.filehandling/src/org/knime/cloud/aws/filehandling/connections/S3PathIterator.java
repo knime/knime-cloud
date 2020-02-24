@@ -136,8 +136,9 @@ public class S3PathIterator implements Iterator<Path> {
         } else {
             try {
                 m_listRequest = new ListObjectsV2Request();
-                m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
-                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
+                m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getBlobName())
+                    .withDelimiter(m_fileSystem.getSeparator())
+                    .withEncodingType("url").withStartAfter(s3Path.getBlobName());
                 m_objectsListing = m_client.listObjectsV2(m_listRequest);
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
@@ -227,7 +228,7 @@ public class S3PathIterator implements Iterator<Path> {
         final FileTime lastModified = FileTime.fromMillis(0L);
         final FSFileAttributes attributes = new FSFileAttributes(false, path,
             p -> new FSBasicAttributes(lastModified, lastModified, lastModified, 0, false, false));
-        path.cacheFileAttributes(attributes);
+        m_fileSystem.addToAttributeCache(path.toString(), attributes);
         return path;
     }
 
@@ -236,7 +237,7 @@ public class S3PathIterator implements Iterator<Path> {
         final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
         final FSFileAttributes attributes = new FSFileAttributes(!path.isDirectory(), path,
             p -> new FSBasicAttributes(lastModified, lastModified, lastModified, nextSummary.getSize(), false, false));
-        path.cacheFileAttributes(attributes);
+        m_fileSystem.addToAttributeCache(path.toString(), attributes);
         return path;
     }
 

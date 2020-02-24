@@ -75,6 +75,8 @@ public class S3Connection implements FSConnection {
 
     private final long m_cacheTimeToLive = 60000;
 
+    private final boolean m_normalizePaths = true;
+
     /**
      * Creates a new {@link S3Connection} for the given connection information.
      *
@@ -94,7 +96,7 @@ public class S3Connection implements FSConnection {
         final ClientConfiguration clientConfig) {
         Objects.requireNonNull(connectionInformation);
         m_connInfo = connectionInformation;
-        m_provider = new S3FileSystemProvider(clientConfig, m_connInfo.toURI(), m_cacheTimeToLive);
+        m_provider = new S3FileSystemProvider(clientConfig, m_connInfo.toURI(), m_cacheTimeToLive, m_normalizePaths);
     }
 
     /**

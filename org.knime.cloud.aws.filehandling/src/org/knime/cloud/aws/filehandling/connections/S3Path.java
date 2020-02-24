@@ -46,44 +46,19 @@
  * History
  *   21.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
+
 package org.knime.cloud.aws.filehandling.connections;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent.Kind;
-import java.nio.file.WatchEvent.Modifier;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
-import java.nio.file.spi.FileSystemProvider;
-import java.util.ArrayList;
-import java.util.Iterator;
 
-import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
-import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
-import org.knime.filehandling.core.filechooser.NioFile;
-
-import com.amazonaws.services.s3.model.Bucket;
+import org.knime.filehandling.core.connections.base.BlobStorePath;
 
 /**
  * {@link Path} implementation for {@link S3FileSystem}
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3Path implements Path {
-
-    /** Path separator for {@link S3FileSystem} */
-    public static final String PATH_SEPARATOR = "/";
-
-    private final String m_fullPath;
-
-    private final ArrayList<String> m_blobParts;
-
-    private final S3FileSystem m_fileSystem;
-
-    private final boolean m_isAbsolute;
+public class S3Path extends BlobStorePath<S3FileSystem> {
 
     /**
      * Creates an S3Path from the given path string
@@ -92,10 +67,7 @@ public class S3Path implements Path {
      * @param pathString the string representing the S3 path
      */
     public S3Path(final S3FileSystem fileSystem, final String pathString) {
-        m_fileSystem = fileSystem;
-        m_fullPath = pathString.isEmpty() ? PATH_SEPARATOR : pathString;
-        m_isAbsolute = m_fullPath.startsWith(PATH_SEPARATOR);
-        m_blobParts = getPathSplits(m_fullPath, m_isAbsolute);
+        super(fileSystem, pathString);
     }
 
     /**
@@ -106,199 +78,18 @@ public class S3Path implements Path {
      * @param key the object key
      */
     public S3Path(final S3FileSystem fileSystem, final String bucketName, final String key) {
-        m_fileSystem = fileSystem;
-        m_fullPath = PATH_SEPARATOR + bucketName + PATH_SEPARATOR + key;
-        m_isAbsolute = true;
-        m_blobParts = getPathSplits(m_fullPath, m_isAbsolute);
-    }
-
-    private static ArrayList<String> getPathSplits(final String pathString, final boolean isAbsolute) {
-
-        //Prepare path string for splitting
-        String path = pathString;
-        if (isAbsolute) {
-            path = path.substring(1);
-        }
-
-        if (path.endsWith(PATH_SEPARATOR)) {
-            path = path.substring(0, path.length() - 1);
-        }
-
-        final ArrayList<String> splitList = new ArrayList<>();
-        if (path.isEmpty()) {
-            return splitList;
-        }
-
-        int index = 0;
-        while (index != -1) {
-            int secondOccurence = path.indexOf(PATH_SEPARATOR, index + 1);
-            if (secondOccurence == -1) {
-                splitList.add(path.substring(index));
-                secondOccurence = -2;
-            } else {
-                splitList.add(path.substring(index, secondOccurence));
-            }
-            index = secondOccurence + 1;
-        }
-
-        return splitList;
+        super(fileSystem, bucketName, key);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public S3FileSystem getFileSystem() {
-        return m_fileSystem;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isAbsolute() {
-        return m_isAbsolute;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path getRoot() {
-        if (isAbsolute()) {
-            return new S3Path(m_fileSystem, PATH_SEPARATOR + m_blobParts.get(0) + PATH_SEPARATOR);
+    protected boolean lastComponentSymbolicLink() {
+        if (getFileSystem().normalizePaths()) {
+            return super.lastComponentSymbolicLink();
         }
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path getFileName() {
-        if (m_blobParts.isEmpty()) {
-            return null;
-        }
-        return new S3Path(m_fileSystem, m_blobParts.get(m_blobParts.size() - 1));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path getParent() {
-        if (m_blobParts.isEmpty()) {
-            return null;
-        }
-
-        final StringBuilder sb = new StringBuilder(PATH_SEPARATOR);
-        final Iterator<String> iter = m_blobParts.iterator();
-        for (String part = iter.next(); iter.hasNext(); part = iter.next()) {
-            sb.append(part);
-            sb.append(PATH_SEPARATOR);
-        }
-
-        return new S3Path(m_fileSystem, sb.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNameCount() {
-        return m_blobParts.size();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path getName(final int index) {
-        if (index < 0 || index >= m_blobParts.size()) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < index; i++) {
-            sb.append(m_blobParts.get(i));
-        }
-
-        return new S3Path(m_fileSystem, sb.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path subpath(final int beginIndex, final int endIndex) {
-        if (beginIndex > endIndex) {
-            throw new IllegalArgumentException("Begin index must not be greater than end index");
-        }
-        if (beginIndex < 0 || beginIndex >= m_blobParts.size() || endIndex < 0 || endIndex >= m_blobParts.size()) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final StringBuilder sb = new StringBuilder();
-        for (int i = beginIndex; i < endIndex; i++) {
-            sb.append(m_blobParts.get(i));
-        }
-
-        return new S3Path(m_fileSystem, sb.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean startsWith(final Path other) {
-        if (!(other instanceof S3Path)) {
-            return false;
-        }
-
-        if (other.getNameCount() > getNameCount()) {
-            return false;
-        }
-
-        if (other.isAbsolute() && !isAbsolute()) {
-            return false;
-        }
-
-        if (!other.getRoot().equals(getRoot())) {
-            return false;
-        }
-
-        for (int i = 0; i < other.getNameCount(); i++) {
-            if (!other.getName(i).equals(getName(i))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean startsWith(final String other) {
-        final S3Path path = new S3Path(m_fileSystem, other);
-        return startsWith(path);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean endsWith(final Path other) {
-        return m_fullPath.endsWith(other.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean endsWith(final String other) {
-        return m_fullPath.endsWith(other);
+        return false;
     }
 
     /**
@@ -306,51 +97,11 @@ public class S3Path implements Path {
      */
     @Override
     public Path normalize() {
-        return this;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path resolve(final Path other) {
-        final S3Path otherPath = toS3Path(other);
-        if (otherPath.m_isAbsolute) {
-            return other;
-        }
-        if (otherPath.getNameCount() == 0) {
+        if (getFileSystem().normalizePaths()) {
+            return super.normalize();
+        } else {
             return this;
         }
-
-        final String resolvedPath = m_fullPath + otherPath.getFullPath();
-
-        return new S3Path(m_fileSystem, resolvedPath);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path resolve(final String other) {
-        return resolve(new S3Path(m_fileSystem, other));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path resolveSibling(final Path other) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path resolveSibling(final String other) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -358,209 +109,48 @@ public class S3Path implements Path {
      */
     @Override
     public Path relativize(final Path other) {
-        final S3Path path = toS3Path(other);
-        if (!this.m_isAbsolute) {
-            return this;
-        }
-        if (!path.isAbsolute()) {
-            throw new IllegalArgumentException("Input path must be absolut");
-        }
-        final URI relative = toUri().relativize(other.toUri());
-
-        return new S3Path(m_fileSystem, relative.getPath());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public URI toUri() {
-        //FIXME ACCESS STRING
-        return URI.create("s3://" + m_fullPath);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path toAbsolutePath() {
-        if (isAbsolute()) {
-            return this;
-        }
-        throw new IllegalStateException(String.format("Realtive path %s cannot be made absolut.", this));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path toRealPath(final LinkOption... options) throws IOException {
-        return toAbsolutePath();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public File toFile() {
-        return new NioFile(this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public WatchKey register(final WatchService watcher, final Kind<?>[] events, final Modifier... modifiers)
-        throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public WatchKey register(final WatchService watcher, final Kind<?>... events) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Iterator<Path> iterator() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(final Path other) {
-        final S3Path otherPath = toS3Path(other);
-        return m_fullPath.compareTo(otherPath.getFullPath());
-    }
-
-    private static S3Path toS3Path(final Path other) {
-        if (!(other instanceof S3Path)) {
-            throw new IllegalArgumentException("Input path must be an S3 Path");
-        }
-        return (S3Path)other;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return m_fullPath.hashCode();
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!(other instanceof S3Path)) {
-            return false;
+        if (other.getFileSystem() != m_fileSystem) {
+            throw new IllegalArgumentException("Cannot relativize paths across different file systems.");
         }
 
-        final S3Path path = (S3Path)other;
-
-        if (!m_fullPath.equals(path.m_fullPath)) {
-            return false;
+        if (this.equals(other)) {
+            return createPath("");
         }
-        return true;
-    }
 
-    /**
-     * @return the bucket name
-     */
-    public String getBucketName() {
-        if (m_blobParts.isEmpty()) {
-            return null;
+        if (this.isAbsolute() != other.isAbsolute()) {
+            throw new IllegalArgumentException("Cannot relativize an absolute path with a relative path.");
         }
-        return m_blobParts.get(0);
-    }
 
-    /**
-     * @return the key of the object i.e. the path without the bucket name.
-     */
-    public String getKey() {
-        int start = 0;
-        if (isAbsolute()) {
-            start = 1;
+        if (m_pathParts.isEmpty() || (m_pathParts.size() == 1 && m_pathParts.get(0).isEmpty())) {
+            return other;
         }
-        if (m_blobParts.size() == 1) {
-            return "";
+
+        @SuppressWarnings("unchecked")
+        final BlobStorePath<S3FileSystem> s3Other = (BlobStorePath<S3FileSystem>)other;
+
+        if (s3Other.startsWith(this)) {
+            return s3Other.subpath(getNameCount(), s3Other.getNameCount());
         }
-        return m_fullPath.substring(m_fullPath.indexOf(PATH_SEPARATOR, start + 1) + 1);
-    }
 
-    @Override
-    public String toString() {
-        return m_fullPath;
-    }
-
-    /**
-     * @return the full path as String
-     */
-    public String getFullPath() {
-        return m_fullPath;
-    }
-
-    /**
-     * @return a {@link Bucket} if a bucket with that name exists in S3, null otherwise.
-     */
-    public Bucket getBucket() {
-
-        for (final Bucket buck : m_fileSystem.getClient().listBuckets()) {
-            if (buck.getName().equals(getBucketName())) {
-                return buck;
-            }
+        if (!m_fileSystem.normalizePaths()) {
+            throw new IllegalArgumentException("Cannot relativize an independent paths if normalization is disabled.");
         }
-        return null;
-    }
 
-    /**
-     * @return whether the path is a directory
-     */
-    public boolean isDirectory() {
-        return m_fullPath.endsWith(PATH_SEPARATOR);
+        return super.relativize(other);
     }
 
     /**
      * @return whether this is the virtual S3 root "/"
      */
     public boolean isVirtualRoot() {
-        return m_blobParts.isEmpty();
+        return m_pathParts.isEmpty() && isAbsolute();
     }
 
     /**
-     * Caches the given attributes in the providers cache.
-     *
-     * @param attributes the attributes to cache
+     * {@inheritDoc}
      */
-    public void cacheFileAttributes(final FSFileAttributes attributes) {
-
-        final FileSystemProvider provider = getFileSystem().provider();
-        if (provider instanceof BaseFileSystemProvider) {
-            m_fileSystem.addToAttributeCache(normalize().toAbsolutePath().toString(), attributes);
-        }
-
-    }
-
-    /**
-     * Whether this paths attributes are cached in the providers cache.
-     *
-     * @return Whether this paths attributes are cached in the providers cache.
-     */
-    public boolean isCached() {
-
-        final FileSystemProvider provider = getFileSystem().provider();
-        if (provider instanceof BaseFileSystemProvider) {
-            return m_fileSystem.hasCachedAttributes(normalize().toAbsolutePath().toString());
-        }
-        return false;
+    @Override
+    public Path createPath(final String pathString, final String... more) {
+        return new S3Path(m_fileSystem, concatenatePathSegments(m_pathSeparator, pathString, more));
     }
 }

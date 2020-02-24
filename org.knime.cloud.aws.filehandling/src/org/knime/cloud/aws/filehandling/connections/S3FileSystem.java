@@ -80,7 +80,9 @@ public class S3FileSystem extends BaseFileSystem {
 
     private final AmazonS3 m_client;
 
-    private static final String PATH_SEPARATOR = S3Path.PATH_SEPARATOR;
+    private final boolean m_normalizePaths;
+
+    private static final String PATH_SEPARATOR = "/";
 
     /**
      * Constructs an S3FileSystem for the given URI
@@ -90,10 +92,12 @@ public class S3FileSystem extends BaseFileSystem {
      * @param env the environment map
      * @param connectionInformation the {@link CloudConnectionInformation}
      * @param timeToLive the time to live for cache entries in the attributes cache
+     * @param normalizePaths whether paths should be normalized
      */
     public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
-        final CloudConnectionInformation connectionInformation, final long timeToLive) {
+        final CloudConnectionInformation connectionInformation, final long timeToLive, final boolean normalizePaths) {
         super(provider, uri, "S3 file system", "S3 file system", timeToLive);
+        m_normalizePaths = normalizePaths;
         try {
             if (connectionInformation.switchRole()) {
                 m_client = getRoleAssumedS3Client(connectionInformation, provider.getClientConfig());
@@ -138,8 +142,9 @@ public class S3FileSystem extends BaseFileSystem {
             new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
                 assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
 
-        return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig).withCredentials(
-            new AWSStaticCredentialsProvider(tempCredentials)).withRegion(connectionInformation.getHost()).build();
+        return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig)
+            .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
+            .withRegion(connectionInformation.getHost()).build();
     }
 
     private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
@@ -209,5 +214,28 @@ public class S3FileSystem extends BaseFileSystem {
     @Override
     public void prepareClose() {
         m_client.shutdown();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getSchemeString() {
+        return "s3";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getHostString() {
+        return null;
+    }
+
+    /**
+     * @return whether to normalize paths.
+     */
+    public boolean normalizePaths() {
+        return m_normalizePaths;
     }
 }
