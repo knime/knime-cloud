@@ -68,7 +68,6 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.core.node.workflow.FSConnectionNode;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
 import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
@@ -80,7 +79,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectionNodeModel extends NodeModel implements FSConnectionNode {
+public class S3ConnectionNodeModel extends NodeModel {
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
