@@ -56,6 +56,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
+import com.amazonaws.AbortedException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -107,21 +109,30 @@ public class S3PathIterator implements Iterator<Path> {
         m_filter = filter;
         m_bucketName = s3Path.getBucketName();
 
-        if (path.getNameCount() == 0) {
-            final List<Bucket> buckets = m_client.listBuckets();
-            m_roots = buckets.stream() //
-                .map(bucket -> (Path)new S3Path(m_fileSystem,
-                    S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
-                .collect(Collectors.toList()).iterator();
 
-        } else {
-            m_listRequest = new ListObjectsV2Request();
-            m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
-                .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
-            m_objectsListing = m_client.listObjectsV2(m_listRequest);
-            m_objectSummary = m_objectsListing.getObjectSummaries();
-            m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
+        try {
+            if (path.getNameCount() == 0) {
 
+                final List<Bucket> buckets = m_client.listBuckets();
+                m_roots = buckets.stream() //
+                    .map(bucket -> (Path)new S3Path(m_fileSystem,
+                        S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
+                    .collect(Collectors.toList()).iterator();
+            } else {
+                m_listRequest = new ListObjectsV2Request();
+                m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
+                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
+                m_objectsListing = m_client.listObjectsV2(m_listRequest);
+                m_objectSummary = m_objectsListing.getObjectSummaries();
+                m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
+
+            }
+        } catch (SdkClientException e) {
+            if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                // ignore
+            } else {
+                throw e;
+            }
         }
 
         m_nextPath = m_objectsListing == null && m_roots == null ? null : getNextPath();
