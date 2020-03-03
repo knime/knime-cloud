@@ -62,6 +62,7 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -427,11 +428,14 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      */
     @Override
     public InputStream newInputStreamInternal(final Path path, final OpenOption... options) throws IOException {
+
         InputStream inputStream;
         final S3Path s3path = toS3Path(path);
+
         if (s3path.getBlobName() == null) {
             throw new IOException("Cannot open input stream on bucket.");
         }
+
         try {
 
             final S3Object object =
@@ -443,11 +447,31 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
                 throw new IOException(String.format("Could not read path %s", s3path));
             }
 
-        } catch (final Exception ex) {
-            throw new IOException(ex);
+        } catch (AmazonServiceException ex) {
+            if (Objects.equals(ex.getErrorCode(), "NoSuchKey")) {
+                final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
+                noSuchFileEx.initCause(ex);
+                throw noSuchFileEx;
+            } else {
+                throw new IOException(ex);
+            }
+        } catch (Exception ex) {
+            throw wrapAsIOExceptionIfNecessary(ex);
         }
 
         return inputStream;
+    }
+
+    private static IOException wrapAsIOExceptionIfNecessary(final Exception ex) {
+        IOException toReturn;
+
+        if (ex instanceof IOException) {
+            toReturn = (IOException) ex;
+        } else {
+            toReturn = new IOException(ex);
+        }
+
+        return toReturn;
     }
 
     /**
