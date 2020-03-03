@@ -66,6 +66,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
@@ -444,11 +445,13 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
         final LinkOption... options) {
-        try {
-            return (V)new FSBasicFileAttributeView(path.toString(), readAttributes(path, BasicFileAttributes.class));
-        } catch (final IOException ex) {
-            LOGGER.warn(ex);
-            return (V)new FSBasicFileAttributeView(path.toString(), null);
+
+        checkPathProvider(path);
+
+        if (type == BasicFileAttributeView.class) {
+            return (V)new FSBasicFileAttributeView(path, "basic");
+        } else {
+            return null;
         }
     }
 
@@ -459,15 +462,20 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public <A extends BasicFileAttributes> A readAttributes(final Path path, final Class<A> type,
         final LinkOption... options) throws IOException {
-        final FSPath fsPath = (FSPath)path;
-        if(!exists((S3Path)path)) {
-            throw new IOException(String.format("No such file %s", path.toString()));
-        }
-        if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
-            return (A)fsPath.getFileAttributes(type);
-        }
 
-        throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
+        checkPathProvider(path);
+
+
+        if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
+            final S3Path s3Path = toS3Path(path);
+            if (!exists(s3Path)) {
+                throw new NoSuchFileException(path.toString());
+            }
+
+            return (A)s3Path.getFileAttributes(type);
+        } else {
+            throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
+        }
     }
 
     /**
@@ -516,5 +524,11 @@ public class S3FileSystemProvider extends FileSystemProvider {
                 String.format("Path has to be an instance of %s", S3Path.class.getName()));
         }
         return (S3Path)path;
+    }
+
+    private void checkPathProvider(final Path path) {
+        if (path.getFileSystem().provider() != this) {
+            throw new IllegalArgumentException("Path is from a different provider");
+        }
     }
 }
