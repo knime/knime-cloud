@@ -63,6 +63,7 @@ import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -188,6 +189,7 @@ public class S3FileSystemProvider extends FileSystemProvider {
 
         InputStream inputStream;
         final S3Path s3path = toS3Path(path);
+
         try {
 
             final S3Object object =
@@ -199,6 +201,14 @@ public class S3FileSystemProvider extends FileSystemProvider {
                 throw new IOException(String.format("Could not read path %s", s3path));
             }
 
+        } catch (AmazonServiceException ex) {
+            if (Objects.equals(ex.getErrorCode(), "NoSuchKey")) {
+                final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
+                noSuchFileEx.initCause(ex);
+                throw noSuchFileEx;
+            } else {
+                throw new IOException(ex);
+            }
         } catch (Exception ex) {
             throw new IOException(ex);
         }
