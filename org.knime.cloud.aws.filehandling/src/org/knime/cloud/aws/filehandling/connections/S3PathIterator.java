@@ -60,6 +60,7 @@ import java.util.NoSuchElementException;
 import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
 import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
 
+import com.amazonaws.AbortedException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Bucket;
@@ -112,8 +113,8 @@ public class S3PathIterator implements Iterator<Path> {
         m_filter = filter;
         m_bucketName = s3Path.getBucketName();
 
-        if (path.getNameCount() == 0) {
-            try {
+        try {
+            if (path.getNameCount() == 0) {
                 final List<Bucket> buckets = m_client.listBuckets();
                 final ArrayList<Path> rootPaths = new ArrayList<>();
                 for (final Bucket thebucket : buckets) {
@@ -130,12 +131,7 @@ public class S3PathIterator implements Iterator<Path> {
                     rootPaths.add(bucketPath);
                 }
                 m_roots = rootPaths.iterator();
-            } catch (final SdkClientException e) {
-                // In case of anonymous browsing listBuckets() will fail.
-            }
-
-        } else {
-            try {
+            } else {
                 m_listRequest = new ListObjectsV2Request();
                 m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getBlobName())
                     .withDelimiter(m_fileSystem.getSeparator())
@@ -143,13 +139,16 @@ public class S3PathIterator implements Iterator<Path> {
                 m_objectsListing = m_client.listObjectsV2(m_listRequest);
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
-            } catch (final Exception e) {
-                // Listing does not work, when bucket is in wrong region
             }
-
+        } catch (SdkClientException e) {
+            if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                // ignore
+            } else {
+                throw e;
+            }
         }
-        m_nextPath = m_objectsListing == null && m_roots == null ? null : getNextPath();
 
+        m_nextPath = m_objectsListing == null && m_roots == null ? null : getNextPath();
     }
 
     /**
