@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -95,8 +94,9 @@ public class S3PathIterator implements Iterator<Path> {
      *
      * @param path the path to iterate over
      * @param filter the filter to use for the iteration
+     * @throws IOException
      */
-    public S3PathIterator(final Path path, final Filter<? super Path> filter) {
+    public S3PathIterator(final Path path, final Filter<? super Path> filter) throws IOException {
 
         if (!(path instanceof S3Path)) {
             throw new IllegalArgumentException(String.format("Path has to be of instance %s", S3Path.class.getName()));
@@ -108,27 +108,19 @@ public class S3PathIterator implements Iterator<Path> {
         m_bucketName = s3Path.getBucketName();
 
         if (path.getNameCount() == 0) {
-            try {
-                final List<Bucket> buckets = m_client.listBuckets();
-                m_roots = buckets.stream() //
-                    .map(bucket -> (Path)new S3Path(m_fileSystem,
-                        S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
-                    .collect(Collectors.toList()).iterator();
-            } catch (final SdkClientException e) {
-                // In case of anonymous browsing listBuckets() will fail.
-            }
+            final List<Bucket> buckets = m_client.listBuckets();
+            m_roots = buckets.stream() //
+                .map(bucket -> (Path)new S3Path(m_fileSystem,
+                    S3Path.PATH_SEPARATOR + bucket.getName() + S3Path.PATH_SEPARATOR))//
+                .collect(Collectors.toList()).iterator();
 
         } else {
-            try {
-                m_listRequest = new ListObjectsV2Request();
-                m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
-                    .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
-                m_objectsListing = m_client.listObjectsV2(m_listRequest);
-                m_objectSummary = m_objectsListing.getObjectSummaries();
-                m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
-            } catch (final Exception e) {
-                // Listing does not work, when bucket is in wrong region
-            }
+            m_listRequest = new ListObjectsV2Request();
+            m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getKey()).withDelimiter(s3Path.getKey())
+                .withDelimiter(S3Path.PATH_SEPARATOR).withEncodingType("url").withStartAfter(s3Path.getKey());
+            m_objectsListing = m_client.listObjectsV2(m_listRequest);
+            m_objectSummary = m_objectsListing.getObjectSummaries();
+            m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
 
         }
 

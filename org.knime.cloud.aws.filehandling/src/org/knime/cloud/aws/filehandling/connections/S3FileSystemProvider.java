@@ -80,7 +80,7 @@ import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
-import org.knime.filehandling.core.connections.FSPath;
+import org.knime.filehandling.core.connections.FSDirectoryStream;
 import org.knime.filehandling.core.connections.attributes.FSBasicFileAttributeView;
 import org.knime.filehandling.core.connections.base.attributes.BasicFileAttributesUtil;
 
@@ -223,8 +223,20 @@ public class S3FileSystemProvider extends FileSystemProvider {
     @Override
     public DirectoryStream<Path> newDirectoryStream(final Path dir, final Filter<? super Path> filter)
         throws IOException {
+
         final S3Path path = toS3Path(dir);
-        return new S3DirectoryStream(path, filter);
+
+        try {
+            return new FSDirectoryStream(new S3PathIterator(path, filter));
+        } catch (AmazonServiceException ex) {
+            if (Objects.equals(ex.getErrorCode(), "NoSuchKey")) {
+                final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
+                noSuchFileEx.initCause(ex);
+                throw noSuchFileEx;
+            } else {
+                throw new IOException(ex);
+            }
+        }
     }
 
     /**
