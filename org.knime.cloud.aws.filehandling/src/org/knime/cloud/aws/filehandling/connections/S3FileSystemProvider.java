@@ -68,7 +68,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.EnumSet;
@@ -83,7 +82,6 @@ import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
 import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
-import org.knime.filehandling.core.connections.base.attributes.FSFileAttributeView;
 import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
 
 import com.amazonaws.AmazonServiceException;
@@ -142,7 +140,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
     /**
      * @return the {@link ClientConfiguration}
      */
-    public ClientConfiguration getClientConfig() {
+    ClientConfiguration getClientConfig() {
         return m_clientConfig;
     }
 
@@ -338,18 +336,6 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <V extends FileAttributeView> V getFileAttributeView(final Path path, final Class<V> type,
-        final LinkOption... options) {
-
-        return (V)new FSFileAttributeView(path.toString(),
-            () -> (FSFileAttributes)readAttributes(path, BasicFileAttributes.class));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setAttribute(final Path path, final String attribute, final Object value, final LinkOption... options)
         throws IOException {
@@ -358,11 +344,8 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
 
     }
 
-    private static S3Path toS3Path(final Path path) {
-        if (!(path instanceof S3Path)) {
-            throw new IllegalArgumentException(
-                String.format("Path has to be an instance of %s", S3Path.class.getName()));
-        }
+    private S3Path toS3Path(final Path path) {
+        checkPath(path);
         return (S3Path)path.normalize();
     }
 
@@ -382,7 +365,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    public boolean exists(final Path path) {
+    protected boolean exists(final Path path) {
         final S3Path s3Path = toS3Path(path);
         if (s3Path.getBucketName() == null || s3Path.getFileSystem().hasCachedAttributes(s3Path.toString())) {
             //This is the fake S3 root, or we have valid data in the cache.
@@ -427,7 +410,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    public InputStream newInputStreamInternal(final Path path, final OpenOption... options) throws IOException {
+    protected InputStream newInputStreamInternal(final Path path, final OpenOption... options) throws IOException {
 
         InputStream inputStream;
         final S3Path s3path = toS3Path(path);
@@ -478,7 +461,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    public OutputStream newOutputStreamInternal(final Path path, final OpenOption... options) throws IOException {
+    protected OutputStream newOutputStreamInternal(final Path path, final OpenOption... options) throws IOException {
         final int len = options.length;
         final Set<OpenOption> opts = new HashSet<>(len + 3);
         if (len == 0) {
@@ -500,7 +483,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    public Iterator<Path> createPathIterator(final Path dir, final Filter<? super Path> filter) throws IOException {
+    protected Iterator<Path> createPathIterator(final Path dir, final Filter<? super Path> filter) throws IOException {
         return new S3PathIterator(dir, filter);
     }
 
@@ -510,6 +493,11 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
     @Override
     protected FSFileAttributes fetchAttributesInternal(final Path path, final Class<?> type) throws IOException {
         final S3Path pathS3 = toS3Path(path);
+
+        if (!exists(pathS3)) {
+            throw new NoSuchFileException(path.toString());
+        }
+
         if (type == BasicFileAttributes.class) {
             return new FSFileAttributes(!pathS3.isDirectory(), pathS3, p -> {
 
@@ -546,7 +534,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * @param s3Path the path to get the bucket for.
      * @return a {@link Bucket} if a bucket with that name exists in S3, null otherwise.
      */
-    public Bucket getBucket(final S3Path s3Path) {
+    Bucket getBucket(final S3Path s3Path) {
 
         for (final Bucket buck : s3Path.getFileSystem().getClient().listBuckets()) {
             if (buck.getName().equals(s3Path.getBucketName())) {
@@ -573,5 +561,4 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
             throw new IOException(ex);
         }
     }
-
 }
