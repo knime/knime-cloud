@@ -253,7 +253,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
 
             client.deleteObject(p.getBucketName(), p.getKey());
             sourceS3Path.getFileSystem()
-                .removeFromAttributeCache(new S3Path(sourceS3Path.getFileSystem(), p.getBucketName(), p.getKey()));
+                .removeFromAttributeCache(new S3Path(getFileSystemInternal(), p.getBucketName(), p.getKey()));
         });
     }
 
