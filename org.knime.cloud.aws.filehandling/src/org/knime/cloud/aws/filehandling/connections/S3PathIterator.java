@@ -126,7 +126,7 @@ public class S3PathIterator implements Iterator<Path> {
                     final FSFileAttributes attributes = new FSFileAttributes(false, bucketPath,
                         p -> new FSBasicAttributes(time, time, time, 0L, false, false));
 
-                    m_fileSystem.addToAttributeCache(bucketPath.toString(), attributes);
+                    m_fileSystem.addToAttributeCache(bucketPath, attributes);
 
                     rootPaths.add(bucketPath);
                 }
@@ -228,7 +228,7 @@ public class S3PathIterator implements Iterator<Path> {
         final FileTime lastModified = FileTime.fromMillis(0L);
         final FSFileAttributes attributes = new FSFileAttributes(false, path,
             p -> new FSBasicAttributes(lastModified, lastModified, lastModified, 0, false, false));
-        m_fileSystem.addToAttributeCache(path.toString(), attributes);
+        m_fileSystem.addToAttributeCache(path, attributes);
         return path;
     }
 
@@ -237,7 +237,7 @@ public class S3PathIterator implements Iterator<Path> {
         final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
         final FSFileAttributes attributes = new FSFileAttributes(!path.isDirectory(), path,
             p -> new FSBasicAttributes(lastModified, lastModified, lastModified, nextSummary.getSize(), false, false));
-        m_fileSystem.addToAttributeCache(path.toString(), attributes);
+        m_fileSystem.addToAttributeCache(path, attributes);
         return path;
     }
 
