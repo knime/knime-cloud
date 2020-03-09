@@ -98,18 +98,19 @@ public class S3PathIterator implements Iterator<Path> {
     /**
      * Creates an S3PathIterator that iterates over the files and folders of the given path.
      *
+     * @param fileSystem the file system to iterate over
      * @param path the path to iterate over
      * @param filter the filter to use for the iteration
      */
-    public S3PathIterator(final Path path, final Filter<? super Path> filter) {
+    public S3PathIterator(final S3FileSystem fileSystem, final Path path, final Filter<? super Path> filter) {
 
         if (!(path instanceof S3Path)) {
             throw new IllegalArgumentException(String.format("Path has to be of instance %s", S3Path.class.getName()));
         }
         final S3Path s3Path = (S3Path)path;
 
-        m_fileSystem = s3Path.getFileSystem();
-        m_client = m_fileSystem.getClient();
+        m_fileSystem = fileSystem;
+        m_client = fileSystem.getClient();
         m_filter = filter;
         m_bucketName = s3Path.getBucketName();
 
