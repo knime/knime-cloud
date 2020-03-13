@@ -69,6 +69,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -81,8 +82,7 @@ import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
-import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
-import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
+import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -242,7 +242,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
         // We have to move every blob with this prefix
         final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
 
-        ListObjectsV2Request listRequest = new ListObjectsV2Request();
+        final ListObjectsV2Request listRequest = new ListObjectsV2Request();
         listRequest.withBucketName(sourceS3Path.getBucketName()).withPrefix(sourceS3Path.getBlobName())
             .withDelimiter(sourceS3Path.getFileSystem().getSeparator()).withEncodingType("url")
             .withStartAfter(sourceS3Path.getBlobName());
@@ -430,7 +430,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
                 throw new IOException(String.format("Could not read path %s", s3path));
             }
 
-        } catch (AmazonServiceException ex) {
+        } catch (final AmazonServiceException ex) {
             if (Objects.equals(ex.getErrorCode(), "NoSuchKey")) {
                 final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
                 noSuchFileEx.initCause(ex);
@@ -438,7 +438,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
             } else {
                 throw new IOException(ex);
             }
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw wrapAsIOExceptionIfNecessary(ex);
         }
 
@@ -449,7 +449,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
         IOException toReturn;
 
         if (ex instanceof IOException) {
-            toReturn = (IOException) ex;
+            toReturn = (IOException)ex;
         } else {
             toReturn = new IOException(ex);
         }
@@ -491,43 +491,40 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    protected FSFileAttributes fetchAttributesInternal(final Path path, final Class<?> type) throws IOException {
+    protected BaseFileAttributes fetchAttributesInternal(final Path path, final Class<?> type) throws IOException {
         final S3Path pathS3 = toS3Path(path);
 
         if (!exists(pathS3)) {
             throw new NoSuchFileException(path.toString());
         }
 
-        if (type == BasicFileAttributes.class) {
-            return new FSFileAttributes(!pathS3.isDirectory(), pathS3, p -> {
+        if (type == BasicFileAttributes.class || type == PosixFileAttributes.class) {
 
-                FileTime lastmod = FileTime.fromMillis(0L);
-                long size = 0;
+            FileTime lastmod = FileTime.fromMillis(0L);
+            long size = 0;
 
-                final S3Path s3Path = (S3Path)p;
+            final S3Path s3Path = (S3Path)path;
+            if (!s3Path.isVirtualRoot()) {
                 try {
-                    if (s3Path.getBlobName() != null) {
-                        final ObjectMetadata objectMetadata = s3Path.getFileSystem().getClient()
-                            .getObjectMetadata(s3Path.getBucketName(), s3Path.getBlobName());
+                    final ObjectMetadata objectMetadata = s3Path.getFileSystem().getClient()
+                        .getObjectMetadata(s3Path.getBucketName(), s3Path.getBlobName());
 
-                        final Date metaDataLastMod = objectMetadata.getLastModified();
+                    final Date metaDataLastMod = objectMetadata.getLastModified();
 
-                        lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
-                            : FileTime.from(getBucket(s3Path).getCreationDate().toInstant());
-                        size = objectMetadata.getContentLength();
-                    } else {
-                        //
-                        lastmod = FileTime.from(getBucket(s3Path).getCreationDate().toInstant());
-                    }
+                    lastmod = metaDataLastMod != null ? FileTime.from(metaDataLastMod.toInstant())
+                        : FileTime.from(getBucket(s3Path).getCreationDate().toInstant());
+                    size = objectMetadata.getContentLength();
 
                 } catch (final Exception e) {
-                    // If we do not have metadata we use fall back values
+                    throw new IOException(e);
                 }
-
-                return new FSBasicAttributes(lastmod, lastmod, lastmod, size, false, false);
-            });
+            }
+            return new BaseFileAttributes(!pathS3.isDirectory(), pathS3, lastmod, lastmod, lastmod, size, false, false,
+                new S3PosixAttributesFetcher());
         }
-        throw new UnsupportedOperationException(String.format("only %s supported", BasicFileAttributes.class));
+
+        throw new UnsupportedOperationException(
+            String.format("only %s and %s supported", BasicFileAttributes.class, PosixFileAttributes.class));
     }
 
     /**

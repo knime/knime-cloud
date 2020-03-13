@@ -57,8 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.knime.filehandling.core.connections.base.attributes.FSBasicAttributes;
-import org.knime.filehandling.core.connections.base.attributes.FSFileAttributes;
+import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
 import com.amazonaws.AbortedException;
 import com.amazonaws.SdkClientException;
@@ -119,14 +118,13 @@ public class S3PathIterator implements Iterator<Path> {
                 final ArrayList<Path> rootPaths = new ArrayList<>();
                 for (final Bucket thebucket : buckets) {
 
-                    final S3Path bucketPath =
-                        new S3Path(m_fileSystem, m_fileSystem.getSeparator() + thebucket.getName() + m_fileSystem.getSeparator());
+                    final S3Path bucketPath = new S3Path(m_fileSystem,
+                        m_fileSystem.getSeparator() + thebucket.getName() + m_fileSystem.getSeparator());
 
                     final FileTime time = FileTime.fromMillis(thebucket.getCreationDate().getTime());
-                    final FSFileAttributes attributes = new FSFileAttributes(false, bucketPath,
-                        p -> new FSBasicAttributes(time, time, time, 0L, false, false));
-
-                    m_fileSystem.addToAttributeCache(bucketPath.toString(), attributes);
+                    final BaseFileAttributes attributes = new BaseFileAttributes(false, bucketPath, time, time, time,
+                        0L, false, false, new S3PosixAttributesFetcher());
+                    m_fileSystem.addToAttributeCache(bucketPath.normalize().toAbsolutePath().toString(), attributes);
 
                     rootPaths.add(bucketPath);
                 }
@@ -134,13 +132,13 @@ public class S3PathIterator implements Iterator<Path> {
             } else {
                 m_listRequest = new ListObjectsV2Request();
                 m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getBlobName())
-                    .withDelimiter(m_fileSystem.getSeparator())
-                    .withEncodingType("url").withStartAfter(s3Path.getBlobName());
+                    .withDelimiter(m_fileSystem.getSeparator()).withEncodingType("url")
+                    .withStartAfter(s3Path.getBlobName());
                 m_objectsListing = m_client.listObjectsV2(m_listRequest);
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
             }
-        } catch (SdkClientException e) {
+        } catch (final SdkClientException e) {
             if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
                 // ignore
             } else {
@@ -226,18 +224,20 @@ public class S3PathIterator implements Iterator<Path> {
     private Path getPathFromPrefix(final String commonPrefix) {
         final S3Path path = new S3Path(m_fileSystem, m_bucketName, commonPrefix);
         final FileTime lastModified = FileTime.fromMillis(0L);
-        final FSFileAttributes attributes = new FSFileAttributes(false, path,
-            p -> new FSBasicAttributes(lastModified, lastModified, lastModified, 0, false, false));
-        m_fileSystem.addToAttributeCache(path.toString(), attributes);
+        final BaseFileAttributes attributes = new BaseFileAttributes(false, path, lastModified, lastModified,
+            lastModified, 0, false, false, new S3PosixAttributesFetcher());
+        m_fileSystem.addToAttributeCache(path.normalize().toAbsolutePath().toString(), attributes);
         return path;
     }
 
     private S3Path getPathFromSummary(final S3ObjectSummary nextSummary) {
         final S3Path path = new S3Path(m_fileSystem, nextSummary.getBucketName(), nextSummary.getKey());
         final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
-        final FSFileAttributes attributes = new FSFileAttributes(!path.isDirectory(), path,
-            p -> new FSBasicAttributes(lastModified, lastModified, lastModified, nextSummary.getSize(), false, false));
-        m_fileSystem.addToAttributeCache(path.toString(), attributes);
+
+        final BaseFileAttributes attributes = new BaseFileAttributes(!path.isDirectory(), path, lastModified,
+            lastModified, lastModified, nextSummary.getSize(), false, false, new S3PosixAttributesFetcher());
+        m_fileSystem.addToAttributeCache(path.normalize().toAbsolutePath().toString(), attributes);
+
         return path;
     }
 
