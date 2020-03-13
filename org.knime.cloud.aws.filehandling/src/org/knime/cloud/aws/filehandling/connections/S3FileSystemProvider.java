@@ -80,7 +80,6 @@ import java.util.Set;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
-import org.knime.filehandling.core.connections.base.BaseFileSystem;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
@@ -103,7 +102,7 @@ import com.amazonaws.services.s3.model.S3Object;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FileSystemProvider extends BaseFileSystemProvider {
+public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
@@ -254,7 +253,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
 
             client.deleteObject(p.getBucketName(), p.getKey());
             sourceS3Path.getFileSystem()
-                .removeFromAttributeCache(p.getBucketName() + sourceS3Path.getFileSystem().getSeparator() + p.getKey());
+                .removeFromAttributeCache(new S3Path(sourceS3Path.getFileSystem(), p.getBucketName(), p.getKey()));
         });
     }
 
@@ -353,7 +352,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
      * {@inheritDoc}
      */
     @Override
-    public BaseFileSystem createFileSystem(final URI uri, final Map<String, ?> env) {
+    public S3FileSystem createFileSystem(final URI uri, final Map<String, ?> env) {
         CloudConnectionInformation connInfo = null;
         if (env.containsKey(CONNECTION_INFORMATION)) {
             connInfo = (CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
@@ -367,7 +366,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider {
     @Override
     protected boolean exists(final Path path) {
         final S3Path s3Path = toS3Path(path);
-        if (s3Path.getBucketName() == null || s3Path.getFileSystem().hasCachedAttributes(s3Path.toString())) {
+        if (s3Path.getBucketName() == null || s3Path.getFileSystem().hasCachedAttributes(s3Path)) {
             //This is the fake S3 root, or we have valid data in the cache.
             return true;
         }
