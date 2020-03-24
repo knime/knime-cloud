@@ -58,6 +58,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
@@ -163,7 +164,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
      * {@inheritDoc}
      */
     @Override
-    public SeekableByteChannel newByteChannel(final Path path, final Set<? extends OpenOption> options,
+    protected SeekableByteChannel newByteChannelInternal(final Path path, final Set<? extends OpenOption> options,
         final FileAttribute<?>... attrs) throws IOException {
         return new S3SeekableByteChannel(toS3Path(path), options);
     }
@@ -199,33 +200,50 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
      * {@inheritDoc}
      */
     @Override
-    public void copy(final Path source, final Path target, final CopyOption... options) throws IOException {
+    protected void copyInternal(final Path source, final Path target, final CopyOption... options) throws IOException {
         final S3Path sourceS3Path = toS3Path(source);
         final S3Path targetS3Path = (S3Path)target;
         final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
-        try {
-            if (sourceS3Path.getBlobName() != null) {
+
+        if (!sourceS3Path.isDirectory()) {
+            try {
                 client.copyObject(sourceS3Path.getBucketName(), sourceS3Path.getBlobName(),
                     targetS3Path.getBucketName(), targetS3Path.getBlobName());
-            } else {
-                createDirectory(targetS3Path);
+            } catch (final Exception ex) {
+                throw new IOException(ex);
             }
-        } catch (final Exception ex) {
-            throw new IOException(ex);
+        } else {
+            if (!dirIsEmpty(targetS3Path)) {
+                throw new DirectoryNotEmptyException(
+                    String.format("Target directory %s exists and is not empty", targetS3Path.toString()));
+            }
+            createDirectory(targetS3Path);
         }
+    }
+
+    private static boolean dirIsEmpty(final S3Path dir) {
+        final AmazonS3 client = dir.getFileSystem().getClient();
+
+        final ListObjectsV2Request listRequest = new ListObjectsV2Request();
+        listRequest.withBucketName(dir.getBucketName()).withPrefix(dir.getBlobName())
+            .withDelimiter(dir.getFileSystem().getSeparator()).withEncodingType("url").withStartAfter(dir.getBlobName())
+            .withMaxKeys(1);
+
+        return client.listObjectsV2(listRequest).getKeyCount() == 0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void move(final Path source, final Path target, final CopyOption... options) throws IOException {
+    protected void moveInternal(final Path source, final Path target, final CopyOption... options) throws IOException {
         final S3Path sourceS3Path = toS3Path(source);
         final S3Path targetS3Path = (S3Path)target;
         if (sourceS3Path.isDirectory()) {
             moveDir(sourceS3Path, targetS3Path);
             return;
         }
+
         final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
         try {
             client.copyObject(sourceS3Path.getBucketName(), sourceS3Path.getBlobName(), targetS3Path.getBucketName(),
@@ -237,7 +255,13 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
         delete(sourceS3Path);
     }
 
-    private static void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path) {
+    private static void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path)
+        throws DirectoryNotEmptyException {
+
+        if (!dirIsEmpty(targetS3Path)) {
+            throw new DirectoryNotEmptyException(targetS3Path.toString());
+        }
+
         // We have to move every blob with this prefix
         final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
 
@@ -547,6 +571,9 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3FileSystem> {
     protected void deleteInternal(final Path path) throws IOException {
         final S3Path s3Path = toS3Path(path);
         final AmazonS3 client = s3Path.getFileSystem().getClient();
+        if (s3Path.isDirectory() && !dirIsEmpty(s3Path)) {
+            throw new DirectoryNotEmptyException(path.toString());
+        }
         try {
             if (s3Path.getBlobName() != null) {
                 client.deleteObject(s3Path.getBucketName(), s3Path.getBlobName());
