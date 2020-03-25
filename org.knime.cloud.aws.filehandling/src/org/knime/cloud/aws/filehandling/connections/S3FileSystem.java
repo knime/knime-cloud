@@ -198,7 +198,7 @@ public class S3FileSystem extends BaseFileSystem {
         } else {
             final StringBuilder sb = new StringBuilder(first);
             for (final String subPath : more) {
-                if (!(PATH_SEPARATOR.charAt(0) == sb.charAt(sb.length() - 1) || subPath.endsWith(PATH_SEPARATOR))) {
+                if (!(PATH_SEPARATOR.charAt(0) == sb.charAt(sb.length() - 1) || subPath.startsWith(PATH_SEPARATOR))) {
                     sb.append(PATH_SEPARATOR);
                 }
                 sb.append(subPath);

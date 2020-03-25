@@ -48,17 +48,20 @@
  */
 package org.knime.cloud.aws.filehandling.testing;
 
+import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
+import org.knime.cloud.aws.filehandling.connections.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.testing.FSTestInitializer;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 /**
@@ -97,7 +100,7 @@ public class S3FSTestInitializer implements FSTestInitializer {
 
     @Override
     public Path getRoot() {
-        return m_fileSystem.getPath("/", m_bucket, m_uniquePrefix);
+        return m_fileSystem.getPath("/", m_bucket, m_uniquePrefix + "/");
     }
 
     @Override
@@ -120,6 +123,17 @@ public class S3FSTestInitializer implements FSTestInitializer {
         m_s3Client.putObject(m_bucket, key, content);
 
         return absoulutePath;
+    }
+
+    @Override
+    public void beforeTestCase() {
+        final S3Path testRoot = (S3Path)getRoot();
+
+        final ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentLength(0);
+
+        m_s3Client.putObject(testRoot.getBucketName(), testRoot.getBlobName(), new ByteArrayInputStream(new byte[0]),
+            metadata);
     }
 
     @Override
