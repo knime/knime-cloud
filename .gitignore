@@ -1,3 +1,8 @@
 */bin/
-*/target/
+**/target/
 */build/
+
+.flattened-pom.xml
+org.knime.cloud.aws.filehandling/cloud_aws_filehandling.jar
+org.knime.cloud.azure/absconnection.jar
+
