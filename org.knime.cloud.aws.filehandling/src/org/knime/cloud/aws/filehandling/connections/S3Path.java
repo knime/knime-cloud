@@ -58,16 +58,17 @@ import org.knime.filehandling.core.connections.base.BlobStorePath;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3Path extends BlobStorePath<S3FileSystem> {
+public class S3Path extends BlobStorePath {
 
     /**
      * Creates an S3Path from the given path string
      *
      * @param fileSystem the file system
-     * @param pathString the string representing the S3 path
+     * @param first The first name component.
+     * @param more More name components.
      */
-    public S3Path(final S3FileSystem fileSystem, final String pathString) {
-        super(fileSystem, pathString);
+    public S3Path(final S3FileSystem fileSystem, final String first, final String[] more) {
+        super(fileSystem, first, more);
     }
 
     /**
@@ -81,20 +82,19 @@ public class S3Path extends BlobStorePath<S3FileSystem> {
         super(fileSystem, bucketName, key);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected boolean lastComponentSymbolicLink() {
+    public S3FileSystem getFileSystem() {
+        return (S3FileSystem)super.getFileSystem();
+    }
+
+    @Override
+    protected boolean lastComponentUsesRelativeNotation() {
         if (getFileSystem().normalizePaths()) {
-            return super.lastComponentSymbolicLink();
+            return super.lastComponentUsesRelativeNotation();
         }
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Path normalize() {
         if (getFileSystem().normalizePaths()) {
@@ -104,9 +104,6 @@ public class S3Path extends BlobStorePath<S3FileSystem> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Path relativize(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
@@ -114,25 +111,24 @@ public class S3Path extends BlobStorePath<S3FileSystem> {
         }
 
         if (this.equals(other)) {
-            return createPath("");
+            return getFileSystem().getPath("");
         }
 
         if (this.isAbsolute() != other.isAbsolute()) {
             throw new IllegalArgumentException("Cannot relativize an absolute path with a relative path.");
         }
 
-        if (m_pathParts.isEmpty() || (m_pathParts.size() == 1 && m_pathParts.get(0).isEmpty())) {
-            return other;
-        }
+        final S3Path s3Other = (S3Path)other;
 
-        @SuppressWarnings("unchecked")
-        final BlobStorePath<S3FileSystem> s3Other = (BlobStorePath<S3FileSystem>)other;
+        if (m_pathParts.isEmpty() || (m_pathParts.size() == 1 && m_pathParts.get(0).isEmpty())) {
+            return getFileSystem().getPath(String.join(s3Other.m_pathSeparator, s3Other.m_pathParts));
+        }
 
         if (s3Other.startsWith(this)) {
             return s3Other.subpath(getNameCount(), s3Other.getNameCount());
         }
 
-        if (!m_fileSystem.normalizePaths()) {
+        if (!getFileSystem().normalizePaths()) {
             throw new IllegalArgumentException("Cannot relativize an independent paths if normalization is disabled.");
         }
 
@@ -144,13 +140,5 @@ public class S3Path extends BlobStorePath<S3FileSystem> {
      */
     public boolean isVirtualRoot() {
         return m_pathParts.isEmpty() && isAbsolute();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Path createPath(final String pathString, final String... more) {
-        return new S3Path(m_fileSystem, concatenatePathSegments(m_pathSeparator, pathString, more));
     }
 }

@@ -51,13 +51,13 @@ package org.knime.cloud.aws.filehandling.connections;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileSystem;
 import java.util.HashMap;
 import java.util.Objects;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
+import org.knime.filehandling.core.connections.FSFileSystem;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
 
 import com.amazonaws.ClientConfiguration;
@@ -67,7 +67,7 @@ import com.amazonaws.ClientConfiguration;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3Connection implements FSConnection {
+public class S3FSConnection implements FSConnection {
 
     private final CloudConnectionInformation m_connInfo;
 
@@ -78,21 +78,21 @@ public class S3Connection implements FSConnection {
     private final boolean m_normalizePaths = true;
 
     /**
-     * Creates a new {@link S3Connection} for the given connection information.
+     * Creates a new {@link S3FSConnection} for the given connection information.
      *
      * @param connectionInformation the cloud connection information
      */
-    public S3Connection(final CloudConnectionInformation connectionInformation) {
+    public S3FSConnection(final CloudConnectionInformation connectionInformation) {
         this(connectionInformation, new ClientConfiguration());
     }
 
     /**
-     * Creates a new {@link S3Connection} for the given connection information.
+     * Creates a new {@link S3FSConnection} for the given connection information.
      *
      * @param connectionInformation the cloud connection information
      * @param clientConfig the {@link ClientConfiguration} to use
      */
-    public S3Connection(final CloudConnectionInformation connectionInformation,
+    public S3FSConnection(final CloudConnectionInformation connectionInformation,
         final ClientConfiguration clientConfig) {
         Objects.requireNonNull(connectionInformation);
         m_connInfo = connectionInformation;
@@ -103,7 +103,7 @@ public class S3Connection implements FSConnection {
      * {@inheritDoc}
      */
     @Override
-    public FileSystem getFileSystem() {
+    public FSFileSystem<?> getFileSystem() {
         final HashMap<String, CloudConnectionInformation> env = new HashMap<>();
         env.put(S3FileSystemProvider.CONNECTION_INFORMATION, m_connInfo);
 

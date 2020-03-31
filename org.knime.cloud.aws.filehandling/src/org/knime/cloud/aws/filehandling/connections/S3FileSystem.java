@@ -53,10 +53,12 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
+import org.knime.filehandling.core.defaultnodesettings.FileSystemChoice.Choice;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -76,13 +78,16 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FileSystem extends BaseFileSystem {
+public class S3FileSystem extends BaseFileSystem<S3Path> {
+
+    private static final String PATH_SEPARATOR = "/";
 
     private final AmazonS3 m_client;
 
     private final boolean m_normalizePaths;
 
-    private static final String PATH_SEPARATOR = "/";
+    private final S3Path m_workingDirectory;
+
 
     /**
      * Constructs an S3FileSystem for the given URI
@@ -96,7 +101,13 @@ public class S3FileSystem extends BaseFileSystem {
      */
     public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
         final CloudConnectionInformation connectionInformation, final long timeToLive, final boolean normalizePaths) {
-        super(provider, uri, "S3 file system", "S3 file system", timeToLive);
+        super(provider, //
+            uri, //
+            "S3 file system", //
+            "S3 file system", //
+            timeToLive, //
+            Choice.CONNECTED_FS, //
+            Optional.of(connectionInformation.getHost()));
         m_normalizePaths = normalizePaths;
         try {
             if (connectionInformation.switchRole()) {
@@ -107,6 +118,7 @@ public class S3FileSystem extends BaseFileSystem {
         } catch (final Exception ex) {
             throw new IllegalArgumentException(ex);
         }
+        m_workingDirectory = getPath(PATH_SEPARATOR);
     }
 
     private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation,
@@ -173,12 +185,18 @@ public class S3FileSystem extends BaseFileSystem {
         return PATH_SEPARATOR;
     }
 
+    @Override
+    public S3Path getWorkingDirectory() {
+        // TODO Auto-generated method stub
+        return m_workingDirectory;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singletonList(new S3Path(this, PATH_SEPARATOR));
+        return Collections.singletonList(getPath(PATH_SEPARATOR));
     }
 
     /**
@@ -192,20 +210,8 @@ public class S3FileSystem extends BaseFileSystem {
      * {@inheritDoc}
      */
     @Override
-    public Path getPath(final String first, final String... more) {
-        if (more.length == 0) {
-            return new S3Path(this, first);
-        } else {
-            final StringBuilder sb = new StringBuilder(first);
-            for (final String subPath : more) {
-                if (!(PATH_SEPARATOR.charAt(0) == sb.charAt(sb.length() - 1) || subPath.startsWith(PATH_SEPARATOR))) {
-                    sb.append(PATH_SEPARATOR);
-                }
-                sb.append(subPath);
-            }
-            return new S3Path(this, sb.toString());
-        }
-
+    public S3Path getPath(final String first, final String... more) {
+        return new S3Path(this, first, more);
     }
 
     /**
@@ -243,4 +249,5 @@ public class S3FileSystem extends BaseFileSystem {
     protected String getCachedAttributesKey(final Path path) {
         return path.toString();
     }
+
 }

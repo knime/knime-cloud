@@ -52,7 +52,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.knime.cloud.aws.filehandling.connections.S3Connection;
+import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -87,7 +87,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 
     private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
 
-    private S3Connection m_fsConn;
+    private S3FSConnection m_fsConn;
 
     private String m_fsId;
 
@@ -119,7 +119,7 @@ public class S3ConnectionNodeModel extends NodeModel {
         //TODO: Test if connection is available and if switch role is required!!!
 
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-        m_fsConn = new S3Connection(conInfo, getClientConfig());
+        m_fsConn = new S3FSConnection(conInfo, getClientConfig());
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
         if (conInfo.isUseAnonymous()) {
             setWarningMessage("You are using anonymous credentials." + "File browsing might not work as expected.\n"

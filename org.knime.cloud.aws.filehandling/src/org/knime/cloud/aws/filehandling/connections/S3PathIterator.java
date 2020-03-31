@@ -50,7 +50,6 @@ package org.knime.cloud.aws.filehandling.connections;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -72,7 +71,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3PathIterator implements Iterator<Path> {
+public class S3PathIterator implements Iterator<S3Path> {
 
     private final AmazonS3 m_client;
 
@@ -82,15 +81,15 @@ public class S3PathIterator implements Iterator<Path> {
 
     private final S3FileSystem m_fileSystem;
 
-    private Path m_nextPath;
+    private S3Path m_nextPath;
 
-    private final Filter<? super Path> m_filter;
+    private final Filter<? super S3Path> m_filter;
 
     private List<String> m_objectsCommonPrefixes;
 
     private final String m_bucketName;
 
-    private Iterator<Path> m_roots;
+    private Iterator<S3Path> m_roots;
 
     private ListObjectsV2Request m_listRequest;
 
@@ -100,30 +99,22 @@ public class S3PathIterator implements Iterator<Path> {
      * @param path the path to iterate over
      * @param filter the filter to use for the iteration
      */
-    public S3PathIterator(final Path path, final Filter<? super Path> filter) {
-
-        if (!(path instanceof S3Path)) {
-            throw new IllegalArgumentException(String.format("Path has to be of instance %s", S3Path.class.getName()));
-        }
-        final S3Path s3Path = (S3Path)path;
-
-        m_fileSystem = s3Path.getFileSystem();
+    public S3PathIterator(final S3Path path, final Filter<? super S3Path> filter) {
+        m_fileSystem = path.getFileSystem();
         m_client = m_fileSystem.getClient();
         m_filter = filter;
-        m_bucketName = s3Path.getBucketName();
+        m_bucketName = path.getBucketName();
 
         try {
             if (path.getNameCount() == 0) {
                 final List<Bucket> buckets = m_client.listBuckets();
-                final ArrayList<Path> rootPaths = new ArrayList<>();
+                final ArrayList<S3Path> rootPaths = new ArrayList<>();
                 for (final Bucket thebucket : buckets) {
 
-                    final S3Path bucketPath = new S3Path(m_fileSystem,
-                        m_fileSystem.getSeparator() + thebucket.getName() + m_fileSystem.getSeparator());
+                    final S3Path bucketPath = m_fileSystem.getPath(m_fileSystem.getSeparator() + thebucket.getName(),
+                        m_fileSystem.getSeparator());
 
-                    final FileTime time = FileTime.fromMillis(thebucket.getCreationDate().getTime());
-                    final BaseFileAttributes attributes = new BaseFileAttributes(false, bucketPath, time, time, time,
-                        0L, false, false, new S3PosixAttributesFetcher());
+                    final BaseFileAttributes attributes = S3FileSystemProvider.createBucketFileAttributes(thebucket, bucketPath);
                     m_fileSystem.addToAttributeCache(bucketPath, attributes);
 
                     rootPaths.add(bucketPath);
@@ -131,9 +122,9 @@ public class S3PathIterator implements Iterator<Path> {
                 m_roots = rootPaths.iterator();
             } else {
                 m_listRequest = new ListObjectsV2Request();
-                m_listRequest.withBucketName(m_bucketName).withPrefix(s3Path.getBlobName())
+                m_listRequest.withBucketName(m_bucketName).withPrefix(path.getBlobName())
                     .withDelimiter(m_fileSystem.getSeparator()).withEncodingType("url")
-                    .withStartAfter(s3Path.getBlobName());
+                    .withStartAfter(path.getBlobName());
                 m_objectsListing = m_client.listObjectsV2(m_listRequest);
                 m_objectSummary = m_objectsListing.getObjectSummaries();
                 m_objectsCommonPrefixes = m_objectsListing.getCommonPrefixes();
@@ -161,12 +152,12 @@ public class S3PathIterator implements Iterator<Path> {
      * {@inheritDoc}
      */
     @Override
-    public Path next() {
+    public S3Path next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
 
-        final Path path = m_nextPath;
+        final S3Path path = m_nextPath;
 
         m_nextPath = getNextPath();
 
@@ -190,7 +181,7 @@ public class S3PathIterator implements Iterator<Path> {
         return true;
     }
 
-    private Path getNextPath() {
+    private S3Path getNextPath() {
 
         if (m_roots != null) {
 
@@ -201,7 +192,7 @@ public class S3PathIterator implements Iterator<Path> {
         } else {
 
             while (checkAndFillSummaryList()) {
-                Path path = null;
+                S3Path path = null;
                 if (!m_objectSummary.isEmpty()) {
                     path = getPathFromSummary(m_objectSummary.remove(0));
                 } else {
@@ -221,7 +212,7 @@ public class S3PathIterator implements Iterator<Path> {
         return null;
     }
 
-    private Path getPathFromPrefix(final String commonPrefix) {
+    private S3Path getPathFromPrefix(final String commonPrefix) {
         final S3Path path = new S3Path(m_fileSystem, m_bucketName, commonPrefix);
         final FileTime lastModified = FileTime.fromMillis(0L);
         final BaseFileAttributes attributes = new BaseFileAttributes(false, path, lastModified, lastModified,

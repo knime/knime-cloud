@@ -50,7 +50,7 @@ package org.knime.cloud.aws.filehandling.testing;
 
 import java.util.Map;
 
-import org.knime.cloud.aws.filehandling.connections.S3Connection;
+import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.filehandling.core.testing.FSTestInitializer;
 import org.knime.filehandling.core.testing.FSTestInitializerProvider;
@@ -79,7 +79,7 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
         s3ConnectionInformation.setPassword(config.get("secretKey"));
 
         final String bucket = config.get("bucket");
-        final S3Connection s3Connection = new S3Connection(s3ConnectionInformation, getClientConfig());
+        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, getClientConfig());
         return new S3FSTestInitializer(bucket, s3Connection);
     }
 
