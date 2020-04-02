@@ -325,22 +325,26 @@ public class S3RemoteFile extends CloudRemoteFile<S3Connection> {
 	 */
 	@Override
 	protected boolean createDirectory(final String dirName) throws Exception {
-		try {
-		    final ObjectMetadata metadata = new ObjectMetadata();
-		    metadata.setContentLength(0);
+	    try {
+	        final ObjectMetadata metadata = new ObjectMetadata();
+	        // Add SSEncryption --> See AP-8823
+	        if (getConnection().useSSEncryption()) {
+	            metadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+	        }
+	        metadata.setContentLength(0);
 
-		    // Create empty content
-		    final InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
-		    // Create a PutObjectRequest passing the folder name
-		    // suffixed by the DELIMITER
-		    final PutObjectRequest putObjectRequest = new PutObjectRequest(getContainerName(), dirName, emptyContent,
-		        metadata);
-		    // Send request to S3 to create folder
-		    getClient().putObject(putObjectRequest);
-		    return true;
-		} catch (AmazonS3Exception amazonException) {
-		    throw new KnimeS3Exception(amazonException);
-		}
+	        // Create empty content
+	        final InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
+	        // Create a PutObjectRequest passing the folder name
+	        // suffixed by the DELIMITER
+	        final PutObjectRequest putObjectRequest = new PutObjectRequest(getContainerName(), dirName, emptyContent,
+	            metadata);
+	        // Send request to S3 to create folder
+	        getClient().putObject(putObjectRequest);
+	        return true;
+	    } catch (AmazonS3Exception amazonException) {
+	        throw new KnimeS3Exception(amazonException);
+	    }
 	}
 
 	/**

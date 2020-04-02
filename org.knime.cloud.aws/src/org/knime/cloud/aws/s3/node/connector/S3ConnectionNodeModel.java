@@ -193,7 +193,7 @@ public class S3ConnectionNodeModel extends NodeModel {
 		} catch (InvalidSettingsException ex) {
 		    throw ex;
 		} catch (Exception ex) {
-	        throw new InvalidSettingsException(ex.getMessage());
+	        throw new InvalidSettingsException(ex.getMessage(), ex);
 		}
 		return new CloudConnectionInformationPortObjectSpec(connectionInformation);
 	}
