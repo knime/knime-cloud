@@ -211,8 +211,11 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         final AmazonS3 client = dir.getFileSystem().getClient();
 
         final ListObjectsV2Request listRequest = new ListObjectsV2Request();
-        listRequest.withBucketName(dir.getBucketName()).withPrefix(dir.getBlobName())
-            .withDelimiter(dir.getFileSystem().getSeparator()).withEncodingType("url").withStartAfter(dir.getBlobName())
+        listRequest.withBucketName(dir.getBucketName())//
+            .withPrefix(dir.getBlobName())//
+            .withDelimiter(dir.getFileSystem().getSeparator())//
+            .withEncodingType("url")
+            .withStartAfter(dir.getBlobName())
             .withMaxKeys(1);
 
         return client.listObjectsV2(listRequest).getKeyCount() == 0;
@@ -608,21 +611,37 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         return null;
     }
 
+    @SuppressWarnings("resource")
     @Override
     protected void deleteInternal(final S3Path path) throws IOException {
-        final AmazonS3 client = path.getFileSystem().getClient();
-        if (path.isDirectory() && !dirIsEmpty(path)) {
-            throw new DirectoryNotEmptyException(path.toString());
-        }
         try {
+            final AmazonS3 client = path.getFileSystem().getClient();
+
             if (path.getBlobName() != null) {
-                client.deleteObject(path.getBucketName(), path.getBlobName());
+                if (!path.isDirectory() && client.doesObjectExist(path.getBucketName(), path.getBlobName())) {
+                    // regular file. deleteObject does not fail if the object has been deleted in the meantime
+                    client.deleteObject(path.getBucketName(), path.getBlobName());
+                } else {
+                    deleteFolder(path);
+                }
             } else {
                 client.deleteBucket(path.getBucketName());
             }
-        } catch (final Exception ex) {
+        } catch (final RuntimeException ex) {
             throw new IOException(ex);
         }
+    }
+
+    @SuppressWarnings("resource")
+    private void deleteFolder(final S3Path origPath) throws DirectoryNotEmptyException {
+        final S3Path dirPath = ensureDirPath(origPath);
+        final AmazonS3 client = getFileSystemInternal().getClient();
+
+        if (!dirIsEmpty(dirPath)) {
+            throw new DirectoryNotEmptyException(origPath.toString());
+        }
+
+        client.deleteObject(dirPath.getBucketName(), dirPath.getBlobName());
     }
 
     static BaseFileAttributes createBucketFileAttributes(final Bucket bucket, final S3Path bucketPath) {

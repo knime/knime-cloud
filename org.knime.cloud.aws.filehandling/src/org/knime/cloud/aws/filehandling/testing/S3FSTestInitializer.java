@@ -50,7 +50,6 @@ package org.knime.cloud.aws.filehandling.testing;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -110,19 +109,21 @@ public class S3FSTestInitializer implements FSTestInitializer {
 
     @Override
     public Path createFileWithContent(final String content, final String... pathComponents) {
-        Path absoulutePath = //
-            Arrays //
-            .stream(pathComponents) //
-            .reduce( //
-                getRoot(), //
-                (path, pathComponent) -> path.resolve(pathComponent), //
-                (p1, p2) -> p1.resolve(p2) //
-            ); //
+        final Path path = makePath(pathComponents);
 
-        final String key = absoulutePath.subpath(1, absoulutePath.getNameCount()).toString();
+        // create parent directory objects if necessary
+        for (int i = 1; i < path.getNameCount() - 1; i++) {
+            final String dirKey = path.subpath(1, i + 1).toString();
+            if (!m_s3Client.doesObjectExist(m_bucket, dirKey)) {
+                m_s3Client.putObject(m_bucket, dirKey, "");
+            }
+        }
+
+        // create the actual object with content
+        final String key = path.subpath(1, path.getNameCount()).toString();
         m_s3Client.putObject(m_bucket, key, content);
 
-        return absoulutePath;
+        return path;
     }
 
     @Override
