@@ -61,8 +61,8 @@ import org.knime.cloud.azure.abs.filehandler.AzureBSRemoteFile;
 import org.knime.cloud.core.node.filepicker.AbstractFilePickerNodeModel;
 import org.knime.core.node.NodeLogger;
 
+import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.SharedAccessBlobPolicy;
 
 /**
@@ -108,7 +108,7 @@ public class AzureBSFilePickerNodeModel extends AbstractFilePickerNodeModel {
 
 		// create sas url here
 
-		final CloudBlockBlob blockBlobReference = client.getContainerReference(containerName).getBlockBlobReference(blobName);
+		final CloudBlob blockBlobReference = client.getContainerReference(containerName).getBlobReferenceFromServer(blobName);
 		final SharedAccessBlobPolicy sasConstraints = new SharedAccessBlobPolicy();
 		sasConstraints.setSharedAccessExpiryTime(expirationTime);
 		sasConstraints.setPermissionsFromString("r"); // complete permissions: racwdl
