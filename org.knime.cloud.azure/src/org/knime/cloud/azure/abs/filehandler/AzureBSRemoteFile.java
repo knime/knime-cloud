@@ -65,8 +65,8 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.util.CheckUtils;
 
 import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.BlobInputStream;
 import com.microsoft.azure.storage.blob.BlobOutputStream;
+import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlobDirectory;
@@ -99,7 +99,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 * @throws Exception
 	 */
 	public AzureBSRemoteFile(final URI uri, final CloudConnectionInformation connectionInformation,
-			final ConnectionMonitor<AzureBSConnection> connectionMonitor, final CloudBlockBlob blob) throws Exception {
+			final ConnectionMonitor<AzureBSConnection> connectionMonitor, final CloudBlob blob) throws Exception {
 		super(uri, connectionInformation, connectionMonitor);
 		CheckUtils.checkArgumentNotNull(connectionInformation, "Connection Information mus not be null");
 		if (blob != null) {
@@ -169,8 +169,8 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 		final List<AzureBSRemoteFile> fileList = new ArrayList<AzureBSRemoteFile>();
 		while (iterator.hasNext()) {
 			final ListBlobItem listBlobItem = iterator.next();
-			if (listBlobItem instanceof CloudBlockBlob) {
-				final CloudBlockBlob blob = (CloudBlockBlob) listBlobItem;
+			if (listBlobItem instanceof CloudBlob) {
+				final CloudBlob blob = (CloudBlob) listBlobItem;
 				if (!blob.getName().equals(prefix)) {
 					final URI uri = new URI(getURI().getScheme(), getURI().getUserInfo(), getURI().getHost(),
 							getURI().getPort(), createContainerPath(containerName) + blob.getName(),
@@ -224,7 +224,7 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 		final Iterator<ListBlobItem> iterator = listBlobs.iterator();
 		while (iterator.hasNext()) {
 			final ListBlobItem next = iterator.next();
-			final CloudBlockBlob blob = (CloudBlockBlob) next;
+			final CloudBlob blob = (CloudBlob) next;
 			result = blob.deleteIfExists();
 		}
 		return result;
@@ -263,8 +263,10 @@ public class AzureBSRemoteFile extends CloudRemoteFile<AzureBSConnection> {
 	 */
 	@Override
 	public InputStream openInputStream() throws Exception {
-		final BlobInputStream blobInputStream = getClient().getContainerReference(getContainerName()).getBlockBlobReference(getBlobName()).openInputStream();
-		return blobInputStream;
+        return getClient() //
+            .getContainerReference(getContainerName()) //
+            .getBlobReferenceFromServer(getBlobName()) //
+            .openInputStream();
 	}
 
 	/**

@@ -48,7 +48,6 @@
  */
 package org.knime.cloud.azure.abs.filehandler;
 
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 
 import org.knime.base.filehandling.remote.files.Connection;
@@ -61,8 +60,6 @@ import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageCredentialsAccountAndKey;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
 
 /**
  *
@@ -132,21 +129,6 @@ public class AzureBSConnection extends Connection {
 	 */
 	public CloudBlobClient getClient() {
 		return m_client;
-	}
-
-	/**
-	 * Check whether a blob with the given name exists in the given container
-	 *
-	 * @param containerName the given containerName
-	 * @param name the given blob name
-	 * @return <code>true</code> if the blob exists, or <code>false</code> otherwise.
-	 * @throws StorageException
-	 * @throws URISyntaxException
-	 */
-	public boolean doesBlobExist(String containerName, String name) throws URISyntaxException, StorageException {
-		final CloudBlobContainer containerReference = m_client.getContainerReference(containerName);
-		final CloudBlockBlob blockBlobReference = containerReference.getBlockBlobReference(name);
-		return blockBlobReference.exists();
 	}
 
 	/**
