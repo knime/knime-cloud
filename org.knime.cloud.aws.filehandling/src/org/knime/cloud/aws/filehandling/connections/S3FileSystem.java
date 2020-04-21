@@ -103,9 +103,8 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         final CloudConnectionInformation connectionInformation, final long timeToLive, final boolean normalizePaths) {
         super(provider, //
             uri, //
-            "S3 file system", //
-            "S3 file system", //
             timeToLive, //
+            PATH_SEPARATOR,
             Choice.CONNECTED_FS, //
             Optional.of(connectionInformation.getHost()));
         m_normalizePaths = normalizePaths;
