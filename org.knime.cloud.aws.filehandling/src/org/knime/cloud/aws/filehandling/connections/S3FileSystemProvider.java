@@ -60,7 +60,6 @@ import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -154,12 +153,8 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
     }
 
     @Override
-    public void createDirectory(final Path dir, final FileAttribute<?>... attrs) throws IOException {
+    protected void createDirectoryInternal(final S3Path dir, final FileAttribute<?>... attrs) throws IOException {
         final S3Path s3Path = toS3Path(dir);
-
-        if (existsCached(s3Path)) {
-            throw new FileAlreadyExistsException(s3Path.toString());
-        }
 
         final String bucketName = s3Path.getBucketName();
 
@@ -167,14 +162,13 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
             // create empty object
             final ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(0);
-            final String objectKey =
-                s3Path.getBlobName().endsWith(getSeparator()) ? s3Path.getBlobName() : s3Path.getBlobName() + getSeparator();
+            final String objectKey = s3Path.getBlobName().endsWith(getSeparator()) ? s3Path.getBlobName()
+                : s3Path.getBlobName() + getSeparator();
             s3Path.getFileSystem().getClient().putObject(bucketName, objectKey, new ByteArrayInputStream(new byte[0]),
                 metadata);
         } else {
             s3Path.getFileSystem().getClient().createBucket(bucketName);
         }
-
     }
 
     @Override
