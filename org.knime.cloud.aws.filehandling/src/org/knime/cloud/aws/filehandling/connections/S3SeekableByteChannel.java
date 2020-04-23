@@ -54,19 +54,19 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.Set;
 
-import org.knime.filehandling.core.connections.FSTempFileSeekableByteChannel;
+import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 
 /**
- * Amazon S3 implementation of the {@link FSTempFileSeekableByteChannel}.
+ * Amazon S3 implementation of the {@link TempFileSeekableByteChannel}.
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3SeekableByteChannel extends FSTempFileSeekableByteChannel<S3Path> {
+public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
 
     /**
-     * Constructs an {@link FSTempFileSeekableByteChannel} for S3.
+     * Constructs an {@link TempFileSeekableByteChannel} for S3.
      * @param file the file for the channel
      * @param options the open options
      * @throws IOException if an I/O Error occurred
