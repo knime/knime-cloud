@@ -62,7 +62,6 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
-import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -143,26 +142,17 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         return getFileSystemInternal().getSeparator();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getScheme() {
         return "s3";
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected SeekableByteChannel newByteChannelInternal(final Path path, final Set<? extends OpenOption> options,
+    protected SeekableByteChannel newByteChannelInternal(final S3Path path, final Set<? extends OpenOption> options,
         final FileAttribute<?>... attrs) throws IOException {
         return new S3SeekableByteChannel(toS3Path(path), options);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void createDirectory(final Path dir, final FileAttribute<?>... attrs) throws IOException {
         final S3Path s3Path = toS3Path(dir);
@@ -322,19 +312,8 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAttribute(final Path path, final String attribute, final Object value, final LinkOption... options)
-        throws IOException {
-
-        throw new UnsupportedOperationException();
-
-    }
-
     private S3Path toS3Path(final Path path) {
-        checkPath(path);
+        checkPathProvider(path);
         return (S3Path)path.normalize();
     }
 
