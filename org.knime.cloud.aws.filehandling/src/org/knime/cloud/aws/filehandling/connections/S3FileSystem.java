@@ -53,10 +53,11 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
+import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
+import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 import org.knime.filehandling.core.defaultnodesettings.FileSystemChoice.Choice;
 
@@ -104,9 +105,9 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         super(provider, //
             uri, //
             timeToLive, //
-            PATH_SEPARATOR,
-            Choice.CONNECTED_FS, //
-            Optional.of(connectionInformation.getHost()));
+            PATH_SEPARATOR, //
+            createFSLocationSpec(connectionInformation));
+
         m_normalizePaths = normalizePaths;
         try {
             if (connectionInformation.switchRole()) {
@@ -118,6 +119,12 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             throw new IllegalArgumentException(ex);
         }
         m_workingDirectory = getPath(PATH_SEPARATOR);
+    }
+
+    private static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
+        // the connection information is the AWS region
+        final String specifier = connectionInformation.getHost();
+        return new DefaultFSLocationSpec(Choice.CONNECTED_FS, specifier);
     }
 
     private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation,
