@@ -81,6 +81,8 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  */
 public class S3FileSystem extends BaseFileSystem<S3Path> {
 
+    private static final String S3_SCHEME = "s3";
+
     private static final String PATH_SEPARATOR = "/";
 
     private final AmazonS3 m_client;
@@ -123,7 +125,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
     private static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
         // the connection information is the AWS region
-        final String specifier = connectionInformation.getHost();
+        final String specifier = String.format("%s:%s", S3_SCHEME, connectionInformation.getHost());
         return new DefaultFSLocationSpec(Choice.CONNECTED_FS, specifier);
     }
 
@@ -233,7 +235,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     @Override
     public String getSchemeString() {
-        return "s3";
+        return S3_SCHEME;
     }
 
     /**
