@@ -56,8 +56,6 @@ import java.util.Set;
 
 import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
-
 /**
  * Amazon S3 implementation of the {@link TempFileSeekableByteChannel}.
  *
@@ -67,6 +65,7 @@ public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
 
     /**
      * Constructs an {@link TempFileSeekableByteChannel} for S3.
+     *
      * @param file the file for the channel
      * @param options the open options
      * @throws IOException if an I/O Error occurred
@@ -75,22 +74,16 @@ public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
         super(file, options);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void copyFromRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
         Files.copy(remoteFile, tempFile);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @SuppressWarnings("resource")
     @Override
     public void copyToRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-        S3Path s3Path = remoteFile;
-        s3Path.getFileSystem().getClient().putObject(s3Path.getBucketName(), s3Path.getBlobName(),
-            Files.newInputStream(tempFile), new ObjectMetadata());
+        remoteFile.getFileSystem().getClient().putObject(remoteFile.getBucketName(),
+            remoteFile.getBlobName(),
+            tempFile.toFile());
     }
-
 }
