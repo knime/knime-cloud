@@ -60,7 +60,6 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -82,8 +81,6 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 public class S3ConnectionNodeModel extends NodeModel {
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
-
-    private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectionNodeModel.class);
 
     private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
 
@@ -119,7 +116,7 @@ public class S3ConnectionNodeModel extends NodeModel {
         //TODO: Test if connection is available and if switch role is required!!!
 
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-        m_fsConn = new S3FSConnection(conInfo, getClientConfig());
+        m_fsConn = new S3FSConnection(conInfo, getClientConfig(), S3FileSystem.PATH_SEPARATOR, true);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
         if (conInfo.isUseAnonymous()) {
             setWarningMessage("You are using anonymous credentials." + "File browsing might not work as expected.\n"
@@ -216,17 +213,11 @@ public class S3ConnectionNodeModel extends NodeModel {
      */
     @Override
     protected void reset() {
-        try {
-            if (m_fsConn != null) {
-                m_fsConn.closeFileSystem();
-            }
-        } catch (final IOException ex) {
-            LOGGER.error("Exception closing file system: " + ex.getMessage(), ex);
-        } finally {
-            FSConnectionRegistry.getInstance().deregister(m_fsId);
-            m_awsConnectionInfo = null;
-            m_fsId = null;
+        if (m_fsConn != null) {
+            m_fsConn.close();
             m_fsConn = null;
         }
+        m_awsConnectionInfo = null;
+        m_fsId = null;
     }
 }

@@ -49,13 +49,13 @@
 package org.knime.cloud.aws.filehandling.testing;
 
 import java.io.ByteArrayInputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.filehandling.connections.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
+import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.testing.FSTestInitializer;
 
 import com.amazonaws.services.s3.AmazonS3;
@@ -98,18 +98,18 @@ public class S3FSTestInitializer implements FSTestInitializer {
     }
 
     @Override
-    public Path getRoot() {
+    public FSPath getRoot() {
         return m_fileSystem.getPath("/", m_bucket, m_uniquePrefix + "/");
     }
 
     @Override
-    public Path createFile(final String... pathComponents) {
+    public FSPath createFile(final String... pathComponents) {
         return createFileWithContent("", pathComponents);
     }
 
     @Override
-    public Path createFileWithContent(final String content, final String... pathComponents) {
-        final Path path = makePath(pathComponents);
+    public FSPath createFileWithContent(final String content, final String... pathComponents) {
+        final FSPath path = makePath(pathComponents);
 
         // create parent directory objects if necessary
         for (int i = 1; i < path.getNameCount() - 1; i++) {

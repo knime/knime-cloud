@@ -49,12 +49,11 @@
 package org.knime.cloud.aws.filehandling.connections;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.Map;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
@@ -69,11 +68,9 @@ import com.amazonaws.ClientConfiguration;
  */
 public class S3FSConnection implements FSConnection {
 
-    private final CloudConnectionInformation m_connInfo;
+    private final static long CACHE_TTL_MILLIS = 60000;
 
-    private final S3FileSystemProvider m_provider;
-
-    private final long m_cacheTimeToLive = 60000;
+    private final S3FileSystem m_fileSystem;
 
     private final boolean m_normalizePaths = true;
 
@@ -81,58 +78,38 @@ public class S3FSConnection implements FSConnection {
      * Creates a new {@link S3FSConnection} for the given connection information.
      *
      * @param connectionInformation the cloud connection information
-     */
-    public S3FSConnection(final CloudConnectionInformation connectionInformation) {
-        this(connectionInformation, new ClientConfiguration());
-    }
-
-    /**
-     * Creates a new {@link S3FSConnection} for the given connection information.
-     *
-     * @param connectionInformation the cloud connection information
      * @param clientConfig the {@link ClientConfiguration} to use
+     * @param workingDirectory The working directory of the S3 file system.
+     * @param normalizePaths
+     * @throws IOException
      */
     public S3FSConnection(final CloudConnectionInformation connectionInformation,
-        final ClientConfiguration clientConfig) {
-        Objects.requireNonNull(connectionInformation);
-        m_connInfo = connectionInformation;
-        m_provider = new S3FileSystemProvider(clientConfig, m_connInfo.toURI(), m_cacheTimeToLive, m_normalizePaths);
+        final ClientConfiguration clientConfig,
+        final String workingDirectory,
+        final boolean normalizePaths) throws IOException {
+
+        CheckUtils.checkArgumentNotNull(connectionInformation, "CloudConnectionInformation must not be null");
+        CheckUtils.checkArgumentNotNull(clientConfig, "ClientConfiguration must not be null");
+        CheckUtils.checkArgumentNotNull(workingDirectory, "Working directory must not be null");
+
+        final S3FileSystemProvider provider = new S3FileSystemProvider();
+
+        final Map<String,Object> env = new HashMap<>();
+        env.put(S3FileSystemProvider.KEY_CONNECTION_INFORMATION, connectionInformation);
+        env.put(S3FileSystemProvider.KEY_CLIENT_CONFIG, clientConfig);
+        env.put(S3FileSystemProvider.KEY_WORKING_DIRECTORY, workingDirectory);
+        env.put(S3FileSystemProvider.KEY_NORMALIZE_PATHS, m_normalizePaths);
+        env.put(S3FileSystemProvider.KEY_CACHE_TTL_MILLIS, CACHE_TTL_MILLIS);
+        m_fileSystem = provider.getOrCreateFileSystem(connectionInformation.toURI(), env);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public FSFileSystem<?> getFileSystem() {
-        final HashMap<String, CloudConnectionInformation> env = new HashMap<>();
-        env.put(S3FileSystemProvider.CONNECTION_INFORMATION, m_connInfo);
-
-        final URI uri = m_connInfo.toURI();
-        try {
-            return m_provider.getOrCreateFileSystem(uri, env);
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        return m_fileSystem;
     }
 
-    /**
-     * Closes the FileSystem for this connection
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    public void closeFileSystem() throws IOException {
-        final URI uri = m_connInfo.toURI();
-        if (m_provider.isOpen(uri)) {
-            m_provider.getFileSystem(uri).close();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public FileSystemBrowser getFileSystemBrowser() {
         return new NioFileSystemBrowser(this);
     }
-
 }

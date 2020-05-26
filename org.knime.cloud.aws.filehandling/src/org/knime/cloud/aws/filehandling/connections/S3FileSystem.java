@@ -48,11 +48,9 @@
  */
 package org.knime.cloud.aws.filehandling.connections;
 
-import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Map;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
@@ -81,46 +79,50 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  */
 public class S3FileSystem extends BaseFileSystem<S3Path> {
 
-    private static final String S3_SCHEME = "s3";
+    /**
+     * Path separator for the S3 file system.
+     */
+    public static final String PATH_SEPARATOR = "/";
 
-    private static final String PATH_SEPARATOR = "/";
+    private static final String S3_SCHEME = "s3";
 
     private final AmazonS3 m_client;
 
     private final boolean m_normalizePaths;
 
-    private final S3Path m_workingDirectory;
-
-
     /**
      * Constructs an S3FileSystem for the given URI
      *
      * @param provider the {@link S3FileSystemProvider}
-     * @param uri the URI for the file system
-     * @param env the environment map
      * @param connectionInformation the {@link CloudConnectionInformation}
-     * @param timeToLive the time to live for cache entries in the attributes cache
-     * @param normalizePaths whether paths should be normalized
+     * @param clientConfig The client config.
+     * @param workingDir The working directory.
+     * @param cacheTTL The time to live for cache entries in the attributes cache
+     * @param normalizePaths Whether paths should be normalized.
      */
-    public S3FileSystem(final S3FileSystemProvider provider, final URI uri, final Map<String, ?> env,
-        final CloudConnectionInformation connectionInformation, final long timeToLive, final boolean normalizePaths) {
+    public S3FileSystem(final S3FileSystemProvider provider,
+        final CloudConnectionInformation connectionInformation,
+        final ClientConfiguration clientConfig,
+        final String workingDir,
+        final long cacheTTL,
+        final boolean normalizePaths) {
+
         super(provider, //
-            uri, //
-            timeToLive, //
-            PATH_SEPARATOR, //
+            connectionInformation.toURI(), //
+            cacheTTL, //
+            workingDir, //
             createFSLocationSpec(connectionInformation));
 
         m_normalizePaths = normalizePaths;
         try {
             if (connectionInformation.switchRole()) {
-                m_client = getRoleAssumedS3Client(connectionInformation, provider.getClientConfig());
+                m_client = getRoleAssumedS3Client(connectionInformation, clientConfig);
             } else {
-                m_client = getS3Client(connectionInformation, provider.getClientConfig());
+                m_client = getS3Client(connectionInformation, clientConfig);
             }
         } catch (final Exception ex) {
             throw new IllegalArgumentException(ex);
         }
-        m_workingDirectory = getPath(PATH_SEPARATOR);
     }
 
     private static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
@@ -185,23 +187,11 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             + connectionInformation.getSwitchRoleName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getSeparator() {
         return PATH_SEPARATOR;
     }
 
-    @Override
-    public S3Path getWorkingDirectory() {
-        // TODO Auto-generated method stub
-        return m_workingDirectory;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Iterable<Path> getRootDirectories() {
         return Collections.singletonList(getPath(PATH_SEPARATOR));
@@ -214,33 +204,21 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         return m_client;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public S3Path getPath(final String first, final String... more) {
         return new S3Path(this, first, more);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void prepareClose() {
         m_client.shutdown();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getSchemeString() {
         return S3_SCHEME;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getHostString() {
         return null;
@@ -257,5 +235,4 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     protected String getCachedAttributesKey(final Path path) {
         return path.toString();
     }
-
 }

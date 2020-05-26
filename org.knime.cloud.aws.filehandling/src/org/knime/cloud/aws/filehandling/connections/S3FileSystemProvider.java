@@ -103,43 +103,15 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
-    public static final String CONNECTION_INFORMATION = "ConnectionInformation";
+    static final String KEY_CONNECTION_INFORMATION = "connInfo";
 
-    private final ClientConfiguration m_clientConfig;
+    static final String KEY_CLIENT_CONFIG = "clientConfig";
 
-    private final URI m_uri;
+    static final String KEY_WORKING_DIRECTORY = "workingDir";
 
-    private final long m_cacheTimeToLive;
+    static final String KEY_NORMALIZE_PATHS = "normalizePaths";
 
-    private final boolean m_normalizePaths;
-
-    /**
-     * Constructs a file system provider for {@link S3FileSystem}s.
-     *
-     * @param clientConfig the {@link ClientConfiguration} to use
-     * @param uri
-     * @param cacheTimeToLive the timeToLive for the attributes cache.
-     * @param normalizePaths
-     */
-    public S3FileSystemProvider(final ClientConfiguration clientConfig, final URI uri, final long cacheTimeToLive,
-        final boolean normalizePaths) {
-        Objects.requireNonNull(clientConfig);
-        m_clientConfig = clientConfig;
-        m_uri = uri;
-        m_cacheTimeToLive = cacheTimeToLive;
-        m_normalizePaths = normalizePaths;
-    }
-
-    /**
-     * @return the {@link ClientConfiguration}
-     */
-    ClientConfiguration getClientConfig() {
-        return m_clientConfig;
-    }
-
-    private String getSeparator() {
-        return getFileSystemInternal().getSeparator();
-    }
+    static final String KEY_CACHE_TTL_MILLIS = "cacheTTL";
 
     @Override
     public String getScheme() {
@@ -162,8 +134,8 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
             // create empty object
             final ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(0);
-            final String objectKey = s3Path.getBlobName().endsWith(getSeparator()) ? s3Path.getBlobName()
-                : s3Path.getBlobName() + getSeparator();
+            final String objectKey = s3Path.getBlobName().endsWith(S3FileSystem.PATH_SEPARATOR) ? s3Path.getBlobName()
+                : s3Path.getBlobName() + S3FileSystem.PATH_SEPARATOR;
             s3Path.getFileSystem().getClient().putObject(bucketName, objectKey, new ByteArrayInputStream(new byte[0]),
                 metadata);
         } else {
@@ -241,20 +213,12 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         final ListObjectsV2Result list = client.listObjectsV2(listRequest);
         list.getObjectSummaries().forEach(p -> {
             client.copyObject(p.getBucketName(), p.getKey(), targetS3Path.getBucketName(),
-                p.getKey().replace(sourceS3Path.getBlobName(), targetS3Path.getBlobName() + getSeparator()));
+                p.getKey().replace(sourceS3Path.getBlobName(), targetS3Path.getBlobName() + S3FileSystem.PATH_SEPARATOR));
 
             client.deleteObject(p.getBucketName(), p.getKey());
             sourceS3Path.getFileSystem()
                 .removeFromAttributeCache(new S3Path(sourceS3Path.getFileSystem(), p.getBucketName(), p.getKey()));
         });
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isHidden(final Path path) throws IOException {
-        return false;
     }
 
     /**
@@ -313,11 +277,13 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     @Override
     public S3FileSystem createFileSystem(final URI uri, final Map<String, ?> env) {
-        CloudConnectionInformation connInfo = null;
-        if (env.containsKey(CONNECTION_INFORMATION)) {
-            connInfo = (CloudConnectionInformation)env.get(CONNECTION_INFORMATION);
-        }
-        return new S3FileSystem(this, uri, env, connInfo, m_cacheTimeToLive, m_normalizePaths);
+        final CloudConnectionInformation connInfo = (CloudConnectionInformation) env.get(KEY_CONNECTION_INFORMATION);
+        final ClientConfiguration clientConfig = (ClientConfiguration) env.get(KEY_CLIENT_CONFIG);
+        final String workingDir = (String) env.get(KEY_WORKING_DIRECTORY);
+        final boolean normalizePaths = (boolean) env.get(KEY_NORMALIZE_PATHS);
+        final long cacheTTL = (long) env.get(KEY_CACHE_TTL_MILLIS);
+
+        return new S3FileSystem(this, connInfo, clientConfig, workingDir, cacheTTL, normalizePaths);
     }
 
     @Override
@@ -339,7 +305,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
             // when given /path also check for existence of /path/
             if (!exists && !path.isDirectory()) {
                 try {
-                    exists = client.doesObjectExist(path.getBucketName(), path.getBlobName() + getSeparator());
+                    exists = client.doesObjectExist(path.getBucketName(), path.getBlobName() + S3FileSystem.PATH_SEPARATOR);
                 } catch (final AmazonS3Exception e) {
                     LOGGER.warn(e);
                 }
@@ -347,9 +313,9 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
             // when given /path or /path/ also check for /path/bla
             if (!exists) {
-                final String blobFolderName = path.getBlobName().endsWith(getSeparator())//
+                final String blobFolderName = path.getBlobName().endsWith(S3FileSystem.PATH_SEPARATOR)//
                     ? path.getBlobName()//
-                    : path.getBlobName() + getSeparator();
+                    : path.getBlobName() + S3FileSystem.PATH_SEPARATOR;
 
                 final ListObjectsV2Request request = new ListObjectsV2Request();
                 request.withBucketName(path.getBucketName())//
@@ -523,7 +489,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     private S3Path ensureDirPath(final S3Path path) {
         if (!path.isDirectory()) {
-            return getFileSystemInternal().getPath(path.toString(), getSeparator());
+            return getFileSystemInternal().getPath(path.toString(), S3FileSystem.PATH_SEPARATOR);
         } else {
             return path;
         }

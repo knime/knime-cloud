@@ -48,9 +48,11 @@
  */
 package org.knime.cloud.aws.filehandling.testing;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
+import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.filehandling.core.testing.FSTestInitializer;
 import org.knime.filehandling.core.testing.FSTestInitializerProvider;
@@ -67,6 +69,7 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
 
     private final static String FS_NAME = "s3";
 
+    @SuppressWarnings("resource")
     @Override
     public FSTestInitializer setup(final Map<String, String> config) {
         final CloudConnectionInformation s3ConnectionInformation = new CloudConnectionInformation();
@@ -79,8 +82,16 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
         s3ConnectionInformation.setPassword(config.get("secretKey"));
 
         final String bucket = config.get("bucket");
-        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, getClientConfig());
-        return new S3FSTestInitializer(bucket, s3Connection);
+        S3FSConnection s3Connection;
+        try {
+            s3Connection = new S3FSConnection(s3ConnectionInformation,
+                getClientConfig(),
+                S3FileSystem.PATH_SEPARATOR + bucket,
+                true);
+            return new S3FSTestInitializer(bucket, s3Connection);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Could not create S3FSConnection", ex);
+        }
     }
 
     private static ClientConfiguration getClientConfig() {
