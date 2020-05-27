@@ -103,6 +103,10 @@ public class S3FSConnection implements FSConnection {
         m_fileSystem = provider.getOrCreateFileSystem(connectionInformation.toURI(), env);
     }
 
+    public S3FSConnection(final CloudConnectionInformation connectionInformation) throws IOException {
+        this(connectionInformation, new ClientConfiguration(), S3FileSystem.PATH_SEPARATOR, true);
+    }
+
     @Override
     public FSFileSystem<?> getFileSystem() {
         return m_fileSystem;
