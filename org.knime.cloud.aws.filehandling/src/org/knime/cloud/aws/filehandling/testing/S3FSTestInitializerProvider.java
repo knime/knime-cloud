@@ -54,6 +54,8 @@ import java.util.Map;
 import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.util.CheckUtils;
+import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.testing.FSTestInitializer;
 import org.knime.filehandling.core.testing.FSTestInitializerProvider;
 
@@ -71,7 +73,18 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
 
     @SuppressWarnings("resource")
     @Override
-    public FSTestInitializer setup(final Map<String, String> config) {
+    public FSTestInitializer setup(final Map<String, String> config) throws IOException {
+
+        validateConfiguration(config);
+        final CloudConnectionInformation s3ConnectionInformation = createCloudConnectionInformation(config);
+        final String bucket = config.get("bucket");
+
+        final S3FSConnection s3Connection =
+            new S3FSConnection(s3ConnectionInformation, getClientConfig(), S3FileSystem.PATH_SEPARATOR + bucket, true);
+        return new S3FSTestInitializer(bucket, s3Connection);
+    }
+
+    private static CloudConnectionInformation createCloudConnectionInformation(final Map<String, String> config) {
         final CloudConnectionInformation s3ConnectionInformation = new CloudConnectionInformation();
         s3ConnectionInformation.setHost(config.get("host"));
         s3ConnectionInformation.setProtocol(config.get("protocol"));
@@ -80,18 +93,17 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
         s3ConnectionInformation.setSwitchRoleName(config.get("roleName"));
         s3ConnectionInformation.setUser(config.get("user"));
         s3ConnectionInformation.setPassword(config.get("secretKey"));
+        return s3ConnectionInformation;
+    }
 
-        final String bucket = config.get("bucket");
-        S3FSConnection s3Connection;
-        try {
-            s3Connection = new S3FSConnection(s3ConnectionInformation,
-                getClientConfig(),
-                S3FileSystem.PATH_SEPARATOR + bucket,
-                true);
-            return new S3FSTestInitializer(bucket, s3Connection);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Could not create S3FSConnection", ex);
-        }
+    private static void validateConfiguration(final Map<String, String> config) {
+        CheckUtils.checkArgumentNotNull(config.get("host"), "host must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("protocol"), "protocol must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("account"), "account must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("roleName"), "roleName must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("user"), "user must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("secretKey"), "secretKey must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("bucket"), "bucket must not be null");
     }
 
     private static ClientConfiguration getClientConfig() {
@@ -106,4 +118,10 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
         return FS_NAME;
     }
 
+    @Override
+    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
+        final CloudConnectionInformation s3ConnectionInformation = createCloudConnectionInformation(config);
+        return S3FileSystem.createFSLocationSpec(s3ConnectionInformation);
+    }
 }
+
