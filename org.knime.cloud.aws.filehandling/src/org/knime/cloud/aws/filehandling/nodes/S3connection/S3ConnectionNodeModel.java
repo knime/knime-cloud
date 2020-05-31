@@ -56,6 +56,7 @@ import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -70,6 +71,7 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
+import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 
@@ -82,7 +84,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
  */
 public class S3ConnectionNodeModel extends NodeModel {
 
-    private static final String FILE_SYSTEM_NAME = "Amazon S3";
+    private static final String FILE_SYSTEM_NAME = "s3";
 
     private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
 
@@ -107,10 +109,20 @@ public class S3ConnectionNodeModel extends NodeModel {
             Math.max(1, ClientConfiguration.DEFAULT_SOCKET_TIMEOUT / 1000), 0, Integer.MAX_VALUE);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings("resource")
+    @Override
+    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) {
+        m_fsId = FSConnectionRegistry.getInstance().getKey();
+
+        final CloudConnectionInformation conInfo =
+            ((CloudConnectionInformationPortObjectSpec)inSpecs[0]).getConnectionInformation();
+        return new PortObjectSpec[]{createSpec(conInfo)};
+    }
+
+    private FileSystemPortObjectSpec createSpec(final CloudConnectionInformation conInfo) {
+        final FSLocationSpec fsLocationSpec = S3FileSystem.createFSLocationSpec(conInfo);
+        return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, m_fsId, fsLocationSpec);
+    }
+
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         m_awsConnectionInfo = (AmazonConnectionInformationPortObject)inObjects[0];
@@ -120,24 +132,30 @@ public class S3ConnectionNodeModel extends NodeModel {
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
         m_fsConn = new S3FSConnection(conInfo, getClientConfig(), S3FileSystem.PATH_SEPARATOR, true);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
+
         if (conInfo.isUseAnonymous()) {
             setWarningMessage("You are using anonymous credentials." + "File browsing might not work as expected.\n"
                 + "Browsing will only be available when bucket name is given in file/URL field.");
         } else {
-            final S3FileSystem fileSystem = (S3FileSystem)m_fsConn.getFileSystem();
-            try {
-                fileSystem.getClient().listBuckets();
-            } catch (final AmazonS3Exception e) {
-                if (Objects.equals(e.getErrorCode(), "InvalidAccessKeyId")) {
-                    throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
-                } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
-                    setWarningMessage("The credentials provided have restricted permissions. "
-                        + "File browsing might not work as expected.\n"
-                        + "All buckets will be assumed existing, as they cannot be listed.");
-                }
+            testFileSystemConnection(m_fsConn);
+        }
+        return new PortObject[]{new FileSystemPortObject(createSpec(conInfo))};
+    }
+
+    @SuppressWarnings("resource")
+    private void testFileSystemConnection(final S3FSConnection fsConn) throws InvalidSettingsException {
+        final S3FileSystem fileSystem = (S3FileSystem)fsConn.getFileSystem();
+        try {
+            fileSystem.getClient().listBuckets();
+        } catch (final AmazonS3Exception e) {
+            if (Objects.equals(e.getErrorCode(), "InvalidAccessKeyId")) {
+                throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
+            } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
+                setWarningMessage("The credentials provided have restricted permissions. "
+                    + "File browsing might not work as expected.\n"
+                    + "All buckets will be assumed existing, as they cannot be listed.");
             }
         }
-        return new PortObject[]{new FileSystemPortObject(createSpec())};
     }
 
     private ClientConfiguration getClientConfig() {
@@ -147,16 +165,6 @@ public class S3ConnectionNodeModel extends NodeModel {
             .withSocketTimeout(socketTimeout)
             .withConnectionTTL(socketTimeout);
 
-    }
-
-    @Override
-    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) {
-        m_fsId = FSConnectionRegistry.getInstance().getKey();
-        return new PortObjectSpec[]{createSpec()};
-    }
-
-    private FileSystemPortObjectSpec createSpec() {
-        return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, m_fsId);
     }
 
     /**

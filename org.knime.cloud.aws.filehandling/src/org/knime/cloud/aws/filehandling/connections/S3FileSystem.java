@@ -125,7 +125,13 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         }
     }
 
-    private static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
+    /**
+     * Creates an {@link FSLocationSpec} for an S3 file system with the given connection information.
+     *
+     * @param connectionInformation
+     * @return an {@link FSLocationSpec} for an S3 file system with the given connection information.
+     */
+    public static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
         // the connection information is the AWS region
         final String specifier = String.format("%s:%s", S3_SCHEME, connectionInformation.getHost());
         return new DefaultFSLocationSpec(Choice.CONNECTED_FS, specifier);
