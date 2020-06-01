@@ -84,7 +84,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
  */
 public class S3ConnectionNodeModel extends NodeModel {
 
-    private static final String FILE_SYSTEM_NAME = "s3";
+    private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
     private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
 
