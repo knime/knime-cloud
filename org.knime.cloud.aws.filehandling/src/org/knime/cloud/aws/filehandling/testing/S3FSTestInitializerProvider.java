@@ -56,8 +56,7 @@ import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.connections.FSLocationSpec;
-import org.knime.filehandling.core.testing.FSTestInitializer;
-import org.knime.filehandling.core.testing.FSTestInitializerProvider;
+import org.knime.filehandling.core.testing.DefaultFSTestInitializerProvider;
 
 import com.amazonaws.ClientConfiguration;
 
@@ -67,43 +66,44 @@ import com.amazonaws.ClientConfiguration;
  *
  * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
  */
-public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
-
-    private final static String FS_NAME = "s3";
+public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvider {
 
     @SuppressWarnings("resource")
     @Override
-    public FSTestInitializer setup(final Map<String, String> config) throws IOException {
+    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
 
         validateConfiguration(config);
+
         final CloudConnectionInformation s3ConnectionInformation = createCloudConnectionInformation(config);
-        final String bucket = config.get("bucket");
+
+        final String workingDir =
+            generateRandomizedWorkingDir(config.get("workingDirPrefix"), S3FileSystem.PATH_SEPARATOR);
 
         final S3FSConnection s3Connection =
-            new S3FSConnection(s3ConnectionInformation, getClientConfig(), S3FileSystem.PATH_SEPARATOR + bucket, true);
-        return new S3FSTestInitializer(bucket, s3Connection);
+            new S3FSConnection(s3ConnectionInformation, getClientConfig(), workingDir, true);
+
+        return new S3FSTestInitializer(s3Connection);
     }
 
     private static CloudConnectionInformation createCloudConnectionInformation(final Map<String, String> config) {
         final CloudConnectionInformation s3ConnectionInformation = new CloudConnectionInformation();
-        s3ConnectionInformation.setHost(config.get("host"));
-        s3ConnectionInformation.setProtocol(config.get("protocol"));
+        s3ConnectionInformation.setHost(config.get("region"));
+        s3ConnectionInformation.setProtocol("s3");
         s3ConnectionInformation.setSwitchRole(true);
-        s3ConnectionInformation.setSwitchRoleAccount(config.get("account"));
-        s3ConnectionInformation.setSwitchRoleName(config.get("roleName"));
-        s3ConnectionInformation.setUser(config.get("user"));
-        s3ConnectionInformation.setPassword(config.get("secretKey"));
+        s3ConnectionInformation.setSwitchRoleAccount(config.get("roleSwitchAccount"));
+        s3ConnectionInformation.setSwitchRoleName(config.get("roleSwitchName"));
+        s3ConnectionInformation.setUser(config.get("accessKeyId"));
+        s3ConnectionInformation.setPassword(config.get("accessKeySecret"));
         return s3ConnectionInformation;
     }
 
     private static void validateConfiguration(final Map<String, String> config) {
-        CheckUtils.checkArgumentNotNull(config.get("host"), "host must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("protocol"), "protocol must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("account"), "account must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("roleName"), "roleName must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("user"), "user must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("secretKey"), "secretKey must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("bucket"), "bucket must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("region"), "region must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("roleSwitchAccount"), "roleSwitchAccount must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("roleSwitchName"), "roleSwitchName must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("accessKeyId"), "accessKeyId must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("accessKeySecret"), "accessKeySecret must not be null");
+        CheckUtils.checkArgumentNotNull(config.get("workingDirPrefix"), "workingDirPrefix must not be null");
     }
 
     private static ClientConfiguration getClientConfig() {
@@ -115,7 +115,7 @@ public class S3FSTestInitializerProvider implements FSTestInitializerProvider {
 
     @Override
     public String getFSType() {
-        return FS_NAME;
+        return S3FileSystem.FS_TYPE;
     }
 
     @Override

@@ -50,13 +50,12 @@ package org.knime.cloud.aws.filehandling.testing;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.UUID;
 
 import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
 import org.knime.cloud.aws.filehandling.connections.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
-import org.knime.filehandling.core.connections.FSPath;
-import org.knime.filehandling.core.testing.FSTestInitializer;
+import org.knime.filehandling.core.connections.base.BlobStorePath;
+import org.knime.filehandling.core.testing.DefaultFSTestInitializer;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -70,83 +69,76 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  *
  * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
  */
-public class S3FSTestInitializer implements FSTestInitializer {
+public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3FileSystem> {
 
-    private final FSConnection m_s3Connection;
-    private final S3FileSystem m_fileSystem;
-    private final String m_bucket;
     private final AmazonS3 m_s3Client;
-    private final String m_uniquePrefix;
 
     /**
      * Creates a initializer for s3 pointing to a special test bucket.
      *
-     * @param bucket
      * @param fsConnection
      */
-    public S3FSTestInitializer(final String bucket, final FSConnection fsConnection) {
-        m_s3Connection = fsConnection;
-        m_fileSystem = (S3FileSystem) m_s3Connection.getFileSystem();
-        m_uniquePrefix = UUID.randomUUID().toString();
-        m_bucket = bucket;
-        m_s3Client = m_fileSystem.getClient();
+    public S3FSTestInitializer(final FSConnection fsConnection) {
+        super(fsConnection);
+        m_s3Client = getFileSystem().getClient();
     }
 
     @Override
-    public FSConnection getFSConnection() {
-        return m_s3Connection;
-    }
-
-    @Override
-    public FSPath getRoot() {
-        return m_fileSystem.getPath("/", m_bucket, m_uniquePrefix + "/");
-    }
-
-    @Override
-    public FSPath createFile(final String... pathComponents) {
+    public S3Path createFile(final String... pathComponents) {
         return createFileWithContent("", pathComponents);
     }
 
     @Override
-    public FSPath createFileWithContent(final String content, final String... pathComponents) {
-        final FSPath path = makePath(pathComponents);
+    public S3Path createFileWithContent(final String content, final String... pathComponents) {
+        final S3Path path = makePath(pathComponents);
 
         // create parent directory objects if necessary
         for (int i = 1; i < path.getNameCount() - 1; i++) {
             final String dirKey = path.subpath(1, i + 1).toString();
-            if (!m_s3Client.doesObjectExist(m_bucket, dirKey)) {
-                m_s3Client.putObject(m_bucket, dirKey, "");
+            if (!m_s3Client.doesObjectExist(path.getBucketName(), dirKey)) {
+                m_s3Client.putObject(path.getBucketName(), dirKey, "");
             }
         }
 
         // create the actual object with content
         final String key = path.subpath(1, path.getNameCount()).toString();
-        m_s3Client.putObject(m_bucket, key, content);
+        m_s3Client.putObject(path.getBucketName(), key, content);
 
         return path;
     }
 
     @Override
-    public void beforeTestCase() {
-        final S3Path testRoot = (S3Path)getRoot();
+    protected void beforeTestCaseInternal() {
+        final BlobStorePath scratchDir = getTestCaseScratchDir().toDirectoryPath();
 
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(0);
 
-        m_s3Client.putObject(testRoot.getBucketName(), testRoot.getBlobName(), new ByteArrayInputStream(new byte[0]),
-            metadata);
+        if (!m_s3Client.doesObjectExist(scratchDir.getBucketName(), scratchDir.getBlobName())) {
+            m_s3Client.putObject(scratchDir.getBucketName(), scratchDir.getBlobName(),
+                new ByteArrayInputStream(new byte[0]), metadata);
+        }
     }
 
     @Override
-    public void afterTestCase() {
-        final ObjectListing bucketObjects = m_s3Client.listObjects(m_bucket);
-        final List<S3ObjectSummary> objectSummaries = bucketObjects.getObjectSummaries();
+    protected void afterTestCaseInternal() {
+        final BlobStorePath scratchDir = getTestCaseScratchDir();
 
-        objectSummaries //
-            .stream() //
-            .map(S3ObjectSummary::getKey) //
-            .filter(summaryKey -> summaryKey.startsWith(m_uniquePrefix)) //
-            .forEach(filteredKey -> m_s3Client.deleteObject(m_bucket, filteredKey)); //
+        ObjectListing bucketObjects = null;
+
+        do {
+            if (bucketObjects == null) {
+                bucketObjects = m_s3Client.listObjects(scratchDir.getBucketName(), scratchDir.getBlobName());
+            } else {
+                bucketObjects = m_s3Client.listNextBatchOfObjects(bucketObjects);
+            }
+
+            final List<S3ObjectSummary> objectSummaries = bucketObjects.getObjectSummaries();
+
+            objectSummaries //
+                .stream() //
+                .map(S3ObjectSummary::getKey) //
+                .forEach(filteredKey -> m_s3Client.deleteObject(scratchDir.getBucketName(), filteredKey)); //
+        } while (bucketObjects.isTruncated());
     }
-
 }

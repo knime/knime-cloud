@@ -84,7 +84,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public static final String PATH_SEPARATOR = "/";
 
-    private static final String S3_SCHEME = "s3";
+    public static final String FS_TYPE = "amazon-s3";
 
     private final AmazonS3 m_client;
 
@@ -133,7 +133,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
         // the connection information is the AWS region
-        final String specifier = String.format("%s:%s", S3_SCHEME, connectionInformation.getHost());
+        final String specifier = String.format("%s:%s", FS_TYPE, connectionInformation.getHost());
         return new DefaultFSLocationSpec(Choice.CONNECTED_FS, specifier);
     }
 
@@ -222,7 +222,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
     @Override
     public String getSchemeString() {
-        return S3_SCHEME;
+        return FS_TYPE;
     }
 
     @Override

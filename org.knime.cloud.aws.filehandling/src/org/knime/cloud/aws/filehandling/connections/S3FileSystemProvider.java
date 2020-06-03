@@ -115,7 +115,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     @Override
     public String getScheme() {
-        return "s3";
+        return S3FileSystem.FS_TYPE;
     }
 
     @Override
