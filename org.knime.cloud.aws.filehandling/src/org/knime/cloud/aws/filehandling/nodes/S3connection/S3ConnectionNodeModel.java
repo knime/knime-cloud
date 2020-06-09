@@ -61,7 +61,6 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -69,7 +68,6 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.port.FileSystemPortObject;
@@ -224,10 +222,7 @@ public class S3ConnectionNodeModel extends NodeModel {
     @Override
     protected void reset() {
         if (m_fsConn != null) {
-            // We will null the m_fsConnection field afterwards, so we need to assign it to
-            // a local variable because to avoid races.
-            final FSConnection fsConnection = m_fsConn;
-            KNIMEConstants.GLOBAL_THREAD_POOL.enqueue(() -> fsConnection.close());
+            m_fsConn.closeInBackground();
             m_fsConn = null;
         }
         m_awsConnectionInfo = null;
