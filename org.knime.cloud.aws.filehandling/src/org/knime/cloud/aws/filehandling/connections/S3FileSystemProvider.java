@@ -231,7 +231,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     @Override
     protected void checkAccessInternal(final S3Path s3Path, final AccessMode... modes) throws IOException {
-        if (s3Path.isVirtualRoot() || s3Path.isDirectory()) {
+        if (s3Path.isRoot() || s3Path.isDirectory()) {
             return;
         }
 
@@ -416,7 +416,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     @Override
     protected Iterator<S3Path> createPathIterator(final S3Path dir, final Filter<? super Path> filter) throws IOException {
-        return new S3PathIterator(ensureDirPath(dir), filter);
+        return new S3PathIterator(dir.toDirectoryPath(), filter);
     }
 
     @Override
@@ -458,7 +458,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
                 client.getObjectMetadata(path.getBucketName(), path.getBlobName()));
         }
 
-        final S3Path dirPath = ensureDirPath(path);
+        final S3Path dirPath = path.toDirectoryPath();
 
         // directory case (1): when given "/path", but it does not exist, then we check for /path/
         if (!path.isDirectory() && client.doesObjectExist(dirPath.getBucketName(), dirPath.getBlobName())) {
@@ -485,14 +485,6 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
         }
 
         throw new NoSuchFileException(path.toString());
-    }
-
-    private S3Path ensureDirPath(final S3Path path) {
-        if (!path.isDirectory()) {
-            return getFileSystemInternal().getPath(path.toString(), S3FileSystem.PATH_SEPARATOR);
-        } else {
-            return path;
-        }
     }
 
     private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path, final ObjectMetadata objectMetadata) throws NoSuchFileException {
@@ -573,7 +565,7 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
 
     @SuppressWarnings("resource")
     private void deleteFolder(final S3Path origPath) throws DirectoryNotEmptyException {
-        final S3Path dirPath = ensureDirPath(origPath);
+        final S3Path dirPath = origPath.toDirectoryPath();
         final AmazonS3 client = getFileSystemInternal().getClient();
 
         if (!dirIsEmpty(dirPath)) {

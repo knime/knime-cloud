@@ -120,8 +120,12 @@ public class S3Path extends BlobStorePath {
 
         final S3Path s3Other = (S3Path)other;
 
-        if (m_pathParts.isEmpty() || (m_pathParts.size() == 1 && m_pathParts.get(0).isEmpty())) {
-            return getFileSystem().getPath(String.join(s3Other.m_pathSeparator, s3Other.m_pathParts));
+        if (isEmptyPath()) {
+            return s3Other;
+        }
+
+        if (isRoot()) {
+            return getFileSystem().getPath(String.join(S3FileSystem.PATH_SEPARATOR, s3Other.m_pathParts));
         }
 
         if (s3Other.startsWith(this)) {
@@ -129,16 +133,18 @@ public class S3Path extends BlobStorePath {
         }
 
         if (!getFileSystem().normalizePaths()) {
-            throw new IllegalArgumentException("Cannot relativize an independent paths if normalization is disabled.");
+            throw new IllegalArgumentException("Cannot relativize independent paths if normalization is disabled.");
         }
 
         return super.relativize(other);
     }
 
+
     /**
-     * @return whether this is the virtual S3 root "/"
+     * @return an {@link S3Path} for which {@link #isDirectory()} returns true.
      */
-    public boolean isVirtualRoot() {
-        return m_pathParts.isEmpty() && isAbsolute();
+    @Override
+    public S3Path toDirectoryPath() {
+        return (S3Path) super.toDirectoryPath();
     }
 }
