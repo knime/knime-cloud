@@ -165,20 +165,25 @@ public class S3PathIterator implements Iterator<S3Path> {
     }
 
     private boolean checkAndFillSummaryList() {
-        if (m_objectSummary.isEmpty() && m_objectsCommonPrefixes.isEmpty() && !m_objectsListing.isTruncated()) {
-            return false;
+        if (!m_objectSummary.isEmpty()) {
+            return true;
         }
 
-        if (m_objectSummary.isEmpty() && m_objectsListing.isTruncated()) {
+        if (!m_objectsCommonPrefixes.isEmpty()) {
+            return true;
+        }
 
+        // we have exhausted all object summaries and common prefixes, now it makes sense
+        // to look at whether there is more to fetch
+        if (m_objectsListing.isTruncated()) {
             m_listRequest.setContinuationToken(m_objectsListing.getNextContinuationToken());
-
             m_objectsListing = m_client.listObjectsV2(m_listRequest);
             m_objectSummary = m_objectsListing.getObjectSummaries();
             m_objectsCommonPrefixes.addAll(m_objectsListing.getCommonPrefixes());
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     private S3Path getNextPath() {
