@@ -13,7 +13,7 @@
    <extension
          point="org.knime.filehandling.FSTestInitializerProvider">
       <FSTestInitializerProvider
-            ProviderClass="org.knime.cloud.aws.filehandling.testing.S3FSTestInitializerProvider"></FSTestInitializerProvider>
+            ProviderClass="org.knime.cloud.aws.filehandling.s3.testing.S3FSTestInitializerProvider"></FSTestInitializerProvider>
    </extension>
 
 </plugin>

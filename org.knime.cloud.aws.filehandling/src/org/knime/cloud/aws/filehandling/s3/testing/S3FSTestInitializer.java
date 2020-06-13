@@ -46,13 +46,13 @@
  * History
  *   Jan 7, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
  */
-package org.knime.cloud.aws.filehandling.testing;
+package org.knime.cloud.aws.filehandling.s3.testing;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
-import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
-import org.knime.cloud.aws.filehandling.connections.S3Path;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.base.BlobStorePath;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializer;

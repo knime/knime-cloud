@@ -46,14 +46,14 @@
  * History
  *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.nodes.S3connection;
+package org.knime.cloud.aws.filehandling.s3.node;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.knime.cloud.aws.filehandling.connections.S3FSConnection;
-import org.knime.cloud.aws.filehandling.connections.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
@@ -80,7 +80,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectionNodeModel extends NodeModel {
+public class S3ConnectorNodeModel extends NodeModel {
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
@@ -95,7 +95,7 @@ public class S3ConnectionNodeModel extends NodeModel {
     /**
      * The NodeModel for the S3Connection node
      */
-    public S3ConnectionNodeModel() {
+    public S3ConnectorNodeModel() {
         super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FileSystemPortObject.TYPE});
     }
 

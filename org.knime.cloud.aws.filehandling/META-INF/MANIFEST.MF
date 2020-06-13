@@ -14,4 +14,4 @@ Require-Bundle: org.knime.cloud.core;bundle-version="[4.1.0,5.0.0)",
  org.knime.base.filehandling;bundle-version="[4.1.0,5.0.0)",
  org.knime.cloud.aws;bundle-version="[4.1.0,5.0.0)"
 Bundle-ClassPath: cloud_aws_filehandling.jar
-Export-Package: org.knime.cloud.aws.filehandling.connections
+Export-Package: org.knime.cloud.aws.filehandling.s3.fs

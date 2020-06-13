@@ -46,7 +46,7 @@
  * History
  *   03.09.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.nodes.S3connection;
+package org.knime.cloud.aws.filehandling.s3.node;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

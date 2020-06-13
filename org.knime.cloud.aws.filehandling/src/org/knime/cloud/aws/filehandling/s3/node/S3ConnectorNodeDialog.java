@@ -46,7 +46,7 @@
  * History
  *   Oct 26, 2019 (Tobias): created
  */
-package org.knime.cloud.aws.filehandling.nodes.S3connection;
+package org.knime.cloud.aws.filehandling.s3.node;
 
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
@@ -56,10 +56,10 @@ import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectionNodeDialog extends DefaultNodeSettingsPane {
+public class S3ConnectorNodeDialog extends DefaultNodeSettingsPane {
 
-    S3ConnectionNodeDialog() {
-        addDialogComponent(new DialogComponentNumber(S3ConnectionNodeModel.createConnectionTimeoutModel(),
+    S3ConnectorNodeDialog() {
+        addDialogComponent(new DialogComponentNumber(S3ConnectorNodeModel.createConnectionTimeoutModel(),
             "Read/write timeout in seconds: ", 10, 5));
     }
 }

@@ -44,46 +44,58 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   04.09.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
+ *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.connections;
+package org.knime.cloud.aws.filehandling.s3.node;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.util.Set;
-
-import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeFactory;
+import org.knime.core.node.NodeView;
 
 /**
- * Amazon S3 implementation of the {@link TempFileSeekableByteChannel}.
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
+public class S3ConnectorNodeFactory extends NodeFactory<S3ConnectorNodeModel> {
 
     /**
-     * Constructs an {@link TempFileSeekableByteChannel} for S3.
-     *
-     * @param file the file for the channel
-     * @param options the open options
-     * @throws IOException if an I/O Error occurred
+     * {@inheritDoc}
      */
-    public S3SeekableByteChannel(final S3Path file, final Set<? extends OpenOption> options) throws IOException {
-        super(file, options);
+    @Override
+    public S3ConnectorNodeModel createNodeModel() {
+        return new S3ConnectorNodeModel();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void copyFromRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-        Files.copy(remoteFile, tempFile);
+    protected int getNrNodeViews() {
+        return 0;
     }
 
-    @SuppressWarnings("resource")
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void copyToRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-        remoteFile.getFileSystem().getClient().putObject(remoteFile.getBucketName(),
-            remoteFile.getBlobName(),
-            tempFile.toFile());
+    public NodeView<S3ConnectorNodeModel> createNodeView(final int viewIndex, final S3ConnectorNodeModel nodeModel) {
+        return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean hasDialog() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected NodeDialogPane createNodeDialogPane() {
+        return new S3ConnectorNodeDialog();
+    }
+
 }

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="org.knime.features.cloud.aws.filehandling"
-      label="KNIME Amazon S3 Filehandling"
+      label="KNIME Amazon S3 Connector (Labs)"
       version="4.2.0.qualifier"
       provider-name="KNIME AG, Zurich, Switzerland">
 
    <description>
-      This feature contains nodes for the Amazon S3 Connections for the NIO file handling
+      Provides the Amazon S3 Connector (Labs) node.
    </description>
 
    <copyright>

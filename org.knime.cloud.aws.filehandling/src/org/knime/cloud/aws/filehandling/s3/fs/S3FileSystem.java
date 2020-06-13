@@ -46,7 +46,7 @@
  * History
  *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.connections;
+package org.knime.cloud.aws.filehandling.s3.fs;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;

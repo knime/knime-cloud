@@ -44,19 +44,46 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Jun 14, 2020 (bjoern): created
+ *   04.09.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.nodes.S3connection;
+package org.knime.cloud.aws.filehandling.s3.fs;
 
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.util.Set;
+
+import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
 
 /**
- * Dummy node factory to keep workflows built with KNIME 4.1 running.
- * Due to a refactoring the node factory package and name have changed with
- * KNIME 4.2.
+ * Amazon S3 implementation of the {@link TempFileSeekableByteChannel}.
  *
- * @author Bjoern Lohrmann, KNIME GmbH
+ * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectionNodeFactory extends S3ConnectorNodeFactory {
+public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
 
+    /**
+     * Constructs an {@link TempFileSeekableByteChannel} for S3.
+     *
+     * @param file the file for the channel
+     * @param options the open options
+     * @throws IOException if an I/O Error occurred
+     */
+    public S3SeekableByteChannel(final S3Path file, final Set<? extends OpenOption> options) throws IOException {
+        super(file, options);
+    }
+
+    @Override
+    public void copyFromRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
+        Files.copy(remoteFile, tempFile);
+    }
+
+    @SuppressWarnings("resource")
+    @Override
+    public void copyToRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
+        remoteFile.getFileSystem().getClient().putObject(remoteFile.getBucketName(),
+            remoteFile.getBlobName(),
+            tempFile.toFile());
+    }
 }
