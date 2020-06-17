@@ -1,0 +1,6 @@
+autoEnabled=true
+eclipse.preferences.version=1
+idePrefixKey=
+projectKey=org.knime\:knime-cloud
+serverId=sonar.knime.com
+sqPrefixKey=org.knime.cloud.azure
