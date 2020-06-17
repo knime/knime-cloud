@@ -89,9 +89,15 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         final CloudConnectionInformation s3ConnectionInformation = new CloudConnectionInformation();
         s3ConnectionInformation.setHost(config.get("region"));
         s3ConnectionInformation.setProtocol("s3");
-        s3ConnectionInformation.setSwitchRole(true);
-        s3ConnectionInformation.setSwitchRoleAccount(config.get("roleSwitchAccount"));
-        s3ConnectionInformation.setSwitchRoleName(config.get("roleSwitchName"));
+        if (config.containsKey("roleSwitchAccount")) {
+            s3ConnectionInformation.setSwitchRole(true);
+            s3ConnectionInformation.setSwitchRoleAccount(config.get("roleSwitchAccount"));
+            s3ConnectionInformation.setSwitchRoleName(config.get("roleSwitchName"));
+        } else {
+            s3ConnectionInformation.setSwitchRole(false);
+            s3ConnectionInformation.setSwitchRoleAccount("");
+            s3ConnectionInformation.setSwitchRoleName("");
+        }
         s3ConnectionInformation.setUser(config.get("accessKeyId"));
         s3ConnectionInformation.setPassword(config.get("accessKeySecret"));
         return s3ConnectionInformation;
@@ -99,8 +105,10 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
 
     private static void validateConfiguration(final Map<String, String> config) {
         CheckUtils.checkArgumentNotNull(config.get("region"), "region must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("roleSwitchAccount"), "roleSwitchAccount must not be null");
-        CheckUtils.checkArgumentNotNull(config.get("roleSwitchName"), "roleSwitchName must not be null");
+        if (config.get("roleSwitchAccount") != null) {
+            CheckUtils.checkArgumentNotNull(config.get("roleSwitchName"),
+                "roleSwitchName must not be null if roleSwitchAccount is set");
+        }
         CheckUtils.checkArgumentNotNull(config.get("accessKeyId"), "accessKeyId must not be null");
         CheckUtils.checkArgumentNotNull(config.get("accessKeySecret"), "accessKeySecret must not be null");
         CheckUtils.checkArgumentNotNull(config.get("workingDirPrefix"), "workingDirPrefix must not be null");
