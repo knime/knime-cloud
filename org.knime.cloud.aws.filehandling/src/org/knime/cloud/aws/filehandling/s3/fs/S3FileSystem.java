@@ -55,9 +55,9 @@ import java.util.Collections;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
+import org.knime.filehandling.core.connections.FSCategory;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
-import org.knime.filehandling.core.defaultnodesettings.FileSystemChoice.Choice;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -134,7 +134,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     public static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
         // the connection information is the AWS region
         final String specifier = String.format("%s:%s", FS_TYPE, connectionInformation.getHost());
-        return new DefaultFSLocationSpec(Choice.CONNECTED_FS, specifier);
+        return new DefaultFSLocationSpec(FSCategory.CONNECTED, specifier);
     }
 
     private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation,
