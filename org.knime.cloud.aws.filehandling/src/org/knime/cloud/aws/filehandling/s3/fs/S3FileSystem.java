@@ -100,14 +100,13 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      * @param cacheTTL The time to live for cache entries in the attributes cache
      * @param normalizePaths Whether paths should be normalized.
      */
-    public S3FileSystem(final S3FileSystemProvider provider,
-        final CloudConnectionInformation connectionInformation,
+    public S3FileSystem(final CloudConnectionInformation connectionInformation,
         final ClientConfiguration clientConfig,
         final String workingDir,
         final long cacheTTL,
         final boolean normalizePaths) {
 
-        super(provider, //
+        super(new S3FileSystemProvider(), //
             connectionInformation.toURI(), //
             cacheTTL, //
             workingDir, //

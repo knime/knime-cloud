@@ -52,7 +52,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
@@ -71,17 +70,14 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -99,19 +95,9 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> {
+class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> {
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
-
-    static final String KEY_CONNECTION_INFORMATION = "connInfo";
-
-    static final String KEY_CLIENT_CONFIG = "clientConfig";
-
-    static final String KEY_WORKING_DIRECTORY = "workingDir";
-
-    static final String KEY_NORMALIZE_PATHS = "normalizePaths";
-
-    static final String KEY_CACHE_TTL_MILLIS = "cacheTTL";
 
     @Override
     public String getScheme() {
@@ -273,17 +259,6 @@ public class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileS
     private S3Path toS3Path(final Path path) {
         checkPathProvider(path);
         return (S3Path)path.normalize();
-    }
-
-    @Override
-    public S3FileSystem createFileSystem(final URI uri, final Map<String, ?> env) {
-        final CloudConnectionInformation connInfo = (CloudConnectionInformation) env.get(KEY_CONNECTION_INFORMATION);
-        final ClientConfiguration clientConfig = (ClientConfiguration) env.get(KEY_CLIENT_CONFIG);
-        final String workingDir = (String) env.get(KEY_WORKING_DIRECTORY);
-        final boolean normalizePaths = (boolean) env.get(KEY_NORMALIZE_PATHS);
-        final long cacheTTL = (long) env.get(KEY_CACHE_TTL_MILLIS);
-
-        return new S3FileSystem(this, connInfo, clientConfig, workingDir, cacheTTL, normalizePaths);
     }
 
     @Override

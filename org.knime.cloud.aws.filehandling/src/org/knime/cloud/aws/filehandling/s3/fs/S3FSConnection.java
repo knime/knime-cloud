@@ -49,8 +49,6 @@
 package org.knime.cloud.aws.filehandling.s3.fs;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
@@ -77,30 +75,22 @@ public class S3FSConnection implements FSConnection {
     /**
      * Creates a new {@link S3FSConnection} for the given connection information.
      *
-     * @param connectionInformation the cloud connection information
+     * @param connInfo the cloud connection information
      * @param clientConfig the {@link ClientConfiguration} to use
      * @param workingDirectory The working directory of the S3 file system.
      * @param normalizePaths
      * @throws IOException
      */
-    public S3FSConnection(final CloudConnectionInformation connectionInformation,
+    public S3FSConnection(final CloudConnectionInformation connInfo,
         final ClientConfiguration clientConfig,
         final String workingDirectory,
         final boolean normalizePaths) throws IOException {
 
-        CheckUtils.checkArgumentNotNull(connectionInformation, "CloudConnectionInformation must not be null");
+        CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
         CheckUtils.checkArgumentNotNull(clientConfig, "ClientConfiguration must not be null");
         CheckUtils.checkArgumentNotNull(workingDirectory, "Working directory must not be null");
 
-        final S3FileSystemProvider provider = new S3FileSystemProvider();
-
-        final Map<String,Object> env = new HashMap<>();
-        env.put(S3FileSystemProvider.KEY_CONNECTION_INFORMATION, connectionInformation);
-        env.put(S3FileSystemProvider.KEY_CLIENT_CONFIG, clientConfig);
-        env.put(S3FileSystemProvider.KEY_WORKING_DIRECTORY, workingDirectory);
-        env.put(S3FileSystemProvider.KEY_NORMALIZE_PATHS, m_normalizePaths);
-        env.put(S3FileSystemProvider.KEY_CACHE_TTL_MILLIS, CACHE_TTL_MILLIS);
-        m_fileSystem = provider.getOrCreateFileSystem(connectionInformation.toURI(), env);
+        m_fileSystem = new S3FileSystem(connInfo, clientConfig, workingDirectory, CACHE_TTL_MILLIS, normalizePaths);
     }
 
     public S3FSConnection(final CloudConnectionInformation connectionInformation) throws IOException {
