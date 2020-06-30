@@ -391,7 +391,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
 
     @Override
     protected Iterator<S3Path> createPathIterator(final S3Path dir, final Filter<? super Path> filter) throws IOException {
-        return new S3PathIterator(dir.toDirectoryPath(), filter);
+        return S3PathIteratorFactory.create(dir.toDirectoryPath(), filter);
     }
 
     @Override
