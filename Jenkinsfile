@@ -32,7 +32,7 @@ try {
             // 'knime-js-core','knime-svg', 'knime-product'
             //
             // All features (not plug-ins!) in the specified repositories will be installed.
-            repositories: ['knime-cloud'],
+            repositories: ['knime-cloud','knime-filehandling','knime-textprocessing','knime-database','knime-kerberos','knime-dl4j','knime-excel','knime-js-base'],
             // an optional list of additional bundles/plug-ins from the repositories above that must be installed
             ius: []
         ],
