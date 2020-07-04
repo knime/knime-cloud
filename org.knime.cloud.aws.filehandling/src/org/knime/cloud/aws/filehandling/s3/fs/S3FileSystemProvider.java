@@ -64,6 +64,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
@@ -165,7 +166,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
 
     @Override
     protected void moveInternal(final S3Path source, final S3Path target, final CopyOption... options) throws IOException {
-        if (source.isDirectory()) {
+        if (isDirectory(source)) {
             moveDir(source, target);
             return;
         }
@@ -181,29 +182,34 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         delete(source);
     }
 
+    private boolean isDirectory(final S3Path path) throws IOException {
+        return readAttributes(path, BasicFileAttributes.class).isDirectory();
+    }
+
     private void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path)
         throws DirectoryNotEmptyException {
+        S3Path sourceDirPath = sourceS3Path.toDirectoryPath();
+        S3Path targetDirPath = targetS3Path.toDirectoryPath();
 
-        if (!dirIsEmpty(targetS3Path)) {
-            throw new DirectoryNotEmptyException(targetS3Path.toString());
+        if (!dirIsEmpty(targetDirPath)) {
+            throw new DirectoryNotEmptyException(targetDirPath.toString());
         }
 
         // We have to move every blob with this prefix
-        final AmazonS3 client = sourceS3Path.getFileSystem().getClient();
+        final AmazonS3 client = sourceDirPath.getFileSystem().getClient();
 
         final ListObjectsV2Request listRequest = new ListObjectsV2Request();
-        listRequest.withBucketName(sourceS3Path.getBucketName()).withPrefix(sourceS3Path.getBlobName())
-            .withDelimiter(sourceS3Path.getFileSystem().getSeparator()).withEncodingType("url")
-            .withStartAfter(sourceS3Path.getBlobName());
+        listRequest.withBucketName(sourceDirPath.getBucketName()).withPrefix(sourceDirPath.getBlobName())
+            .withEncodingType("url");
 
         final ListObjectsV2Result list = client.listObjectsV2(listRequest);
         list.getObjectSummaries().forEach(p -> {
-            client.copyObject(p.getBucketName(), p.getKey(), targetS3Path.getBucketName(),
-                p.getKey().replace(sourceS3Path.getBlobName(), targetS3Path.getBlobName() + S3FileSystem.PATH_SEPARATOR));
+            client.copyObject(p.getBucketName(), p.getKey(), targetDirPath.getBucketName(),
+                p.getKey().replace(sourceDirPath.getBlobName(), targetDirPath.getBlobName()));
 
             client.deleteObject(p.getBucketName(), p.getKey());
-            sourceS3Path.getFileSystem()
-                .removeFromAttributeCache(new S3Path(sourceS3Path.getFileSystem(), p.getBucketName(), p.getKey()));
+            sourceDirPath.getFileSystem()
+                .removeFromAttributeCache(new S3Path(sourceDirPath.getFileSystem(), p.getBucketName(), p.getKey()));
         });
     }
 
