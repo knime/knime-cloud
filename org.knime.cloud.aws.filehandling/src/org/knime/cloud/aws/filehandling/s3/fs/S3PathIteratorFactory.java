@@ -163,7 +163,7 @@ public abstract class S3PathIteratorFactory {
                 nextPage.add(getPathFromPrefix(commonPrefix));
             }
 
-            m_continuationToken = m_objectsListing.getContinuationToken();
+            m_continuationToken = m_objectsListing.getNextContinuationToken();
 
             return nextPage.iterator();
         }

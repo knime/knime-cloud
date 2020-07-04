@@ -116,7 +116,7 @@ public class S3PathIteratorFactoryTest {
         final ListObjectsV2Result mockResult1 = new ListObjectsV2Result();
         mockResult1.setBucketName("mockbucket");
         mockResult1.setCommonPrefixes(Collections.singletonList("prefix1/"));
-        mockResult1.setContinuationToken("mocktoken");
+        mockResult1.setNextContinuationToken("mocktoken");
 
         final ListObjectsV2Result mockResult2 = new ListObjectsV2Result();
         mockResult2.setBucketName("mockbucket");
