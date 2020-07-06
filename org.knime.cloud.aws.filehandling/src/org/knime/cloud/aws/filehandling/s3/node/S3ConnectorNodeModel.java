@@ -64,7 +64,6 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
@@ -73,7 +72,6 @@ import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 /**
@@ -84,7 +82,7 @@ public class S3ConnectorNodeModel extends NodeModel {
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
-    private final SettingsModelIntegerBounded m_socketTimeout = createConnectionTimeoutModel();
+    private S3ConnectorNodeSettings m_settings = new S3ConnectorNodeSettings();
 
     private S3FSConnection m_fsConn;
 
@@ -97,14 +95,6 @@ public class S3ConnectorNodeModel extends NodeModel {
      */
     public S3ConnectorNodeModel() {
         super(new PortType[]{AmazonConnectionInformationPortObject.TYPE}, new PortType[]{FileSystemPortObject.TYPE});
-    }
-
-    /**
-     * @return the connection timeout in seconds settings model
-     */
-    static SettingsModelIntegerBounded createConnectionTimeoutModel() {
-        return new SettingsModelIntegerBounded("readWriteTimeoutInSeconds",
-            Math.max(1, ClientConfiguration.DEFAULT_SOCKET_TIMEOUT / 1000), 0, Integer.MAX_VALUE);
     }
 
     @Override
@@ -128,7 +118,7 @@ public class S3ConnectorNodeModel extends NodeModel {
         //TODO: Test if connection is available and if switch role is required!!!
 
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-        m_fsConn = new S3FSConnection(conInfo, getClientConfig(), S3FileSystem.PATH_SEPARATOR, true);
+        m_fsConn = new S3FSConnection(conInfo, m_settings);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
 
         if (conInfo.isUseAnonymous()) {
@@ -156,15 +146,6 @@ public class S3ConnectorNodeModel extends NodeModel {
         }
     }
 
-    private ClientConfiguration getClientConfig() {
-        final int socketTimeout = m_socketTimeout.getIntValue() * 1000;
-        return new ClientConfiguration()
-            .withConnectionTimeout(m_awsConnectionInfo.getConnectionInformation().getTimeout())
-            .withSocketTimeout(socketTimeout)
-            .withConnectionTTL(socketTimeout);
-
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -188,7 +169,7 @@ public class S3ConnectorNodeModel extends NodeModel {
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
-        m_socketTimeout.saveSettingsTo(settings);
+        m_settings.saveSettingsTo(settings);
     }
 
     /**
@@ -196,7 +177,7 @@ public class S3ConnectorNodeModel extends NodeModel {
      */
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_socketTimeout.validateSettings(settings);
+        m_settings.validateSettings(settings);
     }
 
     /**
@@ -204,7 +185,7 @@ public class S3ConnectorNodeModel extends NodeModel {
      */
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_socketTimeout.loadSettingsFrom(settings);
+        m_settings.loadSettingsFrom(settings);
     }
 
     /**

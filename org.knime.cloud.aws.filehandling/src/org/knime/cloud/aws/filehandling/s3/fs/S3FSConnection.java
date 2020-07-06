@@ -50,6 +50,7 @@ package org.knime.cloud.aws.filehandling.s3.fs;
 
 import java.io.IOException;
 
+import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.FileSystemBrowser;
@@ -70,31 +71,39 @@ public class S3FSConnection implements FSConnection {
 
     private final S3FileSystem m_fileSystem;
 
-    private final boolean m_normalizePaths = true;
-
     /**
      * Creates a new {@link S3FSConnection} for the given connection information.
      *
      * @param connInfo the cloud connection information
-     * @param clientConfig the {@link ClientConfiguration} to use
-     * @param workingDirectory The working directory of the S3 file system.
-     * @param normalizePaths
+     * @param settings the node settings
      * @throws IOException
      */
     public S3FSConnection(final CloudConnectionInformation connInfo,
-        final ClientConfiguration clientConfig,
-        final String workingDirectory,
-        final boolean normalizePaths) throws IOException {
+        final S3ConnectorNodeSettings settings) throws IOException {
 
         CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
-        CheckUtils.checkArgumentNotNull(clientConfig, "ClientConfiguration must not be null");
-        CheckUtils.checkArgumentNotNull(workingDirectory, "Working directory must not be null");
+        CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
 
-        m_fileSystem = new S3FileSystem(connInfo, clientConfig, workingDirectory, CACHE_TTL_MILLIS, normalizePaths);
+        ClientConfiguration clientConfig = createClientConfig(settings, connInfo);
+
+        m_fileSystem = new S3FileSystem(connInfo, clientConfig, settings.getWorkingDirectory(), CACHE_TTL_MILLIS, settings.getNormalizePath());
     }
 
-    public S3FSConnection(final CloudConnectionInformation connectionInformation) throws IOException {
-        this(connectionInformation, new ClientConfiguration(), S3FileSystem.PATH_SEPARATOR, true);
+    /**
+     * @param connInfo the cloud connection information
+     * @throws IOException
+     */
+    public S3FSConnection(final CloudConnectionInformation connInfo) throws IOException {
+        this(connInfo, new S3ConnectorNodeSettings());
+    }
+
+    private static ClientConfiguration createClientConfig(final S3ConnectorNodeSettings settings, final CloudConnectionInformation connInfo) {
+        final int socketTimeout = settings.getSocketTimeout() * 1000;
+        return new ClientConfiguration()
+            .withConnectionTimeout(connInfo.getTimeout())
+            .withSocketTimeout(socketTimeout)
+            .withConnectionTTL(socketTimeout);
+
     }
 
     @Override

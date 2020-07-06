@@ -53,12 +53,11 @@ import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializerProvider;
-
-import com.amazonaws.ClientConfiguration;
 
 /**
  * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection
@@ -79,8 +78,11 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         final String workingDir =
             generateRandomizedWorkingDir(config.get("workingDirPrefix"), S3FileSystem.PATH_SEPARATOR);
 
-        final S3FSConnection s3Connection =
-            new S3FSConnection(s3ConnectionInformation, getClientConfig(), workingDir, true);
+        S3ConnectorNodeSettings settings = new S3ConnectorNodeSettings();
+        settings.getWorkingDirectoryModel().setStringValue(workingDir);
+        settings.getSocketTimeoutModel().setIntValue(CONNECTION_TIMEOUT);
+
+        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, settings);
 
         return new S3FSTestInitializer(s3Connection);
     }
@@ -100,6 +102,7 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         }
         s3ConnectionInformation.setUser(config.get("accessKeyId"));
         s3ConnectionInformation.setPassword(config.get("accessKeySecret"));
+        s3ConnectionInformation.setTimeout(CONNECTION_TIMEOUT);
         return s3ConnectionInformation;
     }
 
@@ -112,13 +115,6 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         CheckUtils.checkArgumentNotNull(config.get("accessKeyId"), "accessKeyId must not be null");
         CheckUtils.checkArgumentNotNull(config.get("accessKeySecret"), "accessKeySecret must not be null");
         CheckUtils.checkArgumentNotNull(config.get("workingDirPrefix"), "workingDirPrefix must not be null");
-    }
-
-    private static ClientConfiguration getClientConfig() {
-        return new ClientConfiguration()
-            .withConnectionTimeout(CONNECTION_TIMEOUT)
-            .withSocketTimeout(CONNECTION_TIMEOUT)
-            .withConnectionTTL(CONNECTION_TIMEOUT);
     }
 
     @Override

@@ -16,10 +16,31 @@
         	<p>
         		For further documentation please take a look at the <a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html">AWS Documentation</a>.
         	</p>
+        	<p><b>Path syntax:</b> Paths for Amazon S3 are specified with a UNIX-like syntax, /mybucket/myfolder/myfile. An absolute
+            for S3 consists of:
+                <ol>
+                    <li>A leading slash ("/").</li>
+                    <li>Followed by the name of a bucket ("mybucket" in the above example), followed by a slash.</li>
+                    <li>Followed by the name of an object within the bucket ("myfolder/myfile" in the above example).</li>
+                </ol>
+            </p>
         </intro>
-        <option name="Read/write timeout in seconds">The socket read/write timeout. For further details see the 
-            <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html#setSocketTimeout-int-">S3 documentation</a>.
-        </option>
+        <tab name="Settings">
+        	<option name="Working directory">
+	            Specifies the <i>working directory</i> using the path syntax explained above. The working directory must be specified as an absolute path. A working directory allows downstream
+	            nodes to access files/folders using <i>relative</i> paths, i.e. paths that do not have a leading slash. If not specified, the default working directory
+	            is "/".
+	        </option>
+	        <option name="Normalize paths">
+	            Determines if the path normalization should be applied. Path normalization eliminates redundant components of a path like, e.g. /a/../b/./c" can be normalized to "/b/c".
+	            When these redundant components like "../" or "." are part of an existing object, then normalization must be deactivated in order to access them properly.
+	        </option>
+        </tab>
+        <tab name="Advanced">
+        	<option name="Read/write timeout in seconds">The socket read/write timeout. For further details see the 
+            	<a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html#setSocketTimeout-int-">S3 documentation</a>.
+        	</option>
+        </tab>
     </fullDescription>
 	<ports>
 	     <inPort index="0" name="Connection information port">

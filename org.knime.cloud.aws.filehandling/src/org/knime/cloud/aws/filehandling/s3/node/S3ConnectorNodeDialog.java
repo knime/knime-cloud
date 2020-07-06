@@ -48,18 +48,130 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
-import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.io.IOException;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.event.ChangeListener;
+
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.NotConfigurableException;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
+import org.knime.core.node.port.PortObjectSpec;
+import org.knime.filehandling.core.connections.FSConnection;
+import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
 
 /**
  * S3 connector node dialog.
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectorNodeDialog extends DefaultNodeSettingsPane {
+public class S3ConnectorNodeDialog extends NodeDialogPane {
+
+    private final ChangeListener m_workdirListener;
+    private final S3ConnectorNodeSettings m_settings = new S3ConnectorNodeSettings();
+    private final WorkingDirectoryChooser m_workingDirChooser =
+        new WorkingDirectoryChooser("s3.workingDir", this::createFSConnection);
+
+    private CloudConnectionInformation m_connInfo;
 
     S3ConnectorNodeDialog() {
-        addDialogComponent(new DialogComponentNumber(S3ConnectorNodeModel.createConnectionTimeoutModel(),
-            "Read/write timeout in seconds: ", 10, 5));
+        m_workdirListener = e -> m_settings.getWorkingDirectoryModel()
+            .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
+
+        addTab("Settings", createSettingsPanel());
+        addTab("Advanced", createTimeoutsPanel());
+    }
+
+    private JComponent createSettingsPanel() {
+        DialogComponentBoolean normalizePath =
+            new DialogComponentBoolean(m_settings.getNormalizePathModel(), "Normalize Paths");
+        normalizePath.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        c.weighty = 0;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.insets = new Insets(0, 10, 0, 0);
+        panel.add(m_workingDirChooser, c);
+
+        c.gridy +=1;
+        c.insets = new Insets(0, 0, 0, 0);
+        panel.add(normalizePath.getComponentPanel(), c);
+
+        c.fill = GridBagConstraints.BOTH;
+        c.weighty = 1;
+        c.gridy +=1;
+        panel.add(Box.createVerticalGlue(), c);
+
+        panel.setBorder(BorderFactory.createTitledBorder("File system settings"));
+        return panel;
+    }
+
+    private JComponent createTimeoutsPanel() {
+        DialogComponentNumber socketTimeout =
+                new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
+
+        socketTimeout.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
+        socketTimeout.getComponentPanel().setBorder(BorderFactory.createTitledBorder("Connection settings"));
+
+        return socketTimeout.getComponentPanel();
+    }
+
+    private FSConnection createFSConnection() throws IOException {
+        S3ConnectorNodeSettings clonedSettings = m_settings.clone();
+        return new S3FSConnection(m_connInfo, clonedSettings);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        m_settings.saveSettingsTo(settings);
+        m_workingDirChooser.addCurrentSelectionToHistory();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs) throws NotConfigurableException {
+        try {
+            m_settings.loadSettingsFrom(settings);
+        } catch (InvalidSettingsException ex) {
+            // ignore
+        }
+
+        m_connInfo = ((CloudConnectionInformationPortObjectSpec)specs[0]).getConnectionInformation();
+
+        settingsLoaded();
+    }
+
+    private void settingsLoaded() {
+        m_workingDirChooser.setSelectedWorkingDirectory(m_settings.getWorkingDirectoryModel().getStringValue());
+        m_workingDirChooser.addListener(m_workdirListener);
+    }
+
+    @Override
+    public void onClose() {
+        m_workingDirChooser.removeListener(m_workdirListener);
+        m_workingDirChooser.onClose();
     }
 }
