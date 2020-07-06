@@ -53,6 +53,7 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -60,6 +61,8 @@ import org.knime.filehandling.core.connections.base.BasePathIterator;
 import org.knime.filehandling.core.connections.base.PagedPathIterator;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
+import com.amazonaws.AbortedException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -103,15 +106,23 @@ public abstract class S3PathIteratorFactory {
             @SuppressWarnings("resource")
             final S3FileSystem fs = path.getFileSystem();
 
-            final ArrayList<S3Path> bucketPaths = new ArrayList<>();
-            for (final Bucket bucket : fs.getClient().listBuckets()) {
-                final S3Path bucketPath = fs.getPath(fs.getSeparator() + bucket.getName(), fs.getSeparator());
-                final BaseFileAttributes attributes =
-                    S3FileSystemProvider.createBucketFileAttributes(bucket, bucketPath);
-                fs.addToAttributeCache(bucketPath, attributes);
-                bucketPaths.add(bucketPath);
+            try {
+                final ArrayList<S3Path> bucketPaths = new ArrayList<>();
+                for (final Bucket bucket : fs.getClient().listBuckets()) {
+                    final S3Path bucketPath = fs.getPath(fs.getSeparator() + bucket.getName(), fs.getSeparator());
+                    final BaseFileAttributes attributes =
+                        S3FileSystemProvider.createBucketFileAttributes(bucket, bucketPath);
+                    fs.addToAttributeCache(bucketPath, attributes);
+                    bucketPaths.add(bucketPath);
+                }
+                setFirstPage(bucketPaths.iterator());
+            } catch (final SdkClientException e) {
+                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                    // ignore
+                } else {
+                    throw e;
+                }
             }
-            setFirstPage(bucketPaths.iterator());
         }
     }
 
@@ -151,21 +162,27 @@ public abstract class S3PathIteratorFactory {
                 .withStartAfter(m_path.getBlobName()) //
                 .withContinuationToken(m_continuationToken);
 
-            final ListObjectsV2Result m_objectsListing = fs.getClient().listObjectsV2(listRequest);
+            try {
+                final ListObjectsV2Result m_objectsListing = fs.getClient().listObjectsV2(listRequest);
+                final List<S3Path> nextPage = new ArrayList<>();
 
-            final List<S3Path> nextPage = new ArrayList<>();
+                for (final S3ObjectSummary objSummary : m_objectsListing.getObjectSummaries()) {
+                    nextPage.add(getPathFromSummary(objSummary));
+                }
 
-            for (final S3ObjectSummary objSummary : m_objectsListing.getObjectSummaries()) {
-                nextPage.add(getPathFromSummary(objSummary));
+                for (final String commonPrefix : m_objectsListing.getCommonPrefixes()) {
+                    nextPage.add(getPathFromPrefix(commonPrefix));
+                }
+
+                m_continuationToken = m_objectsListing.getNextContinuationToken();
+                return nextPage.iterator();
+            } catch (final SdkClientException e) {
+                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                    return Collections.emptyIterator();
+                } else {
+                    throw e;
+                }
             }
-
-            for (final String commonPrefix : m_objectsListing.getCommonPrefixes()) {
-                nextPage.add(getPathFromPrefix(commonPrefix));
-            }
-
-            m_continuationToken = m_objectsListing.getNextContinuationToken();
-
-            return nextPage.iterator();
         }
 
         @SuppressWarnings("resource")
