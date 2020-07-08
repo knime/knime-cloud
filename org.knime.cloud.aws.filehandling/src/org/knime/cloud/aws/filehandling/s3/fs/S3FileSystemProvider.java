@@ -59,7 +59,6 @@ import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -211,14 +210,6 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             sourceDirPath.getFileSystem()
                 .removeFromAttributeCache(new S3Path(sourceDirPath.getFileSystem(), p.getBucketName(), p.getKey()));
         });
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public FileStore getFileStore(final Path path) throws IOException {
-        return path.getFileSystem().getFileStores().iterator().next();
     }
 
     @Override
