@@ -67,7 +67,7 @@ import com.amazonaws.ClientConfiguration;
  */
 public class S3FSConnection implements FSConnection {
 
-    private final static long CACHE_TTL_MILLIS = 60000;
+    private static final long CACHE_TTL_MILLIS = 6000;
 
     private final S3FileSystem m_fileSystem;
 
