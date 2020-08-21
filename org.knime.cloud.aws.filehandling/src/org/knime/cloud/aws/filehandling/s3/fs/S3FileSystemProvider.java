@@ -69,12 +69,12 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
+import org.knime.filehandling.core.connections.base.CloseablePathIterator;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
 import com.amazonaws.AmazonServiceException;
@@ -387,7 +387,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     }
 
     @Override
-    protected Iterator<S3Path> createPathIterator(final S3Path dir, final Filter<? super Path> filter) throws IOException {
+    protected CloseablePathIterator<S3Path> createPathIterator(final S3Path dir, final Filter<? super Path> filter) throws IOException {
         return S3PathIteratorFactory.create(dir.toDirectoryPath(), filter);
     }
 

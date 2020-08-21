@@ -58,6 +58,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.knime.filehandling.core.connections.base.BasePathIterator;
+import org.knime.filehandling.core.connections.base.CloseablePathIterator;
 import org.knime.filehandling.core.connections.base.PagedPathIterator;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
@@ -83,7 +84,7 @@ public abstract class S3PathIteratorFactory {
      * @return {@link S3PathIterator} instance.
      * @throws IOException
      */
-    public static Iterator<S3Path> create(final S3Path path, final Filter<? super Path> filter) throws IOException {
+    public static CloseablePathIterator<S3Path> create(final S3Path path, final Filter<? super Path> filter) throws IOException {
         if (path.isRoot()) {
             return new BucketIterator(path, filter);
         } else {
