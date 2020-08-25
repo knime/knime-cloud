@@ -54,7 +54,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
@@ -214,33 +213,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
 
     @Override
     protected void checkAccessInternal(final S3Path s3Path, final AccessMode... modes) throws IOException {
-        if (s3Path.isRoot() || s3Path.isDirectory()) {
-            return;
-        }
-
-        AccessControlList acl;
-        try {
-            acl = s3Path.getFileSystem().getClient().getObjectAcl(s3Path.getBucketName(), s3Path.getBlobName());
-        } catch (final AmazonServiceException ex) {
-            throw new AccessDeniedException(ex.getMessage());
-        }
-        for (final AccessMode mode : modes) {
-            switch (mode) {
-                case EXECUTE:
-                    throw new AccessDeniedException(s3Path.toString());
-                case READ:
-                    if (!containsPermission(EnumSet.of(Permission.FullControl, Permission.Read), acl)) {
-                        throw new AccessDeniedException(s3Path.toString(), null, "file is not readable");
-                    }
-                    break;
-                case WRITE:
-                    if (!containsPermission(EnumSet.of(Permission.FullControl, Permission.Write), acl)) {
-                        throw new AccessDeniedException(s3Path.toString(), null, "file is not readable");
-                    }
-                    break;
-            }
-        }
-
+        // do nothing, too complex
     }
 
     private static boolean containsPermission(final EnumSet<Permission> permissions, final AccessControlList acl) {
