@@ -73,14 +73,18 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  *
  * @author Bjoern Lohrmann, KNIME GmbH
  */
-public abstract class S3PathIteratorFactory {
+final class S3PathIteratorFactory {
+
+    private S3PathIteratorFactory() {
+
+    }
 
     /**
      * Creates a new iterator instance.
      *
      * @param path path to iterate.
      * @param filter {@link Filter} instance.
-     * @return {@link S3PathIterator} instance.
+     * @return {@link Iterator} over {@link S3Path}s.
      * @throws IOException
      */
     public static Iterator<S3Path> create(final S3Path path, final Filter<? super Path> filter) throws IOException {
@@ -103,7 +107,6 @@ public abstract class S3PathIteratorFactory {
         protected BucketIterator(final S3Path path, final Filter<? super Path> filter) throws IOException {
             super(path, filter);
 
-            @SuppressWarnings("resource")
             final S3FileSystem fs = path.getFileSystem();
 
             try {

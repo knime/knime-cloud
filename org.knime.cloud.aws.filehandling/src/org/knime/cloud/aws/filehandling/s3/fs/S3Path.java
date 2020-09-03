@@ -58,7 +58,7 @@ import org.knime.filehandling.core.connections.base.BlobStorePath;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3Path extends BlobStorePath {
+public class S3Path extends BlobStorePath<S3Path, S3FileSystem> {
 
     /**
      * Creates an S3Path from the given path string
@@ -83,11 +83,6 @@ public class S3Path extends BlobStorePath {
     }
 
     @Override
-    public S3FileSystem getFileSystem() {
-        return (S3FileSystem)super.getFileSystem();
-    }
-
-    @Override
     protected boolean lastComponentUsesRelativeNotation() {
         if (getFileSystem().normalizePaths()) {
             return super.lastComponentUsesRelativeNotation();
@@ -96,7 +91,7 @@ public class S3Path extends BlobStorePath {
     }
 
     @Override
-    public Path normalize() {
+    public S3Path normalize() {
         if (getFileSystem().normalizePaths()) {
             return super.normalize();
         } else {
@@ -105,7 +100,7 @@ public class S3Path extends BlobStorePath {
     }
 
     @Override
-    public Path relativize(final Path other) {
+    public S3Path relativize(final Path other) {
         if (other.getFileSystem() != m_fileSystem) {
             throw new IllegalArgumentException("Cannot relativize paths across different file systems.");
         }
@@ -139,12 +134,11 @@ public class S3Path extends BlobStorePath {
         return super.relativize(other);
     }
 
-
     /**
      * @return an {@link S3Path} for which {@link #isDirectory()} returns true.
      */
     @Override
     public S3Path toDirectoryPath() {
-        return (S3Path) super.toDirectoryPath();
+        return (S3Path)super.toDirectoryPath();
     }
 }
