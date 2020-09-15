@@ -379,7 +379,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
                 0L, //
                 false, //
                 false, //
-                new S3PosixAttributesFetcher());
+                null);
         }
     }
 
@@ -447,7 +447,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             size, //
             false, //
             false, //
-            new S3PosixAttributesFetcher());
+            null);
     }
 
     /**
@@ -536,6 +536,6 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             0L,//
             false,//
             false,//
-            new S3PosixAttributesFetcher());
+            null);
     }
 }

@@ -190,7 +190,7 @@ public abstract class S3PathIteratorFactory {
             final S3Path path = new S3Path(m_path.getFileSystem(), m_path.getBucketName(), commonPrefix);
             final FileTime lastModified = FileTime.fromMillis(0L);
             final BaseFileAttributes attributes = new BaseFileAttributes(false, path, lastModified, lastModified,
-                lastModified, 0, false, false, new S3PosixAttributesFetcher());
+                lastModified, 0, false, false, null);
             m_path.getFileSystem().addToAttributeCache(path, attributes);
             return path;
         }
@@ -201,7 +201,7 @@ public abstract class S3PathIteratorFactory {
             final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
 
             final BaseFileAttributes attributes = new BaseFileAttributes(!path.isDirectory(), path, lastModified,
-                lastModified, lastModified, nextSummary.getSize(), false, false, new S3PosixAttributesFetcher());
+                lastModified, lastModified, nextSummary.getSize(), false, false, null);
             m_path.getFileSystem().addToAttributeCache(path, attributes);
 
             return path;
