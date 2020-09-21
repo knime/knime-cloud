@@ -140,7 +140,7 @@ public class RedshiftDBSQLDialect extends PostgreSQLDBSQLDialect {
             SQL92DBSQLDialect.ATTRIBUTE_SYNTAX_TABLE_REFERENCE_KEYWORD, "AS");
 
         builder.add(Accessibility.HIDDEN,
-            SQL92DBSQLDialect.ATTRIBUTE_SYNTAX_CREATE_TABLE_TEMPORARY, "GLOBAL TEMPORARY");
+            SQL92DBSQLDialect.ATTRIBUTE_SYNTAX_CREATE_TABLE_TEMPORARY, "TEMPORARY");
 
         builder.add(Accessibility.HIDDEN,
             SQL92DBSQLDialect.ATTRIBUTE_SYNTAX_MINUS_OPERATOR_KEYWORD, "EXCEPT");
