@@ -87,7 +87,6 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 /**
  * File system provider for {@link S3FileSystem}s.
@@ -412,24 +411,17 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         }
 
         // directory case (2): last possibility, when neither "/path" nor "/path/" exist, it could be
-        // that the "directory" is just the common prefix of some objects. In this case we use the
-        // metadata of the first object.
+        // that the "directory" is just the common prefix of some objects.
 
-        final ListObjectsV2Request request = new ListObjectsV2Request();
-        request.withBucketName(path.getBucketName())//
-            .withPrefix(dirPath.getBlobName())//
-            .setMaxKeys(1);
-
-        final ListObjectsV2Result result = client.listObjectsV2(request);
-        if (!result.getObjectSummaries().isEmpty()) {
-            final S3ObjectSummary firstObjectSummary = result.getObjectSummaries().get(0);
-            final ObjectMetadata firstObjectMetaData = client.getObjectMetadata(//
-                firstObjectSummary.getBucketName(),//
-                firstObjectSummary.getKey());
-            return convertMetaDataToFileAttributes(dirPath, firstObjectMetaData);
-        }
-
-        throw new NoSuchFileException(path.toString());
+        return new BaseFileAttributes(false, //
+            path, //
+            FileTime.fromMillis(0), //
+            FileTime.fromMillis(0), //
+            FileTime.fromMillis(0), //
+            0L, //
+            false, //
+            false, //
+            null);
     }
 
     private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path, final ObjectMetadata objectMetadata) throws NoSuchFileException {
