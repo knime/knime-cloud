@@ -21,6 +21,9 @@
 	</properties>
 
 	<modules>
+        <!-- this needs to go first because it ensures that jar files required by AWS SDK are present -->
+        <module>org.knime.cloud.aws.filehandling/libs/fetch_jars</module>
+		
 		<module>org.knime.cloud.aws</module>
 		<module>org.knime.cloud.aws.filehandling</module>
 		<module>org.knime.cloud.aws.filehandling.tests</module>

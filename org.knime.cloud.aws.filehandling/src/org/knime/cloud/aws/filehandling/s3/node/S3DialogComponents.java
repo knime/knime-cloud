@@ -51,9 +51,9 @@ package org.knime.cloud.aws.filehandling.s3.node;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
@@ -73,8 +73,8 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.core.util.Pair;
 
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.ServiceMetadata;
 
 /**
  * Copy of final class in cloud repo to override the auth methods
@@ -116,7 +116,7 @@ public class S3DialogComponents extends ConnectionInformationCloudComponents<AWS
     public S3DialogComponents(final AWSConnectionInformationSettings settings,
         final HashMap<AuthenticationType, Pair<String, String>> nameMap, final boolean encryptionDialog) {
         super(settings, nameMap);
-        final ArrayList<String> regions = loadRegions();
+        final List<String> regions = loadRegions();
         m_region = new DialogComponentStringSelection(settings.getRegionModel(), "Region", regions, false);
         m_sSEncrpytion = encryptionDialog
             ? new DialogComponentBoolean(settings.getSSEncryptionModel(), "Use SSE (Server Side Encryption)") : null;
@@ -126,22 +126,11 @@ public class S3DialogComponents extends ConnectionInformationCloudComponents<AWS
         m_useEncryptionDialog = encryptionDialog;
     }
 
-    private ArrayList<String> loadRegions() {
-        final AWSConnectionInformationSettings model = getSettings();
-        final ArrayList<String> regionNames = new ArrayList<>();
-        final String prefix = model.getPrefix();
-        if (prefix != null && !prefix.isEmpty()) {
-            for (final Regions regions : Regions.values()) {
-                final Region region = Region.getRegion(regions);
-                if (region.isServiceSupported(model.getPrefix())) {
-                    final String reg = region.getName();
-                    regionNames.add(reg);
-                }
-            }
-        } else {
-            Stream.of(Regions.values()).forEach(reg -> regionNames.add(reg.getName()));
-        }
-        return regionNames;
+    private List<String> loadRegions() {
+        String prefix = getSettings().getPrefix();
+        List<Region> regions =
+            prefix == null || prefix.isEmpty() ? Region.regions() : ServiceMetadata.of(prefix).regions();
+        return regions.stream().map(Region::id).collect(Collectors.toList());
     }
 
     /**

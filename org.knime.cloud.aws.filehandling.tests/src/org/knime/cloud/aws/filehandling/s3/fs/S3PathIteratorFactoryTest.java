@@ -58,18 +58,17 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
 /**
  * Tests the directory listing functionality of the S3 file system, in particular the paging.
@@ -82,23 +81,22 @@ public class S3PathIteratorFactoryTest {
 
     private S3FileSystem m_fs;
 
-    private AmazonS3 m_client;
+    private S3Client m_client;
 
     @Before
     public void beforeTestCase() {
         m_fs = mock(S3FileSystem.class);
         when(m_fs.getSeparator()).thenReturn(S3FileSystem.PATH_SEPARATOR);
 
-        m_client = mock(AmazonS3.class);
+        m_client = mock(S3Client.class);
         when(m_fs.getClient()).thenReturn(m_client);
     }
 
     @Test
     public void test_root_path_iterator() throws IOException {
         // setup fixture
-        final List<Bucket> buckets = new ArrayList<>();
-        buckets.add(createDummyBucket("mockbucket"));
-        when(m_client.listBuckets()).thenReturn(buckets);
+        ListBucketsResponse response = ListBucketsResponse.builder().buckets(createDummyBucket("mockbucket")).build();
+        when(m_client.listBuckets()).thenReturn(response);
 
         final S3Path bucketPath = new S3Path(m_fs, "/mockbucket/", new String[0]);
         when(m_fs.getPath("/mockbucket", "/")).thenReturn(bucketPath);
@@ -113,14 +111,14 @@ public class S3PathIteratorFactoryTest {
     @Test
     public void test_bucket_path_iterator_with_continuation() throws IOException {
         // setup fixture
-        final ListObjectsV2Result mockResult1 = new ListObjectsV2Result();
-        mockResult1.setBucketName("mockbucket");
-        mockResult1.setCommonPrefixes(Collections.singletonList("prefix1/"));
-        mockResult1.setNextContinuationToken("mocktoken");
+        final ListObjectsV2Response mockResult1 = ListObjectsV2Response.builder()//
+            .commonPrefixes(CommonPrefix.builder().prefix("prefix1/").build())//
+            .nextContinuationToken("mocktoken")//
+            .build();
 
-        final ListObjectsV2Result mockResult2 = new ListObjectsV2Result();
-        mockResult2.setBucketName("mockbucket");
-        mockResult2.setCommonPrefixes(Collections.singletonList("prefix2/"));
+        final ListObjectsV2Response mockResult2 = ListObjectsV2Response.builder()//
+                .commonPrefixes(CommonPrefix.builder().prefix("prefix2/").build())//
+                .build();
 
         when(m_client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(mockResult1).thenReturn(mockResult2);
 
@@ -133,8 +131,7 @@ public class S3PathIteratorFactoryTest {
         assertFalse(iter.hasNext());
     }
 
-
     private Bucket createDummyBucket(final String name) {
-        return new Bucket(name);
+        return Bucket.builder().name(name).build();
     }
 }

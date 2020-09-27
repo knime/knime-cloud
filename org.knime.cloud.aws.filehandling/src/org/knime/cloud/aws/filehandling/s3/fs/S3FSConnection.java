@@ -58,8 +58,6 @@ import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
 
-import com.amazonaws.ClientConfiguration;
-
 /**
  * The Amazon S3 implementation of the {@link FSConnection} interface.
  *
@@ -84,9 +82,8 @@ public class S3FSConnection implements FSConnection {
         CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
         CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
 
-        ClientConfiguration clientConfig = createClientConfig(settings, connInfo);
 
-        m_fileSystem = new S3FileSystem(connInfo, clientConfig, settings.getWorkingDirectory(), CACHE_TTL_MILLIS, settings.getNormalizePath());
+        m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS);
     }
 
     /**
@@ -95,15 +92,6 @@ public class S3FSConnection implements FSConnection {
      */
     public S3FSConnection(final CloudConnectionInformation connInfo) throws IOException {
         this(connInfo, new S3ConnectorNodeSettings());
-    }
-
-    private static ClientConfiguration createClientConfig(final S3ConnectorNodeSettings settings, final CloudConnectionInformation connInfo) {
-        final int socketTimeout = settings.getSocketTimeout() * 1000;
-        return new ClientConfiguration()
-            .withConnectionTimeout(connInfo.getTimeout())
-            .withSocketTimeout(socketTimeout)
-            .withConnectionTTL(socketTimeout);
-
     }
 
     @Override

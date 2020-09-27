@@ -48,10 +48,17 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.security.InvalidKeyException;
+import java.time.Duration;
 import java.util.Collections;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+
+import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.util.KnimeEncryption;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
@@ -59,18 +66,17 @@ import org.knime.filehandling.core.connections.FSCategory;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.AnonymousAWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 /**
  * The Amazon S3 implementation of the {@link FileSystem} interface.
@@ -84,41 +90,34 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public static final String PATH_SEPARATOR = "/";
 
+    /**
+     * Amazon S3 URI scheme
+     */
     public static final String FS_TYPE = "amazon-s3";
 
-    private final AmazonS3 m_client;
+    private final S3Client m_client;
 
     private final boolean m_normalizePaths;
 
     /**
      * Constructs an S3FileSystem for the given URI
      *
-     * @param provider the {@link S3FileSystemProvider}
      * @param connectionInformation the {@link CloudConnectionInformation}
-     * @param clientConfig The client config.
-     * @param workingDir The working directory.
+     * @param settings The node settings
      * @param cacheTTL The time to live for cache entries in the attributes cache
-     * @param normalizePaths Whether paths should be normalized.
      */
-    public S3FileSystem(final CloudConnectionInformation connectionInformation,
-        final ClientConfiguration clientConfig,
-        final String workingDir,
-        final long cacheTTL,
-        final boolean normalizePaths) {
+    public S3FileSystem(final CloudConnectionInformation connectionInformation, final S3ConnectorNodeSettings settings,
+        final long cacheTTL) {
 
         super(new S3FileSystemProvider(), //
             connectionInformation.toURI(), //
             cacheTTL, //
-            workingDir, //
+            settings.getWorkingDirectory(), //
             createFSLocationSpec(connectionInformation));
 
-        m_normalizePaths = normalizePaths;
+        m_normalizePaths = settings.getNormalizePath();
         try {
-            if (connectionInformation.switchRole()) {
-                m_client = getRoleAssumedS3Client(connectionInformation, clientConfig);
-            } else {
-                m_client = getS3Client(connectionInformation, clientConfig);
-            }
+            m_client = createClient(settings, connectionInformation);
         } catch (final Exception ex) {
             throw new IllegalArgumentException(ex);
         }
@@ -136,55 +135,68 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         return new DefaultFSLocationSpec(FSCategory.CONNECTED, specifier);
     }
 
-    private static AmazonS3 getS3Client(final CloudConnectionInformation connectionInformation,
-        final ClientConfiguration clientConfig) throws Exception {
-        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig)
-            .withRegion(connectionInformation.getHost());
+    private static S3Client createClient(final S3ConnectorNodeSettings settings, final CloudConnectionInformation con) {
+        Duration socketTimeout = Duration.ofSeconds(settings.getSocketTimeout());
+        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder()//
+            .connectionTimeout(Duration.ofMillis(con.getTimeout()))//
+            .socketTimeout(socketTimeout)//
+            .connectionTimeToLive(socketTimeout);
 
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
-        }
-
-        return builder.build();
+        return S3Client.builder()//
+            .region(Region.of(con.getHost()))//
+            .credentialsProvider(getCredentialProvider(con))//
+            .httpClientBuilder(httpClientBuilder)//
+            .build();
     }
 
-    private static AmazonS3 getRoleAssumedS3Client(final CloudConnectionInformation connectionInformation,
-        final ClientConfiguration clientConfig) throws Exception {
-        final AWSSecurityTokenServiceClientBuilder builder =
-            AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
+    @SuppressWarnings("resource")
+    private static AwsCredentialsProvider getCredentialProvider(final CloudConnectionInformation con) {
+        final AwsCredentialsProvider credentialProvider;
+        final AwsCredentialsProvider conCredentialProvider;
+
+        if (con.useKeyChain()) {
+            conCredentialProvider = DefaultCredentialsProvider.create();
+        } else if (con.isUseAnonymous()) {
+            conCredentialProvider = AnonymousCredentialsProvider.create();
+        } else {
+            final String accessKeyId = con.getUser();
+            String secretAccessKey;
+            try {
+                secretAccessKey = KnimeEncryption.decrypt(con.getPassword());
+            } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | IOException e) {
+                throw new IllegalStateException(e);
+            }
+            conCredentialProvider =
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
         }
 
-        final AWSSecurityTokenService stsClient = builder.build();
-
-        final AssumeRoleRequest assumeRoleRequest = new AssumeRoleRequest().withRoleArn(buildARN(connectionInformation))
-            .withDurationSeconds(3600).withRoleSessionName("KNIME_S3_Connection");
-
-        final AssumeRoleResult assumeResult = stsClient.assumeRole(assumeRoleRequest);
-
-        final BasicSessionCredentials tempCredentials =
-            new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
-                assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
-
-        return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfig)
-            .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
-            .withRegion(connectionInformation.getHost()).build();
+        if (con.switchRole()) {
+            credentialProvider = getRoleSwitchCredentialProvider(con, conCredentialProvider);
+        } else {
+            credentialProvider = conCredentialProvider;
+        }
+        return credentialProvider;
     }
 
-    private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
-        throws Exception {
+    @SuppressWarnings("resource")
+    private static AwsCredentialsProvider getRoleSwitchCredentialProvider(final CloudConnectionInformation con,
+        final AwsCredentialsProvider credentialProvider) {
+        final AssumeRoleRequest asumeRole = AssumeRoleRequest.builder()//
+            .roleArn(buildARN(con))//
+            .durationSeconds(3600)//
+            .roleSessionName("KNIME_S3_Connection")//
+            .build();
 
-        if (connectionInformation.isUseAnonymous()) {
-            return new AnonymousAWSCredentials();
-        }
-        final String accessKeyId = connectionInformation.getUser();
-        final String secretAccessKey = KnimeEncryption.decrypt(connectionInformation.getPassword());
+        final StsClient stsClient = StsClient.builder()//
+            .region(Region.of(con.getHost()))//
+            .credentialsProvider(credentialProvider)//
+            .build();
 
-        return new BasicAWSCredentials(accessKeyId, secretAccessKey);
-
+        return StsAssumeRoleCredentialsProvider.builder()//
+            .stsClient(stsClient)//
+            .refreshRequest(asumeRole)//
+            .asyncCredentialUpdateEnabled(true)//
+            .build();
     }
 
     private static String buildARN(final CloudConnectionInformation connectionInformation) {
@@ -203,9 +215,9 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     }
 
     /**
-     * @return the {@link AmazonS3} client for this file system
+     * @return the {@link S3Client} client for this file system
      */
-    public AmazonS3 getClient() {
+    public S3Client getClient() {
         return m_client;
     }
 
@@ -216,7 +228,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
     @Override
     public void prepareClose() {
-        m_client.shutdown();
+        m_client.close();
     }
 
     @Override

@@ -56,6 +56,8 @@ import java.util.Set;
 
 import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
 
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
 /**
  * Amazon S3 implementation of the {@link TempFileSeekableByteChannel}.
  *
@@ -82,8 +84,10 @@ public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
     @SuppressWarnings("resource")
     @Override
     public void copyToRemote(final S3Path remoteFile, final Path tempFile) throws IOException {
-        remoteFile.getFileSystem().getClient().putObject(remoteFile.getBucketName(),
-            remoteFile.getBlobName(),
-            tempFile.toFile());
+        PutObjectRequest req = PutObjectRequest.builder()//
+            .bucket(remoteFile.getBucketName())//
+            .key(remoteFile.getBlobName())//
+            .build();
+        remoteFile.getFileSystem().getClient().putObject(req, tempFile);
     }
 }

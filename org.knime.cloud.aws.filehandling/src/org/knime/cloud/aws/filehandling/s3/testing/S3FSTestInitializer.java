@@ -48,19 +48,18 @@
  */
 package org.knime.cloud.aws.filehandling.s3.testing;
 
-import java.io.ByteArrayInputStream;
-import java.util.List;
-
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.base.BlobStorePath;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializer;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * S3 initializer.
@@ -71,7 +70,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  */
 public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3FileSystem> {
 
-    private final AmazonS3 m_s3Client;
+    private final S3Client m_s3Client;
 
     /**
      * Creates a initializer for s3 pointing to a special test bucket.
@@ -95,14 +94,16 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
         // create parent directory objects if necessary
         for (int i = 1; i < path.getNameCount() - 1; i++) {
             final String dirKey = path.subpath(1, i + 1).toString();
-            if (!m_s3Client.doesObjectExist(path.getBucketName(), dirKey)) {
-                m_s3Client.putObject(path.getBucketName(), dirKey, "");
+            try {
+                m_s3Client.headObject(b -> b.bucket(path.getBucketName()).key(dirKey));
+            } catch (NoSuchKeyException e) {//NOSONAR object doesn't exist
+                m_s3Client.putObject(b -> b.bucket(path.getBucketName()).key(dirKey), RequestBody.empty());
             }
         }
 
         // create the actual object with content
         final String key = path.subpath(1, path.getNameCount()).toString();
-        m_s3Client.putObject(path.getBucketName(), key, content);
+        m_s3Client.putObject(b -> b.bucket(path.getBucketName()).key(key), RequestBody.fromString(content));
 
         return path;
     }
@@ -111,12 +112,11 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
     protected void beforeTestCaseInternal() {
         final BlobStorePath scratchDir = getTestCaseScratchDir().toDirectoryPath();
 
-        final ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(0);
-
-        if (!m_s3Client.doesObjectExist(scratchDir.getBucketName(), scratchDir.getBlobName())) {
-            m_s3Client.putObject(scratchDir.getBucketName(), scratchDir.getBlobName(),
-                new ByteArrayInputStream(new byte[0]), metadata);
+        try {
+            m_s3Client.headObject(b -> b.bucket(scratchDir.getBucketName()).key(scratchDir.getBlobName()));
+        } catch (NoSuchKeyException e) {//NOSONAR object doesn't exist
+            m_s3Client.putObject(b -> b.bucket(scratchDir.getBucketName()).key(scratchDir.getBlobName()),
+                RequestBody.empty());
         }
     }
 
@@ -124,21 +124,19 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
     protected void afterTestCaseInternal() {
         final BlobStorePath scratchDir = getTestCaseScratchDir();
 
-        ObjectListing bucketObjects = null;
-
+        String continuationToken = null;
         do {
-            if (bucketObjects == null) {
-                bucketObjects = m_s3Client.listObjects(scratchDir.getBucketName(), scratchDir.getBlobName());
-            } else {
-                bucketObjects = m_s3Client.listNextBatchOfObjects(bucketObjects);
+            ListObjectsV2Request req = ListObjectsV2Request.builder()//
+                .bucket(scratchDir.getBucketName())//
+                .prefix(scratchDir.getBlobName())//
+                .continuationToken(continuationToken)//
+                .build();
+            ListObjectsV2Response result = m_s3Client.listObjectsV2(req);
+
+            continuationToken = result.nextContinuationToken();
+            for (S3Object obj : result.contents()) {
+                m_s3Client.deleteObject(b -> b.bucket(scratchDir.getBucketName()).key(obj.key()));
             }
-
-            final List<S3ObjectSummary> objectSummaries = bucketObjects.getObjectSummaries();
-
-            objectSummaries //
-                .stream() //
-                .map(S3ObjectSummary::getKey) //
-                .forEach(filteredKey -> m_s3Client.deleteObject(scratchDir.getBucketName(), filteredKey)); //
-        } while (bucketObjects.isTruncated());
+        } while (continuationToken != null);
     }
 }

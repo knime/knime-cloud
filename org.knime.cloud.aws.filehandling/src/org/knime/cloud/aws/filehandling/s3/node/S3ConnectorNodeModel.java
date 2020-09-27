@@ -72,7 +72,7 @@ import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.port.FileSystemPortObject;
 import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
  *
@@ -135,10 +135,10 @@ public class S3ConnectorNodeModel extends NodeModel {
         final S3FileSystem fileSystem = (S3FileSystem)fsConn.getFileSystem();
         try {
             fileSystem.getClient().listBuckets();
-        } catch (final AmazonS3Exception e) {
-            if (Objects.equals(e.getErrorCode(), "InvalidAccessKeyId")) {
+        } catch (final AwsServiceException e) {
+            if (Objects.equals(e.awsErrorDetails().errorCode(), "InvalidAccessKeyId")) {
                 throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
-            } else if (Objects.equals(e.getErrorCode(), "AccessDenied")) {
+            } else if (Objects.equals(e.awsErrorDetails().errorCode(), "AccessDenied")) {
                 setWarningMessage("The credentials provided have restricted permissions. "
                     + "File browsing might not work as expected.\n"
                     + "All buckets will be assumed existing, as they cannot be listed.");

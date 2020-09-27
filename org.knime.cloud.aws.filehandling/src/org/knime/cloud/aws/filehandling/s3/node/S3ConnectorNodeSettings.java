@@ -48,6 +48,8 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
+import java.time.Duration;
+
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettings;
@@ -57,7 +59,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
-import com.amazonaws.ClientConfiguration;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 
 /**
  * Settings for {@link S3ConnectorNodeModel}.
@@ -86,10 +88,19 @@ public class S3ConnectorNodeSettings {
      * Creates new instance
      */
     public S3ConnectorNodeSettings() {
-        m_socketTimeout = new SettingsModelIntegerBounded(KEY_SOCKET_TIMEOUTS,
-            Math.max(1, ClientConfiguration.DEFAULT_SOCKET_TIMEOUT / 1000), 0, Integer.MAX_VALUE);
+        m_socketTimeout = new SettingsModelIntegerBounded(KEY_SOCKET_TIMEOUTS, Math.max(1, getDefaultSocketTimeout()),
+            0, Integer.MAX_VALUE);
         m_normalizePath = new SettingsModelBoolean(KEY_NORMALIZE_PATHS, DEFAULT_NORMALIZE);
         m_workingDirectory = new SettingsModelString(KEY_WORKING_DIRECTORY, DEFAULT_WORKING_DIR);
+    }
+
+    private static int getDefaultSocketTimeout() {
+        Duration duration =
+            SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.READ_TIMEOUT);
+        if (duration != null) {
+            return (int)duration.getSeconds();
+        }
+        return 0;
     }
 
     /**

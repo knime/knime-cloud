@@ -48,46 +48,46 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream.Filter;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
-import java.util.Date;
-import java.util.EnumSet;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.Set;
 
 import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AccessControlList;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.Grant;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.Permission;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * File system provider for {@link S3FileSystem}s.
@@ -96,6 +96,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
  */
 class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> {
 
+    @SuppressWarnings("unused")
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
     @Override
@@ -106,36 +107,35 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     @Override
     protected SeekableByteChannel newByteChannelInternal(final S3Path path, final Set<? extends OpenOption> options,
         final FileAttribute<?>... attrs) throws IOException {
-        return new S3SeekableByteChannel(toS3Path(path), options);
+        return new S3SeekableByteChannel(path, options);
     }
 
+    @SuppressWarnings("resource")
     @Override
     protected void createDirectoryInternal(final S3Path dir, final FileAttribute<?>... attrs) throws IOException {
-        final S3Path s3Path = toS3Path(dir);
+        final String bucketName = dir.getBucketName();
 
-        final String bucketName = s3Path.getBucketName();
-
-        if (s3Path.getBlobName() != null) {
-            // create empty object
-            final ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(0);
-            final String objectKey = s3Path.getBlobName().endsWith(S3FileSystem.PATH_SEPARATOR) ? s3Path.getBlobName()
-                : s3Path.getBlobName() + S3FileSystem.PATH_SEPARATOR;
-            s3Path.getFileSystem().getClient().putObject(bucketName, objectKey, new ByteArrayInputStream(new byte[0]),
-                metadata);
+        if (dir.getBlobName() != null) {
+            final String objectKey = dir.toDirectoryPath().getBlobName();
+            PutObjectRequest req = PutObjectRequest.builder().bucket(bucketName).key(objectKey).build();
+            dir.getFileSystem().getClient().putObject(req, RequestBody.empty());
         } else {
-            s3Path.getFileSystem().getClient().createBucket(bucketName);
+            dir.getFileSystem().getClient().createBucket(b -> b.bucket(bucketName));
         }
     }
 
+    @SuppressWarnings("resource")
     @Override
     protected void copyInternal(final S3Path source, final S3Path target, final CopyOption... options) throws IOException {
-        final AmazonS3 client = source.getFileSystem().getClient();
+        final S3Client client = source.getFileSystem().getClient();
 
         if (!source.isDirectory()) {
             try {
-                client.copyObject(source.getBucketName(), source.getBlobName(),
-                    target.getBucketName(), target.getBlobName());
+                CopyObjectRequest req = CopyObjectRequest.builder()//
+                    .copySource(encodeCopySource(source.getBucketName(), source.getBlobName()))
+                    .destinationBucket(target.getBucketName())//
+                    .destinationKey(target.getBlobName()).build();
+                client.copyObject(req);
             } catch (final Exception ex) {
                 throw new IOException(ex);
             }
@@ -148,44 +148,50 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         }
     }
 
-    private static boolean dirIsEmpty(final S3Path dir) {
-        final AmazonS3 client = dir.getFileSystem().getClient();
-
-        final ListObjectsV2Request listRequest = new ListObjectsV2Request();
-        listRequest.withBucketName(dir.getBucketName())//
-            .withPrefix(dir.getBlobName())//
-            .withDelimiter(dir.getFileSystem().getSeparator())//
-            .withEncodingType("url")
-            .withStartAfter(dir.getBlobName())
-            .withMaxKeys(1);
-
-        return client.listObjectsV2(listRequest).getKeyCount() == 0;
+    private static String encodeCopySource(final String bucket, final String blob) throws UnsupportedEncodingException {
+        return URLEncoder.encode(bucket + "/" + blob, StandardCharsets.UTF_8.toString());
     }
 
+    @SuppressWarnings("resource")
+    private static boolean dirIsEmpty(final S3Path dir) {
+        final S3Client client = dir.getFileSystem().getClient();
+
+        final ListObjectsV2Request listRequest = ListObjectsV2Request.builder()//
+            .bucket(dir.getBucketName())//
+            .prefix(dir.getBlobName())//
+            .delimiter(dir.getFileSystem().getSeparator())//
+            .encodingType("url")//
+            .startAfter(dir.getBlobName())//
+            .maxKeys(1)//
+            .build();
+
+        return client.listObjectsV2(listRequest).keyCount() == 0;
+    }
+
+    @SuppressWarnings("resource")
     @Override
     protected void moveInternal(final S3Path source, final S3Path target, final CopyOption... options) throws IOException {
-        if (isDirectory(source)) {
+        if (Files.isDirectory(source)) {
             moveDir(source, target);
             return;
         }
 
-        final AmazonS3 client = source.getFileSystem().getClient();
+        final S3Client client = source.getFileSystem().getClient();
         try {
-            client.copyObject(source.getBucketName(), source.getBlobName(), target.getBucketName(),
-                target.getBlobName());
+            CopyObjectRequest req = CopyObjectRequest.builder()//
+                .copySource(encodeCopySource(source.getBucketName(), source.getBlobName()))
+                .destinationBucket(target.getBucketName())//
+                .destinationKey(target.getBlobName()).build();
+            client.copyObject(req);
+
+            delete(source);
         } catch (final Exception ex) {
             throw new IOException(ex);
         }
-
-        delete(source);
     }
 
-    private boolean isDirectory(final S3Path path) throws IOException {
-        return readAttributes(path, BasicFileAttributes.class).isDirectory();
-    }
-
-    private void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path)
-        throws DirectoryNotEmptyException {
+    @SuppressWarnings("resource")
+    private static void moveDir(final S3Path sourceS3Path, final S3Path targetS3Path) throws IOException {
         S3Path sourceDirPath = sourceS3Path.toDirectoryPath();
         S3Path targetDirPath = targetS3Path.toDirectoryPath();
 
@@ -194,21 +200,28 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         }
 
         // We have to move every blob with this prefix
-        final AmazonS3 client = sourceDirPath.getFileSystem().getClient();
+        final S3Client client = sourceDirPath.getFileSystem().getClient();
 
-        final ListObjectsV2Request listRequest = new ListObjectsV2Request();
-        listRequest.withBucketName(sourceDirPath.getBucketName()).withPrefix(sourceDirPath.getBlobName())
-            .withEncodingType("url");
+        final ListObjectsV2Request listRequest = ListObjectsV2Request.builder()//
+            .bucket(sourceDirPath.getBucketName())//
+            .prefix(sourceDirPath.getBlobName())//
+            .encodingType("url")//
+            .build();
 
-        final ListObjectsV2Result list = client.listObjectsV2(listRequest);
-        list.getObjectSummaries().forEach(p -> {
-            client.copyObject(p.getBucketName(), p.getKey(), targetDirPath.getBucketName(),
-                p.getKey().replace(sourceDirPath.getBlobName(), targetDirPath.getBlobName()));
+        final ListObjectsV2Response list = client.listObjectsV2(listRequest);
+        for (S3Object object : list.contents()) {
+            CopyObjectRequest req = CopyObjectRequest.builder()//
+                .copySource(encodeCopySource(sourceDirPath.getBucketName(), object.key()))
+                .destinationBucket(targetDirPath.getBucketName())//
+                .destinationKey(object.key().replace(sourceDirPath.getBlobName(), targetDirPath.getBlobName()))//
+                .build();
+            client.copyObject(req);
 
-            client.deleteObject(p.getBucketName(), p.getKey());
-            sourceDirPath.getFileSystem()
-                .removeFromAttributeCache(new S3Path(sourceDirPath.getFileSystem(), p.getBucketName(), p.getKey()));
-        });
+            client.deleteObject(b -> b.bucket(sourceDirPath.getBucketName()).key(object.key()));
+
+            sourceDirPath.getFileSystem().removeFromAttributeCache(
+                new S3Path(sourceDirPath.getFileSystem(), sourceDirPath.getBucketName(), object.key()));
+        }
     }
 
     @Override
@@ -216,80 +229,63 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         // do nothing, too complex
     }
 
-    private static boolean containsPermission(final EnumSet<Permission> permissions, final AccessControlList acl) {
-        for (final Grant grant : acl.getGrantsAsList()) {
-            if (grant.getGrantee().getIdentifier().equals(acl.getOwner().getId())
-                && permissions.contains(grant.getPermission())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private S3Path toS3Path(final Path path) {
-        checkPathProvider(path);
-        return (S3Path)path.normalize();
-    }
-
+    @SuppressWarnings("resource")
     @Override
     protected boolean exists(final S3Path path) {
         if (path.getBucketName() == null) {
             //This is the fake S3 root, or we have valid data in the cache.
             return true;
         }
-        final AmazonS3 client = path.getFileSystem().getClient();
+        final S3Client client = path.getFileSystem().getClient();
 
         boolean exists = false;
         if (path.getBlobName() != null) {
-            try {
-                exists = client.doesObjectExist(path.getBucketName(), path.getBlobName());
-            } catch (final AmazonS3Exception e) {
-                LOGGER.warn(e);
-            }
+            exists = doesObjectExist(client, path.getBucketName(), path.getBlobName());
 
             // when given /path also check for existence of /path/
             if (!exists && !path.isDirectory()) {
-                try {
-                    exists = client.doesObjectExist(path.getBucketName(), path.getBlobName() + S3FileSystem.PATH_SEPARATOR);
-                } catch (final AmazonS3Exception e) {
-                    LOGGER.warn(e);
-                }
+                exists = doesObjectExist(client, path.getBucketName(), path.toDirectoryPath().getBlobName());
             }
 
             // when given /path or /path/ also check for /path/bla
             if (!exists) {
-                final String blobFolderName = path.getBlobName().endsWith(S3FileSystem.PATH_SEPARATOR)//
-                    ? path.getBlobName()//
-                    : path.getBlobName() + S3FileSystem.PATH_SEPARATOR;
+                final String blobFolderName = path.toDirectoryPath().getBlobName();
 
-                final ListObjectsV2Request request = new ListObjectsV2Request();
-                request.withBucketName(path.getBucketName())//
-                    .withPrefix(blobFolderName)//
-                    .withStartAfter(blobFolderName)
-                    .setMaxKeys(1);
+                final ListObjectsV2Request request = ListObjectsV2Request.builder()//
+                    .bucket(path.getBucketName())//
+                    .prefix(blobFolderName)//
+                    .startAfter(blobFolderName)//
+                    .maxKeys(1)//
+                    .build();
 
-                try {
-                    final ListObjectsV2Result result = client.listObjectsV2(request);
-                    exists = !result.getObjectSummaries().isEmpty() || !result.getCommonPrefixes().isEmpty();
-                } catch (final AmazonServiceException ex) {
-                    LOGGER.warn(ex);
-                }
+                final ListObjectsV2Response result = client.listObjectsV2(request);
+                exists = !result.contents().isEmpty() || !result.commonPrefixes().isEmpty();
             }
-
-            return exists;
         } else {
             try {
-                return client.doesBucketExistV2(path.getBucketName());
-            } catch (final AmazonS3Exception e) {
-                LOGGER.warn(e);
-                return false;
+                client.headBucket(b -> b.bucket(path.getBucketName()));
+                exists = true;
+            } catch (final NoSuchBucketException e) {//NOSONAR exceptions is expected behavior
+                //bucket does not exist
             }
+        }
+
+        return exists;
+    }
+
+    private static boolean doesObjectExist(final S3Client client, final String bucket, final String blob) {
+        try {
+            client.headObject(b -> b.bucket(bucket).key(blob));
+            return true;
+        } catch (NoSuchKeyException e) {//NOSONAR exceptions is expected behavior
+            return false;
         }
     }
 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("resource")
     @Override
     protected InputStream newInputStreamInternal(final S3Path path, final OpenOption... options) throws IOException {
 
@@ -301,23 +297,19 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
 
         try {
 
-            final S3Object object =
-                path.getFileSystem().getClient().getObject(path.getBucketName(), path.getBlobName());
-            inputStream = object.getObjectContent();
+            inputStream =
+                path.getFileSystem().getClient().getObject(b -> b.bucket(path.getBucketName()).key(path.getBlobName()));
 
             if (inputStream == null) {
-                object.close();
                 throw new IOException(String.format("Could not read path %s", path));
             }
 
-        } catch (final AmazonServiceException ex) {
-            if (Objects.equals(ex.getErrorCode(), "NoSuchKey")) {
-                final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
-                noSuchFileEx.initCause(ex);
-                throw noSuchFileEx;
-            } else {
+        } catch (NoSuchKeyException ex) {
+            final NoSuchFileException noSuchFileEx = new NoSuchFileException(path.toString());
+            noSuchFileEx.initCause(ex);
+            throw noSuchFileEx;
+        } catch (final AwsServiceException ex) {
                 throw new IOException(ex);
-            }
         } catch (final Exception ex) {
             throw wrapAsIOExceptionIfNecessary(ex);
         }
@@ -340,6 +332,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("resource")
     @Override
     protected OutputStream newOutputStreamInternal(final S3Path path, final OpenOption... options) throws IOException {
         final int len = options.length;
@@ -393,51 +386,55 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         return createBucketFileAttributes(bucket, path);
     }
 
+    @SuppressWarnings("resource")
     private BaseFileAttributes fetchAttributesForObject(final S3Path path) throws NoSuchFileException {
-        final AmazonS3 client = path.getFileSystem().getClient();
+        final S3Client client = path.getFileSystem().getClient();
 
         // first we try whether there is an object for the given path
         // (whether path.isDirectory() or not)
-        if (client.doesObjectExist(path.getBucketName(), path.getBlobName())) {
-            return convertMetaDataToFileAttributes(path,
-                client.getObjectMetadata(path.getBucketName(), path.getBlobName()));
+        try {
+            HeadObjectResponse metadata =
+                client.headObject(b -> b.bucket(path.getBucketName()).key(path.getBlobName()));
+            return convertMetaDataToFileAttributes(path, metadata);
+        } catch (NoSuchKeyException e) {//NOSONAR exceptions is expected behavior
+            //object does not exist
         }
 
         final S3Path dirPath = path.toDirectoryPath();
 
         // directory case (1): when given "/path", but it does not exist, then we check for /path/
-        if (!path.isDirectory() && client.doesObjectExist(dirPath.getBucketName(), dirPath.getBlobName())) {
-            return convertMetaDataToFileAttributes(dirPath,
-                client.getObjectMetadata(dirPath.getBucketName(), dirPath.getBlobName()));
+        if (!path.isDirectory()) {
+            try {
+                HeadObjectResponse metadata =
+                    client.headObject(b -> b.bucket(dirPath.getBucketName()).key(dirPath.getBlobName()));
+                return convertMetaDataToFileAttributes(dirPath, metadata);
+            } catch (NoSuchKeyException e) {//NOSONAR exceptions is expected behavior
+                //object does not exist
+            }
+
         }
 
         // directory case (2): last possibility, when neither "/path" nor "/path/" exist, it could be
-        // that the "directory" is just the common prefix of some objects. In this case we use the
-        // metadata of the first object.
+        // that the "directory" is just the common prefix of some objects.
 
-        final ListObjectsV2Request request = new ListObjectsV2Request();
-        request.withBucketName(path.getBucketName())//
-            .withPrefix(dirPath.getBlobName())//
-            .setMaxKeys(1);
-
-        final ListObjectsV2Result result = client.listObjectsV2(request);
-        if (!result.getObjectSummaries().isEmpty()) {
-            final S3ObjectSummary firstObjectSummary = result.getObjectSummaries().get(0);
-            final ObjectMetadata firstObjectMetaData = client.getObjectMetadata(//
-                firstObjectSummary.getBucketName(),//
-                firstObjectSummary.getKey());
-            return convertMetaDataToFileAttributes(dirPath, firstObjectMetaData);
-        }
-
-        throw new NoSuchFileException(path.toString());
+        return new BaseFileAttributes(false, //
+            path, //
+            FileTime.fromMillis(0), //
+            FileTime.fromMillis(0), //
+            FileTime.fromMillis(0), //
+            0L, //
+            false, //
+            false, //
+            null);
     }
 
-    private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path, final ObjectMetadata objectMetadata) throws NoSuchFileException {
+    private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path,
+        final HeadObjectResponse objectMetadata) throws NoSuchFileException {
         final FileTime lastMod = determineObjectLastModificationTime(path, objectMetadata);
 
         long size = 0;
         if (!path.isDirectory()) {
-            size = objectMetadata.getContentLength();
+            size = objectMetadata.contentLength();
         }
 
         return new BaseFileAttributes(!path.isDirectory(), path, //
@@ -456,11 +453,11 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
      * @return
      * @throws NoSuchFileException
      */
-    private FileTime determineObjectLastModificationTime(final S3Path path, final ObjectMetadata objectMetadata)
+    private FileTime determineObjectLastModificationTime(final S3Path path, final HeadObjectResponse objectMetadata)
         throws NoSuchFileException {
         final FileTime lastMod;
-        if (objectMetadata.getLastModified() != null) {
-            lastMod = FileTime.from(objectMetadata.getLastModified().toInstant());
+        if (objectMetadata.lastModified() != null) {
+            lastMod = FileTime.from(objectMetadata.lastModified());
         } else {
             final Bucket bucket = getBucket(path);
 
@@ -469,8 +466,8 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
                 throw new NoSuchFileException(path.toString());
             }
 
-            if (bucket.getCreationDate() != null) {
-                lastMod = FileTime.from(bucket.getCreationDate().toInstant());
+            if (bucket.creationDate() != null) {
+                lastMod = FileTime.from(bucket.creationDate());
             } else {
                 lastMod = FileTime.fromMillis(0);
             }
@@ -478,9 +475,10 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         return lastMod;
     }
 
+    @SuppressWarnings("resource")
     Bucket getBucket(final S3Path path) {
-        for (final Bucket buck : path.getFileSystem().getClient().listBuckets()) {
-            if (buck.getName().equals(path.getBucketName())) {
+        for (final Bucket buck : path.getFileSystem().getClient().listBuckets().buckets()) {
+            if (buck.name().equals(path.getBucketName())) {
                 return buck;
             }
         }
@@ -491,17 +489,17 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     @Override
     protected void deleteInternal(final S3Path path) throws IOException {
         try {
-            final AmazonS3 client = path.getFileSystem().getClient();
+            final S3Client client = path.getFileSystem().getClient();
 
             if (path.getBlobName() != null) {
-                if (!path.isDirectory() && client.doesObjectExist(path.getBucketName(), path.getBlobName())) {
+                if (!path.isDirectory() && doesObjectExist(client, path.getBucketName(), path.getBlobName())) {
                     // regular file. deleteObject does not fail if the object has been deleted in the meantime
-                    client.deleteObject(path.getBucketName(), path.getBlobName());
+                    client.deleteObject(b -> b.bucket(path.getBucketName()).key(path.getBlobName()));
                 } else {
                     deleteFolder(path);
                 }
             } else {
-                client.deleteBucket(path.getBucketName());
+                client.deleteBucket(b -> b.bucket(path.getBucketName()));
             }
         } catch (final RuntimeException ex) {
             throw new IOException(ex);
@@ -511,22 +509,22 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     @SuppressWarnings("resource")
     private void deleteFolder(final S3Path origPath) throws DirectoryNotEmptyException {
         final S3Path dirPath = origPath.toDirectoryPath();
-        final AmazonS3 client = getFileSystemInternal().getClient();
+        final S3Client client = getFileSystemInternal().getClient();
 
         if (!dirIsEmpty(dirPath)) {
             throw new DirectoryNotEmptyException(origPath.toString());
         }
 
-        client.deleteObject(dirPath.getBucketName(), dirPath.getBlobName());
+        client.deleteObject(b -> b.bucket(dirPath.getBucketName()).key(dirPath.getBlobName()));
     }
 
     static BaseFileAttributes createBucketFileAttributes(final Bucket bucket, final S3Path bucketPath) {
-        Date bucketCreationTime = bucket.getCreationDate();
+        Instant bucketCreationTime = bucket.creationDate();
         if (bucketCreationTime == null) {
-            bucketCreationTime = new Date(0);
+            bucketCreationTime = Instant.ofEpochMilli(0);
         }
 
-        final FileTime time = FileTime.fromMillis(bucketCreationTime.getTime());
+        final FileTime time = FileTime.from(bucketCreationTime);
 
         return new BaseFileAttributes(false,//
             bucketPath,//

@@ -61,12 +61,13 @@ import org.knime.filehandling.core.connections.base.BasePathIterator;
 import org.knime.filehandling.core.connections.base.PagedPathIterator;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
-import com.amazonaws.AbortedException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.core.exception.AbortedException;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * Factory class for path iterators on S3.
@@ -108,8 +109,8 @@ public abstract class S3PathIteratorFactory {
 
             try {
                 final ArrayList<S3Path> bucketPaths = new ArrayList<>();
-                for (final Bucket bucket : fs.getClient().listBuckets()) {
-                    final S3Path bucketPath = fs.getPath(fs.getSeparator() + bucket.getName(), fs.getSeparator());
+                for (final Bucket bucket : fs.getClient().listBuckets().buckets()) {
+                    final S3Path bucketPath = fs.getPath(fs.getSeparator() + bucket.name(), fs.getSeparator());
                     final BaseFileAttributes attributes =
                         S3FileSystemProvider.createBucketFileAttributes(bucket, bucketPath);
                     fs.addToAttributeCache(bucketPath, attributes);
@@ -154,27 +155,27 @@ public abstract class S3PathIteratorFactory {
 
             final S3FileSystem fs = m_path.getFileSystem();
 
-            final ListObjectsV2Request listRequest = new ListObjectsV2Request();
-            listRequest.withBucketName(m_path.getBucketName()) //
-                .withPrefix(m_path.getBlobName()) //
-                .withDelimiter(fs.getSeparator()) //
-                .withEncodingType("url") //
-                .withStartAfter(m_path.getBlobName()) //
-                .withContinuationToken(m_continuationToken);
+            final ListObjectsV2Request listRequest = ListObjectsV2Request.builder() //
+                .bucket(m_path.getBucketName()) //
+                .prefix(m_path.getBlobName()) //
+                .delimiter(fs.getSeparator()) //
+                .encodingType("url") //
+                .startAfter(m_path.getBlobName()) //
+                .continuationToken(m_continuationToken).build();
 
             try {
-                final ListObjectsV2Result m_objectsListing = fs.getClient().listObjectsV2(listRequest);
+                final ListObjectsV2Response m_objectsListing = fs.getClient().listObjectsV2(listRequest);
                 final List<S3Path> nextPage = new ArrayList<>();
 
-                for (final S3ObjectSummary objSummary : m_objectsListing.getObjectSummaries()) {
+                for (final S3Object objSummary : m_objectsListing.contents()) {
                     nextPage.add(getPathFromSummary(objSummary));
                 }
 
-                for (final String commonPrefix : m_objectsListing.getCommonPrefixes()) {
-                    nextPage.add(getPathFromPrefix(commonPrefix));
+                for (final CommonPrefix commonPrefix : m_objectsListing.commonPrefixes()) {
+                    nextPage.add(getPathFromPrefix(commonPrefix.prefix()));
                 }
 
-                m_continuationToken = m_objectsListing.getNextContinuationToken();
+                m_continuationToken = m_objectsListing.nextContinuationToken();
                 return nextPage.iterator();
             } catch (final SdkClientException e) {
                 if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
@@ -196,12 +197,12 @@ public abstract class S3PathIteratorFactory {
         }
 
         @SuppressWarnings("resource")
-        private S3Path getPathFromSummary(final S3ObjectSummary nextSummary) {
-            final S3Path path = new S3Path(m_path.getFileSystem(), nextSummary.getBucketName(), nextSummary.getKey());
-            final FileTime lastModified = FileTime.from(nextSummary.getLastModified().toInstant());
+        private S3Path getPathFromSummary(final S3Object nextSummary) {
+            final S3Path path = new S3Path(m_path.getFileSystem(), m_path.getBucketName(), nextSummary.key());
+            final FileTime lastModified = FileTime.from(nextSummary.lastModified());
 
             final BaseFileAttributes attributes = new BaseFileAttributes(!path.isDirectory(), path, lastModified,
-                lastModified, lastModified, nextSummary.getSize(), false, false, null);
+                lastModified, lastModified, nextSummary.size(), false, false, null);
             m_path.getFileSystem().addToAttributeCache(path, attributes);
 
             return path;
