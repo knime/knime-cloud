@@ -1,0 +1,19 @@
+library;						library-url;																licence;													licence-url;																	copyright;										
+FindBugs;						http://findbugs.sourceforge.net/;											GNU Lesser Public License;									http://www.gnu.org/licenses/lgpl.html;											Bill Pugh, Andrey Loskutov;										
+annotations-2.14.24.jar;		https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+apache-client-2.15.14.jar;		https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+arns-2.15.14.jar;				https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+auth-2.15.14.jar;				https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+aws-core-2.15.14.jar;			https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+aws-query-protocol-2.15.14.jar;	https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+aws-xml-protocol-2.15.14.jar;	https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+eventstream-1.0.1.jar;			https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+http-client-spi-2.15.14.jar;	https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+metrics-spi-2.15.14.jar;		https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+profiles-2.15.14.jar;			https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+protocol-core-2.15.14.jar;		https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+regions-2.15.14.jar;			https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+s3-2.15.14.jar;					https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+sdk-core-2.15.14.jar;			https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+sts-2.15.14.jar;				https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
+utils-2.15.14.jar;				https://aws.amazon.com/sdkforjava											Apache 2.0 License;											http://www.apache.org/licenses/LICENSE-2.0;										Amazon Web Services, Inc.
