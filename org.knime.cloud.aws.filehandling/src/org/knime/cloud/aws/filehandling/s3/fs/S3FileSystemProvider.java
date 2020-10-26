@@ -84,7 +84,6 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -229,50 +228,6 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         // do nothing, too complex
     }
 
-    @SuppressWarnings("resource")
-    @Override
-    protected boolean exists(final S3Path path) {
-        if (path.getBucketName() == null) {
-            //This is the fake S3 root, or we have valid data in the cache.
-            return true;
-        }
-        final S3Client client = path.getFileSystem().getClient();
-
-        boolean exists = false;
-        if (path.getBlobName() != null) {
-            exists = doesObjectExist(client, path.getBucketName(), path.getBlobName());
-
-            // when given /path also check for existence of /path/
-            if (!exists && !path.isDirectory()) {
-                exists = doesObjectExist(client, path.getBucketName(), path.toDirectoryPath().getBlobName());
-            }
-
-            // when given /path or /path/ also check for /path/bla
-            if (!exists) {
-                final String blobFolderName = path.toDirectoryPath().getBlobName();
-
-                final ListObjectsV2Request request = ListObjectsV2Request.builder()//
-                    .bucket(path.getBucketName())//
-                    .prefix(blobFolderName)//
-                    .startAfter(blobFolderName)//
-                    .maxKeys(1)//
-                    .build();
-
-                final ListObjectsV2Response result = client.listObjectsV2(request);
-                exists = !result.contents().isEmpty() || !result.commonPrefixes().isEmpty();
-            }
-        } else {
-            try {
-                client.headBucket(b -> b.bucket(path.getBucketName()));
-                exists = true;
-            } catch (final NoSuchBucketException e) {//NOSONAR exceptions is expected behavior
-                //bucket does not exist
-            }
-        }
-
-        return exists;
-    }
-
     private static boolean doesObjectExist(final S3Client client, final String bucket, final String blob) {
         try {
             client.headObject(b -> b.bucket(bucket).key(blob));
@@ -408,24 +363,34 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
                 HeadObjectResponse metadata =
                     client.headObject(b -> b.bucket(dirPath.getBucketName()).key(dirPath.getBlobName()));
                 return convertMetaDataToFileAttributes(dirPath, metadata);
-            } catch (NoSuchKeyException e) {//NOSONAR exceptions is expected behavior
+            } catch (NoSuchKeyException e) { //NOSONAR exceptions is expected behavior
                 //object does not exist
             }
-
         }
 
         // directory case (2): last possibility, when neither "/path" nor "/path/" exist, it could be
         // that the "directory" is just the common prefix of some objects.
+        final ListObjectsV2Request request = ListObjectsV2Request.builder()//
+                .bucket(dirPath.getBucketName())//
+                .prefix(dirPath.getBlobName())//
+                .startAfter(dirPath.getBlobName())//
+                .maxKeys(1)//
+                .build();
 
-        return new BaseFileAttributes(false, //
-            path, //
-            FileTime.fromMillis(0), //
-            FileTime.fromMillis(0), //
-            FileTime.fromMillis(0), //
-            0L, //
-            false, //
-            false, //
-            null);
+        final ListObjectsV2Response result = client.listObjectsV2(request);
+        if (!result.contents().isEmpty() || !result.commonPrefixes().isEmpty()) {
+            return new BaseFileAttributes(false, //
+                path, //
+                FileTime.fromMillis(0), //
+                FileTime.fromMillis(0), //
+                FileTime.fromMillis(0), //
+                0L, //
+                false, //
+                false, //
+                null);
+        }
+
+        throw new NoSuchFileException(path.toString());
     }
 
     private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path,
