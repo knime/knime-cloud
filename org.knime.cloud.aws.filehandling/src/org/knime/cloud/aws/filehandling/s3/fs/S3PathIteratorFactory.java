@@ -188,12 +188,7 @@ public abstract class S3PathIteratorFactory {
 
         @SuppressWarnings("resource")
         private S3Path getPathFromPrefix(final String commonPrefix) {
-            final S3Path path = new S3Path(m_path.getFileSystem(), m_path.getBucketName(), commonPrefix);
-            final FileTime lastModified = FileTime.fromMillis(0L);
-            final BaseFileAttributes attributes = new BaseFileAttributes(false, path, lastModified, lastModified,
-                lastModified, 0, false, false, null);
-            m_path.getFileSystem().addToAttributeCache(path, attributes);
-            return path;
+            return new S3Path(m_path.getFileSystem(), m_path.getBucketName(), commonPrefix);
         }
 
         @SuppressWarnings("resource")
