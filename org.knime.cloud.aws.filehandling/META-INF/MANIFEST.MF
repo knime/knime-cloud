@@ -34,5 +34,7 @@ Bundle-ClassPath: cloud_aws_filehandling.jar,
  libs/s3-2.15.14.jar,
  libs/sdk-core-2.15.14.jar,
  libs/sts-2.15.14.jar,
- libs/utils-2.15.14.jar
+ libs/utils-2.15.14.jar,
+ libs/aws-json-protocol-2.15.14.jar,
+ libs/kms-2.15.14.jar
 Export-Package: org.knime.cloud.aws.filehandling.s3.fs

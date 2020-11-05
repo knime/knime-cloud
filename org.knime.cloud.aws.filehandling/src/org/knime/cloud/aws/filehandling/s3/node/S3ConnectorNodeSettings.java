@@ -60,6 +60,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
 /**
  * Settings for {@link S3ConnectorNodeModel}.
@@ -72,17 +73,29 @@ public class S3ConnectorNodeSettings {
 
     private static final String DEFAULT_WORKING_DIR = S3FileSystem.PATH_SEPARATOR;
 
+    private static final boolean DEFAULT_SSE_ENABLED = false;
+    private static final String DEFAULT_SSE_MODE = SSEMode.getDefault().getKey();
+    private static final String DEFAULT_KMS_KEY_ID = "";
+
     private static final String KEY_SOCKET_TIMEOUTS = "readWriteTimeoutInSeconds";
 
     private static final String KEY_NORMALIZE_PATHS = "normalizePaths";
 
     private static final String KEY_WORKING_DIRECTORY = "workingDirectory";
 
+    private static final String KEY_SSE_ENABLED = "sseEnabled";
+    private static final String KEY_SSE_MODE = "sseMode";
+    private static final String KEY_SSE_KMS_KEY_ID = "sseKmsKeyId";
+
     private final SettingsModelIntegerBounded m_socketTimeout;
 
     private final SettingsModelBoolean m_normalizePath;
 
     private final SettingsModelString m_workingDirectory;
+
+    private final SettingsModelBoolean m_sseEnabled;
+    private final SettingsModelString m_sseMode;
+    private final SettingsModelString m_kmsKeyId;
 
     /**
      * Creates new instance
@@ -92,6 +105,10 @@ public class S3ConnectorNodeSettings {
             0, Integer.MAX_VALUE);
         m_normalizePath = new SettingsModelBoolean(KEY_NORMALIZE_PATHS, DEFAULT_NORMALIZE);
         m_workingDirectory = new SettingsModelString(KEY_WORKING_DIRECTORY, DEFAULT_WORKING_DIR);
+
+        m_sseEnabled = new SettingsModelBoolean(KEY_SSE_ENABLED, DEFAULT_SSE_ENABLED);
+        m_sseMode = new SettingsModelString(KEY_SSE_MODE, DEFAULT_SSE_MODE);
+        m_kmsKeyId = new SettingsModelString(KEY_SSE_KMS_KEY_ID, DEFAULT_KMS_KEY_ID);
     }
 
     private static int getDefaultSocketTimeout() {
@@ -146,6 +163,48 @@ public class S3ConnectorNodeSettings {
     }
 
     /**
+     * @return the sseEnabled model
+     */
+    public SettingsModelBoolean getSseEnabledModel() {
+        return m_sseEnabled;
+    }
+
+    /**
+     * @return whether Sever Side Encryption is enabled.
+     */
+    public boolean isSseEnabled() {
+        return m_sseEnabled.getBooleanValue();
+    }
+
+    /**
+     * @return the sseMode model
+     */
+    public SettingsModelString getSseModeModel() {
+        return m_sseMode;
+    }
+
+    /**
+     * @return the sseMode
+     */
+    public SSEMode getSseMode() {
+        return SSEMode.fromKey(m_sseMode.getStringValue());
+    }
+
+    /**
+     * @return the kmsKeyId model
+     */
+    public SettingsModelString getKmsKeyIdModel() {
+        return m_kmsKeyId;
+    }
+
+    /**
+     * @return the kmsKeyId
+     */
+    public String getKmsKeyId() {
+        return m_kmsKeyId.getStringValue();
+    }
+
+    /**
      * Saves the settings in this instance to the given {@link NodeSettingsWO}
      *
      * @param settings Node settings.
@@ -154,6 +213,9 @@ public class S3ConnectorNodeSettings {
         m_socketTimeout.saveSettingsTo(settings);
         m_normalizePath.saveSettingsTo(settings);
         m_workingDirectory.saveSettingsTo(settings);
+        m_sseEnabled.saveSettingsTo(settings);
+        m_sseMode.saveSettingsTo(settings);
+        m_kmsKeyId.saveSettingsTo(settings);
     }
 
     /**
@@ -166,10 +228,18 @@ public class S3ConnectorNodeSettings {
         m_socketTimeout.validateSettings(settings);
         if (settings.containsKey(KEY_NORMALIZE_PATHS)) {
             m_normalizePath.validateSettings(settings);
-        } else {
         }
         if (settings.containsKey(KEY_WORKING_DIRECTORY)) {
             m_workingDirectory.validateSettings(settings);
+        }
+        if (settings.containsKey(KEY_SSE_ENABLED)) {
+            m_sseEnabled.validateSettings(settings);
+        }
+        if (settings.containsKey(KEY_SSE_MODE)) {
+            m_sseMode.validateSettings(settings);
+        }
+        if (settings.containsKey(KEY_SSE_KMS_KEY_ID)) {
+            m_kmsKeyId.validateSettings(settings);
         }
     }
 
@@ -191,6 +261,15 @@ public class S3ConnectorNodeSettings {
         } else {
             m_workingDirectory.setStringValue(DEFAULT_WORKING_DIR);
         }
+        if (settings.containsKey(KEY_SSE_ENABLED)) {
+            m_sseEnabled.loadSettingsFrom(settings);
+            m_sseMode.loadSettingsFrom(settings);
+            m_kmsKeyId.loadSettingsFrom(settings);
+        } else {
+            m_sseEnabled.setBooleanValue(DEFAULT_SSE_ENABLED);
+            m_sseMode.setStringValue(DEFAULT_SSE_MODE);
+            m_kmsKeyId.setStringValue(DEFAULT_KMS_KEY_ID);
+        }
     }
 
     @Override
@@ -205,5 +284,70 @@ public class S3ConnectorNodeSettings {
             throw new IllegalStateException(ex);
         }
         return clone;
+    }
+
+    /**
+     * Enum representing different available S3 server-side encryption modes.
+     *
+     */
+    public enum SSEMode {
+            /**
+             * SSE-S3 mode
+             */
+            S3("Use Amazon S3-Managed Encryption Keys (SSE-S3)", "SSE-S3",ServerSideEncryption.AES256),
+            /**
+             * SSE-KMS mode
+             */
+            KMS("Use CMKs Stored in AWS Key Management Service (SSE-KMS)", "SSE-KMS",ServerSideEncryption.AWS_KMS);
+
+        private String m_title;
+        private String m_key;
+
+        private ServerSideEncryption m_encryption;
+
+        private SSEMode(final String title, final String key, final ServerSideEncryption encryption) {
+            m_title = title;
+            m_key = key;
+            m_encryption = encryption;
+        }
+
+        /**
+         * @return the key
+         */
+        public String getKey() {
+            return m_key;
+        }
+
+        /**
+         * @return the encryption
+         */
+        public ServerSideEncryption getEncryption() {
+            return m_encryption;
+        }
+
+        @Override
+        public String toString() {
+            return m_title;
+        }
+
+        /**
+         * @return The default mode.
+         */
+        public static SSEMode getDefault() {
+            return S3;
+        }
+
+        /**
+         * @param key The mode key.
+         * @return The mode with the given key or the default mode in case no mode with a given key is found.
+         */
+        public static SSEMode fromKey(final String key) {
+            for (SSEMode mode : values()) {
+                if(mode.getKey().equals(key)) {
+                    return mode;
+                }
+            }
+            return getDefault();
+        }
     }
 }

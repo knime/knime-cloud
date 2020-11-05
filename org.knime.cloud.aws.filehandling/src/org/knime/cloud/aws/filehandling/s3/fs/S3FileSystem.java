@@ -48,35 +48,25 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.security.InvalidKeyException;
 import java.time.Duration;
 import java.util.Collections;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-
+import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
+import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.core.util.KnimeEncryption;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
 import org.knime.filehandling.core.connections.FSCategory;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sts.StsClient;
-import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
  * The Amazon S3 implementation of the {@link FileSystem} interface.
@@ -99,6 +89,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
     private final boolean m_normalizePaths;
 
+    private final boolean m_sseEnabled;
+    private final SSEMode m_sseMode;
+    private final String m_kmsKeyId;
+
     /**
      * Constructs an S3FileSystem for the given URI
      *
@@ -116,6 +110,9 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             createFSLocationSpec(connectionInformation));
 
         m_normalizePaths = settings.getNormalizePath();
+        m_sseEnabled = settings.isSseEnabled();
+        m_sseMode = settings.getSseMode();
+        m_kmsKeyId = settings.getKmsKeyId();
         try {
             m_client = createClient(settings, connectionInformation);
         } catch (final Exception ex) {
@@ -144,64 +141,39 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
         return S3Client.builder()//
             .region(Region.of(con.getHost()))//
-            .credentialsProvider(getCredentialProvider(con))//
+            .credentialsProvider(AwsUtils.getCredentialProvider(con))//
             .httpClientBuilder(httpClientBuilder)//
             .build();
     }
 
-    @SuppressWarnings("resource")
-    private static AwsCredentialsProvider getCredentialProvider(final CloudConnectionInformation con) {
-        final AwsCredentialsProvider credentialProvider;
-        final AwsCredentialsProvider conCredentialProvider;
+    /**
+     * Sets up necessary SSE parameters in case server-side encryption is enabled.
+     *
+     * @param request {@link PutObjectRequest} builder.
+     */
+    public void populateSseParams(final PutObjectRequest.Builder request) {
+        if (m_sseEnabled) {
+            request.serverSideEncryption(m_sseMode.getEncryption());
 
-        if (con.useKeyChain()) {
-            conCredentialProvider = DefaultCredentialsProvider.create();
-        } else if (con.isUseAnonymous()) {
-            conCredentialProvider = AnonymousCredentialsProvider.create();
-        } else {
-            final String accessKeyId = con.getUser();
-            String secretAccessKey;
-            try {
-                secretAccessKey = KnimeEncryption.decrypt(con.getPassword());
-            } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | IOException e) {
-                throw new IllegalStateException(e);
+            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
+                request.ssekmsKeyId(m_kmsKeyId);
             }
-            conCredentialProvider =
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
         }
-
-        if (con.switchRole()) {
-            credentialProvider = getRoleSwitchCredentialProvider(con, conCredentialProvider);
-        } else {
-            credentialProvider = conCredentialProvider;
-        }
-        return credentialProvider;
     }
 
-    @SuppressWarnings("resource")
-    private static AwsCredentialsProvider getRoleSwitchCredentialProvider(final CloudConnectionInformation con,
-        final AwsCredentialsProvider credentialProvider) {
-        final AssumeRoleRequest asumeRole = AssumeRoleRequest.builder()//
-            .roleArn(buildARN(con))//
-            .durationSeconds(3600)//
-            .roleSessionName("KNIME_S3_Connection")//
-            .build();
+    /**
+     * Sets up necessary SSE parameters in case server-side encryption is enabled.
+     *
+     * @param request {@link CopyObjectRequest} builder.
+     */
+    public void populateSseParams(final CopyObjectRequest.Builder request) {
+        if (m_sseEnabled) {
+            request.serverSideEncryption(m_sseMode.getEncryption());
 
-        final StsClient stsClient = StsClient.builder()//
-            .region(Region.of(con.getHost()))//
-            .credentialsProvider(credentialProvider)//
-            .build();
-
-        return StsAssumeRoleCredentialsProvider.builder()//
-            .stsClient(stsClient)//
-            .refreshRequest(asumeRole)//
-            .asyncCredentialUpdateEnabled(true)//
-            .build();
-    }
-
-    private static String buildARN(final CloudConnectionInformation connectionInformation) {
-        return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/"
-            + connectionInformation.getSwitchRoleName();
+            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
+                request.ssekmsKeyId(m_kmsKeyId);
+            }
+        }
     }
 
     @Override

@@ -116,7 +116,11 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
 
         if (dir.getBlobName() != null) {
             final String objectKey = dir.toDirectoryPath().getBlobName();
-            PutObjectRequest req = PutObjectRequest.builder().bucket(bucketName).key(objectKey).build();
+            PutObjectRequest req = PutObjectRequest.builder()//
+                .bucket(bucketName)//
+                .key(objectKey)//
+                .applyMutation(dir.getFileSystem()::populateSseParams)//
+                .build();
             dir.getFileSystem().getClient().putObject(req, RequestBody.empty());
         } else {
             dir.getFileSystem().getClient().createBucket(b -> b.bucket(bucketName));
@@ -133,7 +137,9 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
                 CopyObjectRequest req = CopyObjectRequest.builder()//
                     .copySource(encodeCopySource(source.getBucketName(), source.getBlobName()))
                     .destinationBucket(target.getBucketName())//
-                    .destinationKey(target.getBlobName()).build();
+                    .destinationKey(target.getBlobName())//
+                    .applyMutation(target.getFileSystem()::populateSseParams)//
+                    .build();
                 client.copyObject(req);
             } catch (final Exception ex) {
                 throw new IOException(ex);
@@ -180,7 +186,8 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             CopyObjectRequest req = CopyObjectRequest.builder()//
                 .copySource(encodeCopySource(source.getBucketName(), source.getBlobName()))
                 .destinationBucket(target.getBucketName())//
-                .destinationKey(target.getBlobName()).build();
+                .destinationKey(target.getBlobName())//
+                .applyMutation(target.getFileSystem()::populateSseParams).build();
             client.copyObject(req);
 
             delete(source);
@@ -213,6 +220,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
                 .copySource(encodeCopySource(sourceDirPath.getBucketName(), object.key()))
                 .destinationBucket(targetDirPath.getBucketName())//
                 .destinationKey(object.key().replace(sourceDirPath.getBlobName(), targetDirPath.getBlobName()))//
+                .applyMutation(targetDirPath.getFileSystem()::populateSseParams)//
                 .build();
             client.copyObject(req);
 

@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
+import java.awt.CardLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -56,15 +57,19 @@ import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
+import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
@@ -80,6 +85,7 @@ import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
 public class S3ConnectorNodeDialog extends NodeDialogPane {
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectorNodeDialog.class);
 
     private final ChangeListener m_workdirListener;
     private final S3ConnectorNodeSettings m_settings = new S3ConnectorNodeSettings();
@@ -88,12 +94,15 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
 
     private CloudConnectionInformation m_connInfo;
 
+    private JComboBox<SSEMode> m_sseModeCombobox;
+    private KmsKeyInputPanel m_kmsKeyInput;
+
     S3ConnectorNodeDialog() {
         m_workdirListener = e -> m_settings.getWorkingDirectoryModel()
             .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
 
         addTab("Settings", createSettingsPanel());
-        addTab("Advanced", createTimeoutsPanel());
+        addTab("Advanced", createAdvancedTab());
     }
 
     private JComponent createSettingsPanel() {
@@ -124,6 +133,13 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         return panel;
     }
 
+    private JComponent createAdvancedTab() {
+        Box box = new Box(BoxLayout.Y_AXIS);
+        box.add(createTimeoutsPanel());
+        box.add(createEncryptionPanel());
+        return box;
+    }
+
     private JComponent createTimeoutsPanel() {
         DialogComponentNumber socketTimeout =
                 new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
@@ -132,6 +148,42 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         socketTimeout.getComponentPanel().setBorder(BorderFactory.createTitledBorder("Connection settings"));
 
         return socketTimeout.getComponentPanel();
+    }
+
+    private JComponent createEncryptionPanel() {
+        m_kmsKeyInput = new KmsKeyInputPanel(m_settings.getKmsKeyIdModel());
+
+        JPanel cards = new JPanel(new CardLayout());
+        cards.add(new JPanel(), SSEMode.S3.getKey());
+        cards.add(m_kmsKeyInput, SSEMode.KMS.getKey());
+
+        DialogComponentBoolean sseEnabled =
+            new DialogComponentBoolean(m_settings.getSseEnabledModel(), "Enable server side encryption");
+        m_settings.getSseEnabledModel().addChangeListener(e -> onSseEnabledChanged());
+
+        m_sseModeCombobox = new JComboBox<>(SSEMode.values());
+        m_sseModeCombobox.addActionListener(e -> {
+            SSEMode mode = (SSEMode)m_sseModeCombobox.getSelectedItem();
+            m_settings.getSseModeModel().setStringValue(mode.getKey());
+            ((CardLayout)cards.getLayout()).show(cards, mode.getKey());
+        });
+
+
+        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        checkboxPanel.add(sseEnabled.getComponentPanel());
+        checkboxPanel.add(m_sseModeCombobox);
+
+        Box box = new Box(BoxLayout.Y_AXIS);
+        box.add(checkboxPanel);
+        box.add(cards);
+        box.setBorder(BorderFactory.createTitledBorder("Server side encryption"));
+        return box;
+    }
+
+    private void onSseEnabledChanged() {
+        boolean enabled = m_settings.isSseEnabled();
+        m_sseModeCombobox.setEnabled(enabled);
+        m_kmsKeyInput.setEnabled(enabled);
     }
 
     private FSConnection createFSConnection() throws IOException {
@@ -156,7 +208,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         try {
             m_settings.loadSettingsFrom(settings);
         } catch (InvalidSettingsException ex) {
-            // ignore
+            LOGGER.warn(ex.getMessage(), ex);
         }
 
         m_connInfo = ((CloudConnectionInformationPortObjectSpec)specs[0]).getConnectionInformation();
@@ -167,6 +219,10 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
     private void settingsLoaded() {
         m_workingDirChooser.setSelectedWorkingDirectory(m_settings.getWorkingDirectoryModel().getStringValue());
         m_workingDirChooser.addListener(m_workdirListener);
+
+        m_kmsKeyInput.onSettingsLoaded(m_connInfo);
+        m_sseModeCombobox.setSelectedItem(m_settings.getSseMode());
+        onSseEnabledChanged();
     }
 
     @Override

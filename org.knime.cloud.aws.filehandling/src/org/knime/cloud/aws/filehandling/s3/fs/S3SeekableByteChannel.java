@@ -87,6 +87,7 @@ public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
         PutObjectRequest req = PutObjectRequest.builder()//
             .bucket(remoteFile.getBucketName())//
             .key(remoteFile.getBlobName())//
+            .applyMutation(remoteFile.getFileSystem()::populateSseParams)
             .build();
         remoteFile.getFileSystem().getClient().putObject(req, tempFile);
     }

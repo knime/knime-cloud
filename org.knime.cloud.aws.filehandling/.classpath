@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="libs/annotations-2.15.14.jar" />
-	<classpathentry exported="true" kind="lib" path="libs/apache-client-2.15.14.jar" />
+	<classpathentry exported="true" kind="lib" path="libs/aws-json-protocol-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/kms-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/annotations-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/apache-client-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/arns-2.15.14.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/auth-2.15.14.jar" />
-	<classpathentry exported="true" kind="lib" path="libs/aws-core-2.15.14.jar" />
+	<classpathentry exported="true" kind="lib" path="libs/auth-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/aws-core-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/aws-query-protocol-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/aws-xml-protocol-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/eventstream-1.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/http-client-spi-2.15.14.jar" />
+	<classpathentry exported="true" kind="lib" path="libs/http-client-spi-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/metrics-spi-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/profiles-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/protocol-core-2.15.14.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/regions-2.15.14.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/s3-2.15.14.jar" />
-	<classpathentry exported="true" kind="lib" path="libs/sdk-core-2.15.14.jar" />
-	<classpathentry exported="true" kind="lib" path="libs/sts-2.15.14.jar" />
-	<classpathentry exported="true" kind="lib" path="libs/utils-2.15.14.jar" />
+	<classpathentry exported="true" kind="lib" path="libs/s3-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/sdk-core-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/sts-2.15.14.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/utils-2.15.14.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
