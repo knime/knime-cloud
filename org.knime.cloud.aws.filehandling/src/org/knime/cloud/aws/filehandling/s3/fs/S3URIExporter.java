@@ -42,79 +42,60 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- *
- * History
- *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.core.node.util.CheckUtils;
-import org.knime.core.node.util.FileSystemBrowser;
-import org.knime.filehandling.core.connections.FSConnection;
-import org.knime.filehandling.core.connections.FSFileSystem;
+import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.connections.uriexport.URIExporter;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
-import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
 
 /**
- * The Amazon S3 implementation of the {@link FSConnection} interface.
+ * {@link URIExporter} implementation using "s3" as scheme.
  *
- * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
+ * @author Sascha Wolke, KNIME GmbH
  */
-public class S3FSConnection implements FSConnection {
+public final class S3URIExporter implements URIExporter {
 
-    private static final long CACHE_TTL_MILLIS = 6000;
-
-    private final S3FileSystem m_fileSystem;
+    private static final String SCHEME = "s3";
 
     /**
-     * Creates a new {@link S3FSConnection} for the given connection information.
-     *
-     * @param connInfo the cloud connection information
-     * @param settings the node settings
-     * @throws IOException
+     * Unique identifier of this exporter.
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo,
-        final S3ConnectorNodeSettings settings) throws IOException {
+    public static final URIExporterID ID = new URIExporterID(SCHEME);
 
-        CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
-        CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
+    private static final S3URIExporter INSTANCE = new S3URIExporter();
 
-
-        m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS);
+    private S3URIExporter() {
     }
 
     /**
-     * @param connInfo the cloud connection information
-     * @throws IOException
+     * @return singleton instance of this exporter
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo) throws IOException {
-        this(connInfo, new S3ConnectorNodeSettings());
+    public static S3URIExporter getInstance() {
+        return INSTANCE;
     }
 
     @Override
-    public FSFileSystem<?> getFileSystem() {
-        return m_fileSystem;
+    public URIExporterID getID() {
+        return ID;
     }
 
     @Override
-    public FileSystemBrowser getFileSystemBrowser() {
-        return new NioFileSystemBrowser(this);
+    public String getLabel() {
+        return SCHEME + " URIs";
     }
 
     @Override
-    public URIExporter getDefaultURIExporter() {
-        return S3URIExporter.getInstance();
+    public String getDescription() {
+        return "Exports URIs with scheme '" + SCHEME + "'.";
     }
 
     @Override
-    public Map<URIExporterID, URIExporter> getURIExporters() {
-        return Collections.singletonMap(S3URIExporter.ID, S3URIExporter.getInstance());
+    public URI toUri(final FSPath path) throws URISyntaxException {
+        final S3Path s3Path = (S3Path)path.toAbsolutePath();
+        return new URI(SCHEME, s3Path.getBucketName(), '/' + s3Path.getBlobName(), null);
     }
 }
