@@ -51,7 +51,10 @@ package org.knime.cloud.aws.filehandling.s3.node;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -61,6 +64,9 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
 
 import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -68,9 +74,11 @@ import org.knime.core.node.NodeLogger;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.util.SwingWorkerWithContext;
 
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.KmsClientBuilder;
+import software.amazon.awssdk.services.kms.model.AliasListEntry;
 import software.amazon.awssdk.services.kms.model.KeyListEntry;
 import software.amazon.awssdk.services.kms.model.KmsException;
 
@@ -89,8 +97,8 @@ public class KmsKeyInputPanel extends JPanel {
 
     private CloudConnectionInformation m_connInfo;
 
-    private final DefaultComboBoxModel<String> m_comboModel;
-    private final JComboBox<String> m_combobox;
+    private final DefaultComboBoxModel<KeyItem> m_comboModel;
+    private final JComboBox<KeyItem> m_combobox;
     private final JButton m_fetchBtn;
     private final JButton m_cancelBtn;
 
@@ -103,9 +111,10 @@ public class KmsKeyInputPanel extends JPanel {
     public KmsKeyInputPanel(final SettingsModelString kmsKeyId) {
         m_kmsKeyId = kmsKeyId;
 
-        m_comboModel = new DefaultComboBoxModel<>(new String[]{});
+        m_comboModel = new DefaultComboBoxModel<>(new KeyItem[]{});
         m_combobox = new JComboBox<>(m_comboModel);
         m_combobox.setEditable(true);
+        m_combobox.setEditor(new KeyItemComboBoxEditor(m_combobox));
         m_combobox.addActionListener(e -> onSelectionChanged());
 
         m_fetchBtn = new JButton("List keys");
@@ -151,8 +160,8 @@ public class KmsKeyInputPanel extends JPanel {
     }
 
     private void onSelectionChanged() {
-        String key = (String)m_comboModel.getSelectedItem();
-        m_kmsKeyId.setStringValue(key);
+        KeyItem item = (KeyItem)m_comboModel.getSelectedItem();
+        m_kmsKeyId.setStringValue(item.getKeyId());
     }
 
     private void onFetch() {
@@ -171,7 +180,7 @@ public class KmsKeyInputPanel extends JPanel {
      */
     public void onSettingsLoaded(final CloudConnectionInformation connInfo) {
         m_connInfo = connInfo;
-        m_comboModel.setSelectedItem(m_kmsKeyId.getStringValue());
+        m_comboModel.setSelectedItem(new KeyItem(m_kmsKeyId.getStringValue()));
     }
 
     @Override
@@ -182,9 +191,9 @@ public class KmsKeyInputPanel extends JPanel {
         m_fetchBtn.setEnabled(enabled);
     }
 
-    private class ListKeysWorker extends SwingWorkerWithContext<List<String>, Void> {
+    private class ListKeysWorker extends SwingWorkerWithContext<List<KeyItem>, Void> {
         @Override
-        protected List<String> doInBackgroundWithContext() throws Exception {
+        protected List<KeyItem> doInBackgroundWithContext() throws Exception {
             return fetchKmsKeys();
         }
 
@@ -232,23 +241,135 @@ public class KmsKeyInputPanel extends JPanel {
             JOptionPane.showMessageDialog(getRootPane(), message, "Error", JOptionPane.ERROR_MESSAGE);
         }
 
-        private List<String> fetchKmsKeys() {
+        private List<KeyItem> fetchKmsKeys() {
             KmsClientBuilder builder = KmsClient.builder()//
                 .region(Region.of(m_connInfo.getHost()))//
                 .credentialsProvider(AwsUtils.getCredentialProvider(m_connInfo));
 
             try (KmsClient client = builder.build()) {
                 List<KeyListEntry> keys = client.listKeys().keys();
-                return keys.stream().map(KeyListEntry::keyId).collect(Collectors.toList());
+                Map<String, String> aliases = fetchAliases(client);
+
+                return keys.stream().map(key -> new KeyItem(key.keyId(), aliases.get(key.keyId())))
+                    .collect(Collectors.toList());
             }
         }
 
-        private void onKeysLoaded(final List<String> keys) {
-            for (String key : keys) {
+        private Map<String, String> fetchAliases(final KmsClient client) {
+            try {
+                Map<String, String> result = new HashMap<>();
+
+                List<AliasListEntry> aliases = client.listAliases().aliases();
+                for (AliasListEntry alias : aliases) {
+                    if (alias.targetKeyId() != null) {
+                        result.put(alias.targetKeyId(), alias.aliasName());
+                    }
+                }
+
+                return result;
+            } catch (AwsServiceException ex) {
+                LOGGER.warn(ex.getMessage(), ex);
+            }
+            return Collections.emptyMap();
+        }
+
+        private void onKeysLoaded(final List<KeyItem> keys) {
+            for (KeyItem key : keys) {
                 if (m_comboModel.getIndexOf(key) == -1) {
                     m_comboModel.addElement(key);
                 }
             }
+        }
+    }
+
+    private static class KeyItem {
+        private String m_keyId;
+
+        private String m_alias;
+
+        public KeyItem(final String keyId) {
+            this(keyId, null);
+        }
+
+        public KeyItem(final String keyId, final String alias) {
+            m_keyId = keyId;
+            m_alias = alias;
+        }
+
+        public String getKeyId() {
+            return m_keyId;
+        }
+
+        @Override
+        public String toString() {
+            if (m_alias != null && !m_alias.isEmpty()) {
+                return String.format("%s (%s)", m_alias, m_keyId);
+            }
+            return m_keyId;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (obj != null && this.getClass() == obj.getClass()) {
+                return m_keyId.equals(((KeyItem)obj).m_keyId);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return m_keyId.hashCode();
+        }
+    }
+
+    private static class KeyItemComboBoxEditor extends BasicComboBoxEditor {
+
+        private final JComboBox<KeyItem> m_parent;
+
+        private boolean m_ignoreListeners;
+
+        public KeyItemComboBoxEditor(final JComboBox<KeyItem> parent) {
+            m_parent = parent;
+            m_ignoreListeners = false;
+
+            editor.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void removeUpdate(final DocumentEvent e) {
+                    onTextFieldUpdated();
+                }
+
+                @Override
+                public void insertUpdate(final DocumentEvent e) {
+                    onTextFieldUpdated();
+                }
+
+                @Override
+                public void changedUpdate(final DocumentEvent e) {
+                    onTextFieldUpdated();
+                }
+            });
+        }
+
+        private void onTextFieldUpdated() {
+            if (!m_ignoreListeners) {
+                m_parent.setSelectedItem(getItem());
+            }
+        }
+
+        @Override
+        public void setItem(final Object anObject) {
+            m_ignoreListeners = true;
+            super.setItem(anObject);
+            m_ignoreListeners = false;
+        }
+
+        @Override
+        public KeyItem getItem() {
+            Object newVal = super.getItem();
+            if (!(newVal instanceof KeyItem)) {
+                return new KeyItem(newVal.toString());
+            }
+            return (KeyItem)newVal;
         }
     }
 }
