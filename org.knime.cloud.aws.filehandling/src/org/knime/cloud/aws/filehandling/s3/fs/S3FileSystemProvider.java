@@ -99,11 +99,6 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3FileSystemProvider.class);
 
     @Override
-    public String getScheme() {
-        return S3FileSystem.FS_TYPE;
-    }
-
-    @Override
     protected SeekableByteChannel newByteChannelInternal(final S3Path path, final Set<? extends OpenOption> options,
         final FileAttribute<?>... attrs) throws IOException {
         return new S3SeekableByteChannel(path, options);

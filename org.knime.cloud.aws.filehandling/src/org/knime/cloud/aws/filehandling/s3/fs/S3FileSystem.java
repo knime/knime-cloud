@@ -203,16 +203,6 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         m_client.close();
     }
 
-    @Override
-    public String getSchemeString() {
-        return FS_TYPE;
-    }
-
-    @Override
-    public String getHostString() {
-        return null;
-    }
-
     /**
      * @return whether to normalize paths.
      */
