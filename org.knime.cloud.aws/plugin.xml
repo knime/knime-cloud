@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?eclipse version="3.0"?><plugin>
    <extension point="org.knime.workbench.repository.nodes">
-      <node category-path="/io/filehandling/remote/connections" factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory"/>
-   <node category-path="/io/filehandling/remote" factory-class="org.knime.cloud.aws.s3.node.filepicker.S3FilePickerNodeFactory"/>
+      <node
+            category-path="/io/filehandling/remote/connections"
+            deprecated="true"
+            factory-class="org.knime.cloud.aws.s3.node.connector.S3ConnectionNodeFactory"/>
+   <node
+         category-path="/io/filehandling/remote"
+         deprecated="true"
+         factory-class="org.knime.cloud.aws.s3.node.filepicker.S3FilePickerNodeFactory"/>
    <node category-path="/labs/aws" deprecated="false" factory-class="org.knime.cloud.aws.nodes.connector.AmazonAuthenticationNodeFactory">
       </node>
    </extension>

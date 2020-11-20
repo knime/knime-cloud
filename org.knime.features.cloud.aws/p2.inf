@@ -1,0 +1,2 @@
+update.matchExp = providedCapabilities.exists(pc | pc.namespace == 'org.eclipse.equinox.p2.iu' && (pc.name == 'org.knime.features.cloud.aws.feature.group' || pc.name == 'org.knime.features.cloud.aws.filehandling.feature.group'))
+update.severity = 1

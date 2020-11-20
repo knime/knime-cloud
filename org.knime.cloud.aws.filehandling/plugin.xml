@@ -5,7 +5,7 @@
          point="org.knime.workbench.repository.nodes">
            
       <node
-            category-path="/labs/file-handling-prototype"
+            category-path="/io/connectors"
             factory-class="org.knime.cloud.aws.filehandling.nodes.S3connection.S3ConnectionNodeFactory">
       </node>
 
