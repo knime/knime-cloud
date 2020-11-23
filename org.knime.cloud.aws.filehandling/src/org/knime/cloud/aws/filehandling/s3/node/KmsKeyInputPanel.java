@@ -95,6 +95,7 @@ public class KmsKeyInputPanel extends JPanel {
 
     private final transient SettingsModelString m_kmsKeyId;
 
+    private final JLabel m_keyIdLabel = new JLabel("KMS key id");
     private CloudConnectionInformation m_connInfo;
 
     private final DefaultComboBoxModel<KeyItem> m_comboModel;
@@ -103,6 +104,7 @@ public class KmsKeyInputPanel extends JPanel {
     private final JButton m_cancelBtn;
 
     private transient ListKeysWorker m_fetchWorker;
+
 
     /**
      * @param kmsKeyId {@link SettingsModelString} holding KMS keyId.
@@ -142,7 +144,7 @@ public class KmsKeyInputPanel extends JPanel {
         c.weightx = 0;
         c.insets = new Insets(0, 0, 0, 5);
 
-        add(new JLabel("KMS key id"), c);
+        add(m_keyIdLabel, c);
         c.gridx += 1;
 
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -187,6 +189,7 @@ public class KmsKeyInputPanel extends JPanel {
     public void setEnabled(final boolean enabled) {
         super.setEnabled(enabled);
 
+        m_keyIdLabel.setEnabled(enabled);
         m_combobox.setEnabled(enabled);
         m_fetchBtn.setEnabled(enabled);
     }

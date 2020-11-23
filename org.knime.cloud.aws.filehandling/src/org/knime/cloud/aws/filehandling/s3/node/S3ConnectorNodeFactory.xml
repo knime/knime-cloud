@@ -45,6 +45,17 @@
         	<option name="Read/write timeout in seconds">The socket read/write timeout. For further details see the 
             	<a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html#setSocketTimeout-int-">S3 documentation</a>.
         	</option>
+        	<option name="Server-side encryption (SSE)">If selected, all data written to S3 will be encrypted with 
+        		<a href ="https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html">Server-side encryption (SSE)</a>. Both SSE-S3
+        		and SSE-KMS are supported.
+        	</option>
+        	<option name="Use default AWS managed key">If SSE-KMS is selected as the SSE method, then this option specifies whether or not to
+    	    	encrypt data with the default AWS managed CMK.
+        	</option>
+        	<option name="KMS key id">If SSE-KMS is selected as the SSE method and the default AWS managed CMK should <b>not</b> be used, then
+        	this option allows to choose the KMS key with which to encrypt data written to S3. Click on <i>List keys</i> to fetch the list of available
+        	keys (requires permissions <tt>kms:ListKeys</tt>, <tt>kms:DescribeKey</tt> and optionally <tt>kms:ListAliases</tt>).
+        	</option>
         </tab>
     </fullDescription>
 	<ports>

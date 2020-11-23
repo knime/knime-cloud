@@ -57,7 +57,6 @@ import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -88,18 +87,20 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectorNodeDialog.class);
 
     private final ChangeListener m_workdirListener;
+    private final ChangeListener m_sseKmsUseAwsManagedListener;
+
     private final S3ConnectorNodeSettings m_settings = new S3ConnectorNodeSettings();
     private final WorkingDirectoryChooser m_workingDirChooser =
         new WorkingDirectoryChooser("s3.workingDir", this::createFSConnection);
 
     private CloudConnectionInformation m_connInfo;
-
     private JComboBox<SSEMode> m_sseModeCombobox;
     private KmsKeyInputPanel m_kmsKeyInput;
 
     S3ConnectorNodeDialog() {
         m_workdirListener = e -> m_settings.getWorkingDirectoryModel()
             .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
+        m_sseKmsUseAwsManagedListener = e -> onSseEnabledChanged();
 
         addTab("Settings", createSettingsPanel());
         addTab("Advanced", createAdvancedTab());
@@ -134,10 +135,26 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
     }
 
     private JComponent createAdvancedTab() {
-        Box box = new Box(BoxLayout.Y_AXIS);
-        box.add(createTimeoutsPanel());
-        box.add(createEncryptionPanel());
-        return box;
+        JPanel panel = new JPanel(new GridBagLayout());
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        panel.add(createTimeoutsPanel(), gbc);
+
+        gbc.gridy++;
+        panel.add(createEncryptionPanel(), gbc);
+
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1;
+        panel.add(Box.createVerticalGlue(), gbc);
+
+        return panel;
     }
 
     private JComponent createTimeoutsPanel() {
@@ -155,10 +172,10 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
 
         JPanel cards = new JPanel(new CardLayout());
         cards.add(new JPanel(), SSEMode.S3.getKey());
-        cards.add(m_kmsKeyInput, SSEMode.KMS.getKey());
+        cards.add(createSseKmsPanel(), SSEMode.KMS.getKey());
 
         DialogComponentBoolean sseEnabled =
-            new DialogComponentBoolean(m_settings.getSseEnabledModel(), "Enable server side encryption");
+            new DialogComponentBoolean(m_settings.getSseEnabledModel(), "Server-side encryption (SSE)");
         m_settings.getSseEnabledModel().addChangeListener(e -> onSseEnabledChanged());
 
         m_sseModeCombobox = new JComboBox<>(SSEMode.values());
@@ -172,18 +189,72 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         checkboxPanel.add(sseEnabled.getComponentPanel());
         checkboxPanel.add(m_sseModeCombobox);
+        checkboxPanel.add(Box.createHorizontalGlue());
 
-        Box box = new Box(BoxLayout.Y_AXIS);
-        box.add(checkboxPanel);
-        box.add(cards);
-        box.setBorder(BorderFactory.createTitledBorder("Server side encryption"));
-        return box;
+        JPanel encryptionPanel = new JPanel(new GridBagLayout());
+        encryptionPanel.setBorder(BorderFactory.createTitledBorder("Server side encryption"));
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 0, 5);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.NONE;
+        encryptionPanel.add(checkboxPanel, gbc);
+
+        gbc.gridx++;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        encryptionPanel.add(Box.createHorizontalGlue(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 10, 0, 5);
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        encryptionPanel.add(cards, gbc);
+
+        return encryptionPanel;
+    }
+
+    private JPanel createSseKmsPanel() {
+        final JPanel panel = new JPanel(new GridBagLayout());
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 15, 0, 5);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(new DialogComponentBoolean(m_settings.getSseKmsUseAwsManagedModel(),
+                "Use default AWS managed key").getComponentPanel(), gbc);
+
+        gbc.gridx++;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        panel.add(Box.createHorizontalGlue(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 25, 0, 5);
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        panel.add(m_kmsKeyInput, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        gbc.weighty = 1;
+        panel.add(Box.createVerticalGlue(), gbc);
+
+        return panel;
     }
 
     private void onSseEnabledChanged() {
         boolean enabled = m_settings.isSseEnabled();
         m_sseModeCombobox.setEnabled(enabled);
-        m_kmsKeyInput.setEnabled(enabled);
+        m_kmsKeyInput.setEnabled(enabled && !m_settings.sseKmsUseAwsManaged());
     }
 
     private FSConnection createFSConnection() throws IOException {
@@ -218,16 +289,21 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
 
     private void settingsLoaded() {
         m_workingDirChooser.setSelectedWorkingDirectory(m_settings.getWorkingDirectoryModel().getStringValue());
-        m_workingDirChooser.addListener(m_workdirListener);
-
         m_kmsKeyInput.onSettingsLoaded(m_connInfo);
         m_sseModeCombobox.setSelectedItem(m_settings.getSseMode());
+    }
+
+    @Override
+    public void onOpen() {
+        m_workingDirChooser.addListener(m_workdirListener);
+        m_settings.getSseKmsUseAwsManagedModel().addChangeListener(m_sseKmsUseAwsManagedListener);
         onSseEnabledChanged();
     }
 
     @Override
     public void onClose() {
         m_workingDirChooser.removeListener(m_workdirListener);
+        m_settings.getSseKmsUseAwsManagedModel().removeChangeListener(m_sseKmsUseAwsManagedListener);
         m_workingDirChooser.onClose();
     }
 }

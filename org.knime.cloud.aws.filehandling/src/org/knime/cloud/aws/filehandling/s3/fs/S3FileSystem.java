@@ -112,7 +112,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         m_normalizePaths = settings.getNormalizePath();
         m_sseEnabled = settings.isSseEnabled();
         m_sseMode = settings.getSseMode();
-        m_kmsKeyId = settings.getKmsKeyId();
+        m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
         try {
             m_client = createClient(settings, connectionInformation);
         } catch (final Exception ex) {

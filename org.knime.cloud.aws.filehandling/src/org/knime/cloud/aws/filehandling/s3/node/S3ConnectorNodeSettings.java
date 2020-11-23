@@ -75,7 +75,8 @@ public class S3ConnectorNodeSettings {
 
     private static final boolean DEFAULT_SSE_ENABLED = false;
     private static final String DEFAULT_SSE_MODE = SSEMode.getDefault().getKey();
-    private static final String DEFAULT_KMS_KEY_ID = "";
+    private static final boolean DEFAULT_SSE_KMS_USE_AWS_MANAGED = true;
+    private static final String DEFAULT_SSE_KMS_KEY_ID = "";
 
     private static final String KEY_SOCKET_TIMEOUTS = "readWriteTimeoutInSeconds";
 
@@ -85,7 +86,9 @@ public class S3ConnectorNodeSettings {
 
     private static final String KEY_SSE_ENABLED = "sseEnabled";
     private static final String KEY_SSE_MODE = "sseMode";
+    private static final String KEY_SSE_KMS_USE_AWS_MANAGED = "sseKmsUseAwsManaged";
     private static final String KEY_SSE_KMS_KEY_ID = "sseKmsKeyId";
+
 
     private final SettingsModelIntegerBounded m_socketTimeout;
 
@@ -95,7 +98,9 @@ public class S3ConnectorNodeSettings {
 
     private final SettingsModelBoolean m_sseEnabled;
     private final SettingsModelString m_sseMode;
-    private final SettingsModelString m_kmsKeyId;
+
+    private final SettingsModelBoolean m_sseKmsUseAwsManaged;
+    private final SettingsModelString m_sseKmsKeyId;
 
     /**
      * Creates new instance
@@ -108,7 +113,18 @@ public class S3ConnectorNodeSettings {
 
         m_sseEnabled = new SettingsModelBoolean(KEY_SSE_ENABLED, DEFAULT_SSE_ENABLED);
         m_sseMode = new SettingsModelString(KEY_SSE_MODE, DEFAULT_SSE_MODE);
-        m_kmsKeyId = new SettingsModelString(KEY_SSE_KMS_KEY_ID, DEFAULT_KMS_KEY_ID);
+        m_sseKmsUseAwsManaged = new SettingsModelBoolean(KEY_SSE_KMS_USE_AWS_MANAGED, true);
+        m_sseKmsKeyId = new SettingsModelString(KEY_SSE_KMS_KEY_ID, DEFAULT_SSE_KMS_KEY_ID);
+
+        m_sseEnabled.addChangeListener(e -> updateEnabledness());
+        m_sseKmsUseAwsManaged.addChangeListener(e -> updateEnabledness());
+        updateEnabledness();
+    }
+
+    private void updateEnabledness() {
+        m_sseMode.setEnabled(isSseEnabled());
+        m_sseKmsUseAwsManaged.setEnabled(isSseEnabled());
+        m_sseKmsKeyId.setEnabled(isSseEnabled() && sseKmsUseAwsManaged());
     }
 
     private static int getDefaultSocketTimeout() {
@@ -191,17 +207,31 @@ public class S3ConnectorNodeSettings {
     }
 
     /**
+     * @return settings model for whether to use the default AWS managed CMK (in SSE-KMS mode).
+     */
+    public SettingsModelBoolean getSseKmsUseAwsManagedModel() {
+        return m_sseKmsUseAwsManaged;
+    }
+
+    /**
+     * @return whether to use the default AWS managed CMK (in SSE-KMS mode).
+     */
+    public boolean sseKmsUseAwsManaged() {
+        return m_sseKmsUseAwsManaged.getBooleanValue();
+    }
+
+    /**
      * @return the kmsKeyId model
      */
     public SettingsModelString getKmsKeyIdModel() {
-        return m_kmsKeyId;
+        return m_sseKmsKeyId;
     }
 
     /**
      * @return the kmsKeyId
      */
     public String getKmsKeyId() {
-        return m_kmsKeyId.getStringValue();
+        return m_sseKmsKeyId.getStringValue();
     }
 
     /**
@@ -215,7 +245,8 @@ public class S3ConnectorNodeSettings {
         m_workingDirectory.saveSettingsTo(settings);
         m_sseEnabled.saveSettingsTo(settings);
         m_sseMode.saveSettingsTo(settings);
-        m_kmsKeyId.saveSettingsTo(settings);
+        m_sseKmsUseAwsManaged.saveSettingsTo(settings);
+        m_sseKmsKeyId.saveSettingsTo(settings);
     }
 
     /**
@@ -238,8 +269,11 @@ public class S3ConnectorNodeSettings {
         if (settings.containsKey(KEY_SSE_MODE)) {
             m_sseMode.validateSettings(settings);
         }
+        if (settings.containsKey(KEY_SSE_KMS_USE_AWS_MANAGED)) {
+            m_sseKmsUseAwsManaged.validateSettings(settings);
+        }
         if (settings.containsKey(KEY_SSE_KMS_KEY_ID)) {
-            m_kmsKeyId.validateSettings(settings);
+            m_sseKmsKeyId.validateSettings(settings);
         }
     }
 
@@ -264,12 +298,15 @@ public class S3ConnectorNodeSettings {
         if (settings.containsKey(KEY_SSE_ENABLED)) {
             m_sseEnabled.loadSettingsFrom(settings);
             m_sseMode.loadSettingsFrom(settings);
-            m_kmsKeyId.loadSettingsFrom(settings);
+            m_sseKmsUseAwsManaged.loadSettingsFrom(settings);
+            m_sseKmsKeyId.loadSettingsFrom(settings);
         } else {
             m_sseEnabled.setBooleanValue(DEFAULT_SSE_ENABLED);
             m_sseMode.setStringValue(DEFAULT_SSE_MODE);
-            m_kmsKeyId.setStringValue(DEFAULT_KMS_KEY_ID);
+            m_sseKmsUseAwsManaged.setBooleanValue(DEFAULT_SSE_KMS_USE_AWS_MANAGED);;
+            m_sseKmsKeyId.setStringValue(DEFAULT_SSE_KMS_KEY_ID);
         }
+        updateEnabledness();
     }
 
     @Override
@@ -294,11 +331,11 @@ public class S3ConnectorNodeSettings {
             /**
              * SSE-S3 mode
              */
-            S3("Use Amazon S3-Managed Encryption Keys (SSE-S3)", "SSE-S3",ServerSideEncryption.AES256),
+            S3("S3-Managed Keys (SSE-S3)", "SSE-S3",ServerSideEncryption.AES256),
             /**
              * SSE-KMS mode
              */
-            KMS("Use CMKs Stored in AWS Key Management Service (SSE-KMS)", "SSE-KMS",ServerSideEncryption.AWS_KMS);
+            KMS("Keys in KMS (SSE-KMS)", "SSE-KMS",ServerSideEncryption.AWS_KMS);
 
         private String m_title;
         private String m_key;
