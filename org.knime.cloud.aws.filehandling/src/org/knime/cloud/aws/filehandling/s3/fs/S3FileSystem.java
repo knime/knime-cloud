@@ -209,9 +209,4 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     public boolean normalizePaths() {
         return m_normalizePaths;
     }
-
-    @Override
-    protected String getCachedAttributesKey(final Path path) {
-        return path.toString();
-    }
 }
