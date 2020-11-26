@@ -140,8 +140,7 @@ public class S3ConnectorNodeModel extends NodeModel {
                 throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
             } else if (Objects.equals(e.awsErrorDetails().errorCode(), "AccessDenied")) {
                 setWarningMessage("The credentials provided have restricted permissions. "
-                    + "File browsing might not work as expected.\n"
-                    + "All buckets will be assumed existing, as they cannot be listed.");
+                    + "File browsing might not work as expected.");
             }
         }
     }

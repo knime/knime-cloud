@@ -67,6 +67,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /**
  * The Amazon S3 implementation of the {@link FileSystem} interface.
@@ -88,6 +89,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     private final S3Client m_client;
 
     private final boolean m_normalizePaths;
+    private final boolean m_hasListBucketPermission;
 
     private final boolean m_sseEnabled;
     private final SSEMode m_sseMode;
@@ -115,8 +117,22 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
         try {
             m_client = createClient(settings, connectionInformation);
+            m_hasListBucketPermission = testListBucketPermissions();
         } catch (final Exception ex) {
             throw new IllegalArgumentException(ex);
+        }
+    }
+
+    private boolean testListBucketPermissions() {
+        try {
+            m_client.listBuckets();
+            return true;
+        } catch (S3Exception e) {
+            if (e.statusCode() == 403) {
+                return false;
+            }
+
+            throw e;
         }
     }
 
@@ -208,5 +224,13 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public boolean normalizePaths() {
         return m_normalizePaths;
+    }
+
+    /**
+     * @return <code>true</code> if the current account has enough permissions to perform <code>listBuckets</code> call,
+     *         otherwise <code>false</code>.
+     */
+    public boolean hasListBucketPermission() {
+        return m_hasListBucketPermission;
     }
 }

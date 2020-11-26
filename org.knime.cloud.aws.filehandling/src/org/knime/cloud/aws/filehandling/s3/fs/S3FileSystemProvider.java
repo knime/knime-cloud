@@ -84,8 +84,10 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
@@ -345,7 +347,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     }
 
     @SuppressWarnings("resource")
-    private BaseFileAttributes fetchAttributesForObject(final S3Path path) throws NoSuchFileException {
+    private BaseFileAttributes fetchAttributesForObject(final S3Path path) throws IOException {
         final S3Client client = path.getFileSystem().getClient();
 
         // first we try whether there is an object for the given path
@@ -397,7 +399,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     }
 
     private BaseFileAttributes convertMetaDataToFileAttributes(final S3Path path,
-        final HeadObjectResponse objectMetadata) throws NoSuchFileException {
+        final HeadObjectResponse objectMetadata) throws IOException {
         final FileTime lastMod = determineObjectLastModificationTime(path, objectMetadata);
 
         long size = 0;
@@ -419,10 +421,10 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
      * @param path
      * @param objectMetadata
      * @return
-     * @throws NoSuchFileException
+     * @throws IOException
      */
     private FileTime determineObjectLastModificationTime(final S3Path path, final HeadObjectResponse objectMetadata)
-        throws NoSuchFileException {
+        throws IOException {
         final FileTime lastMod;
         if (objectMetadata.lastModified() != null) {
             lastMod = FileTime.from(objectMetadata.lastModified());
@@ -443,14 +445,35 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
         return lastMod;
     }
 
+    Bucket getBucket(final S3Path path) throws IOException {
+        if (path.getFileSystem().hasListBucketPermission()) {
+            return fetchBucket(path);
+        } else {
+            return doesBucketExist(path) ? Bucket.builder().build() : null;
+        }
+    }
+
     @SuppressWarnings("resource")
-    Bucket getBucket(final S3Path path) {
+    private static Bucket fetchBucket(final S3Path path) {
         for (final Bucket buck : path.getFileSystem().getClient().listBuckets().buckets()) {
             if (buck.name().equals(path.getBucketName())) {
                 return buck;
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("resource")
+    private static boolean doesBucketExist(final S3Path path) throws IOException {
+        try {
+            path.getFileSystem().getClient().headBucket(b -> b.bucket(path.getBucketName()));
+            return true;
+        } catch (NoSuchBucketException e) {//NOSONAR
+            //Bucket does not exist
+            return false;
+        } catch (S3Exception e) {
+            throw new IOException(e);
+        }
     }
 
     @SuppressWarnings("resource")
