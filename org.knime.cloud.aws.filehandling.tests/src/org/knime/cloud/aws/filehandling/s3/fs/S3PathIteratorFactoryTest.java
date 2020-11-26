@@ -66,7 +66,6 @@ import org.junit.Test;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
-import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
@@ -90,22 +89,6 @@ public class S3PathIteratorFactoryTest {
 
         m_client = mock(S3Client.class);
         when(m_fs.getClient()).thenReturn(m_client);
-    }
-
-    @Test
-    public void test_root_path_iterator() throws IOException {
-        // setup fixture
-        ListBucketsResponse response = ListBucketsResponse.builder().buckets(createDummyBucket("mockbucket")).build();
-        when(m_client.listBuckets()).thenReturn(response);
-
-        final S3Path bucketPath = new S3Path(m_fs, "/mockbucket/", new String[0]);
-        when(m_fs.getPath("/mockbucket", "/")).thenReturn(bucketPath);
-
-        final S3Path rootPath = new S3Path(m_fs, "/", new String[0]);
-        final Iterator<S3Path> iter = S3PathIteratorFactory.create(rootPath, ALL_FILTER);
-        assertTrue(iter.hasNext());
-        assertEquals(bucketPath, iter.next());
-        assertFalse(iter.hasNext());
     }
 
     @Test
