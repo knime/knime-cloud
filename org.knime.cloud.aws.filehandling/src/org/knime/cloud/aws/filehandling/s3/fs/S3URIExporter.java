@@ -57,14 +57,14 @@ import org.knime.filehandling.core.connections.uriexport.URIExporterID;
  *
  * @author Sascha Wolke, KNIME GmbH
  */
-public final class S3URIExporter implements URIExporter {
+final class S3URIExporter implements URIExporter {
 
     private static final String SCHEME = "s3";
 
     /**
      * Unique identifier of this exporter.
      */
-    public static final URIExporterID ID = new URIExporterID(SCHEME);
+    public static final URIExporterID ID = new URIExporterID("amazon-s3-url");
 
     private static final S3URIExporter INSTANCE = new S3URIExporter();
 
@@ -76,11 +76,6 @@ public final class S3URIExporter implements URIExporter {
      */
     public static S3URIExporter getInstance() {
         return INSTANCE;
-    }
-
-    @Override
-    public URIExporterID getID() {
-        return ID;
     }
 
     @Override

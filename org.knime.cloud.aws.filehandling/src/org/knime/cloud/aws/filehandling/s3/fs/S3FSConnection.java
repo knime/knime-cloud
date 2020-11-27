@@ -49,7 +49,6 @@
 package org.knime.cloud.aws.filehandling.s3.fs;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
@@ -60,6 +59,8 @@ import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
 import org.knime.filehandling.core.connections.uriexport.URIExporter;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
+import org.knime.filehandling.core.connections.uriexport.URIExporterIDs;
+import org.knime.filehandling.core.connections.uriexport.URIExporterMapBuilder;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
 
 /**
@@ -68,6 +69,11 @@ import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
 public class S3FSConnection implements FSConnection {
+
+    private static final Map<URIExporterID, URIExporter> URI_EXPORTERS = new URIExporterMapBuilder() //
+            .add(URIExporterIDs.DEFAULT, S3URIExporter.getInstance()) //
+            .add(URIExporterIDs.DEFAULT_HADOOP, S3URIExporter.getInstance()) //
+            .build();
 
     private static final long CACHE_TTL_MILLIS = 6000;
 
@@ -109,12 +115,7 @@ public class S3FSConnection implements FSConnection {
     }
 
     @Override
-    public URIExporter getDefaultURIExporter() {
-        return S3URIExporter.getInstance();
-    }
-
-    @Override
     public Map<URIExporterID, URIExporter> getURIExporters() {
-        return Collections.singletonMap(S3URIExporter.ID, S3URIExporter.getInstance());
+        return URI_EXPORTERS;
     }
 }
