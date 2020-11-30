@@ -54,8 +54,10 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.Set;
 
+import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.filehandling.core.connections.base.TempFileSeekableByteChannel;
 
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
@@ -89,6 +91,11 @@ public class S3SeekableByteChannel extends TempFileSeekableByteChannel<S3Path> {
             .key(remoteFile.getBlobName())//
             .applyMutation(remoteFile.getFileSystem()::populateSseParams)
             .build();
-        remoteFile.getFileSystem().getClient().putObject(req, tempFile);
+
+        try {
+            remoteFile.getFileSystem().getClient().putObject(req, tempFile);
+        } catch (SdkException e) {
+            throw AwsUtils.toIOE(e, remoteFile);
+        }
     }
 }

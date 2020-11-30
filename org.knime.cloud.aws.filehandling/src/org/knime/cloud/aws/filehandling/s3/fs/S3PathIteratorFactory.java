@@ -57,12 +57,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.filehandling.core.connections.base.BasePathIterator;
 import org.knime.filehandling.core.connections.base.PagedPathIterator;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
 import software.amazon.awssdk.core.exception.AbortedException;
-import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -116,12 +117,12 @@ public abstract class S3PathIteratorFactory {
                     fs.addToAttributeCache(bucketPath, attributes);
                     bucketPaths.add(bucketPath);
                 }
-                setFirstPage(bucketPaths.iterator());
-            } catch (final SdkClientException e) {
+                setFirstPage(bucketPaths.iterator());//NOSONAR
+            } catch (final SdkException e) {
                 if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
                     // ignore
                 } else {
-                    throw e;
+                    throw AwsUtils.toIOE(e, path);
                 }
             }
         }
@@ -164,24 +165,24 @@ public abstract class S3PathIteratorFactory {
                 .continuationToken(m_continuationToken).build();
 
             try {
-                final ListObjectsV2Response m_objectsListing = fs.getClient().listObjectsV2(listRequest);
+                final ListObjectsV2Response objectsListing = fs.getClient().listObjectsV2(listRequest);
                 final List<S3Path> nextPage = new ArrayList<>();
 
-                for (final S3Object objSummary : m_objectsListing.contents()) {
+                for (final S3Object objSummary : objectsListing.contents()) {
                     nextPage.add(getPathFromSummary(objSummary));
                 }
 
-                for (final CommonPrefix commonPrefix : m_objectsListing.commonPrefixes()) {
+                for (final CommonPrefix commonPrefix : objectsListing.commonPrefixes()) {
                     nextPage.add(getPathFromPrefix(commonPrefix.prefix()));
                 }
 
-                m_continuationToken = m_objectsListing.nextContinuationToken();
+                m_continuationToken = objectsListing.nextContinuationToken();
                 return nextPage.iterator();
-            } catch (final SdkClientException e) {
+            } catch (final SdkException e) {
                 if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
                     return Collections.emptyIterator();
                 } else {
-                    throw e;
+                    throw AwsUtils.toIOE(e, m_path);
                 }
             }
         }

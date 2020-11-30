@@ -49,6 +49,10 @@
 package org.knime.cloud.aws.filehandling.s3;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileSystemException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.security.InvalidKeyException;
 
 import javax.crypto.BadPaddingException;
@@ -62,6 +66,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
@@ -75,6 +81,11 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 public final class AwsUtils {
     private AwsUtils() {
     }
+
+    private static final int MOVED_PERMANENTLY = 301;
+    private static final int UNAUTHORIZED = 401;
+    private static final int FORBIDDEN = 403;
+    private static final int NOT_FOUND = 404;
 
     /**
      * Builds appropriate {@link AwsCredentialsProvider} object from the provided {@link CloudConnectionInformation}.
@@ -135,5 +146,55 @@ public final class AwsUtils {
     private static String buildARN(final CloudConnectionInformation connectionInformation) {
         return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/"
             + connectionInformation.getSwitchRoleName();
+    }
+
+    /**
+     * Converts provided {@link SdkException} into appropriate {@link IOException}.
+     *
+     * @param ex The {@link SdkException} instance.
+     * @param file A path identifying the file or {@code null} if not known.
+     * @param other A path identifying the other file or {@code null} if not known.
+     * @return The {@link IOException} instance.
+     */
+    public static IOException toIOE(final SdkException ex, final Path file, final Path other) {
+        if (ex instanceof SdkServiceException) {
+            String fileString = file != null ? file.toString() : null;
+            String otherString = other != null ? other.toString() : null;
+
+            int status = ((SdkServiceException)ex).statusCode();
+
+            switch (status) {
+                case UNAUTHORIZED:
+                case FORBIDDEN:
+                    final AccessDeniedException ade = new AccessDeniedException(fileString, otherString,
+                        String.format("Access denied (HTTP code %d)", status));
+                    ade.initCause(ex);
+                    return ade;
+                case NOT_FOUND:
+                    final NoSuchFileException nsfe = new NoSuchFileException(fileString, otherString, null);
+                    nsfe.initCause(ex);
+                    return nsfe;
+                case MOVED_PERMANENTLY:
+                    final FileSystemException fse = new FileSystemException(fileString, null,
+                        "Bucket belongs to a different region than the client");
+                    fse.initCause(ex);
+                    return fse;
+                default:
+                    return new IOException(ex.getMessage(), ex);
+            }
+        } else {
+            return new IOException(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Converts provided {@link SdkException} into appropriate {@link IOException}.
+     *
+     * @param ex The {@link SdkException} instance.
+     * @param file A path identifying the file or {@code null} if not known.
+     * @return The {@link IOException} instance.
+     */
+    public static IOException toIOE(final SdkException ex, final Path file) {
+        return toIOE(ex, file, null);
     }
 }
