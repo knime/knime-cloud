@@ -56,7 +56,6 @@ import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -100,14 +99,11 @@ public class S3ConnectorNodeModel extends NodeModel {
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) {
         m_fsId = FSConnectionRegistry.getInstance().getKey();
-
-        final CloudConnectionInformation conInfo =
-            ((CloudConnectionInformationPortObjectSpec)inSpecs[0]).getConnectionInformation();
-        return new PortObjectSpec[]{createSpec(conInfo)};
+        return new PortObjectSpec[]{createSpec()};
     }
 
-    private FileSystemPortObjectSpec createSpec(final CloudConnectionInformation conInfo) {
-        final FSLocationSpec fsLocationSpec = S3FileSystem.createFSLocationSpec(conInfo);
+    private FileSystemPortObjectSpec createSpec() {
+        final FSLocationSpec fsLocationSpec = S3FileSystem.createFSLocationSpec();
         return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, m_fsId, fsLocationSpec);
     }
 
@@ -127,7 +123,7 @@ public class S3ConnectorNodeModel extends NodeModel {
         } else {
             testFileSystemConnection(m_fsConn);
         }
-        return new PortObject[]{new FileSystemPortObject(createSpec(conInfo))};
+        return new PortObject[]{new FileSystemPortObject(createSpec())};
     }
 
     @SuppressWarnings("resource")

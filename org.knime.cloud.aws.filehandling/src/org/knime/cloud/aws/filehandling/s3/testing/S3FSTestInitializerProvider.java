@@ -124,8 +124,7 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
 
     @Override
     public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        final CloudConnectionInformation s3ConnectionInformation = createCloudConnectionInformation(config);
-        return S3FileSystem.createFSLocationSpec(s3ConnectionInformation);
+        return S3FileSystem.createFSLocationSpec();
     }
 }
 

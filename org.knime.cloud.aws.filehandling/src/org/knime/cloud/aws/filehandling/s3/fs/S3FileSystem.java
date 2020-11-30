@@ -109,7 +109,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             connectionInformation.toURI(), //
             cacheTTL, //
             settings.getWorkingDirectory(), //
-            createFSLocationSpec(connectionInformation));
+            createFSLocationSpec());
 
         m_normalizePaths = settings.getNormalizePath();
         m_sseEnabled = settings.isSseEnabled();
@@ -137,15 +137,12 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     }
 
     /**
-     * Creates an {@link FSLocationSpec} for an S3 file system with the given connection information.
+     * Creates an {@link FSLocationSpec} for an S3 file system.
      *
-     * @param connectionInformation
-     * @return an {@link FSLocationSpec} for an S3 file system with the given connection information.
+     * @return an {@link FSLocationSpec} for an S3 file system.
      */
-    public static FSLocationSpec createFSLocationSpec(final CloudConnectionInformation connectionInformation) {
-        // the connection information is the AWS region
-        final String specifier = String.format("%s:%s", FS_TYPE, connectionInformation.getHost());
-        return new DefaultFSLocationSpec(FSCategory.CONNECTED, specifier);
+    public static FSLocationSpec createFSLocationSpec() {
+        return new DefaultFSLocationSpec(FSCategory.CONNECTED, FS_TYPE);
     }
 
     private static S3Client createClient(final S3ConnectorNodeSettings settings, final CloudConnectionInformation con) {
