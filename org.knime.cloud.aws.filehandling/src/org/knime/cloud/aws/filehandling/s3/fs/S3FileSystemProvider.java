@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -76,11 +77,13 @@ import org.knime.core.node.NodeLogger;
 import org.knime.filehandling.core.connections.base.BaseFileSystemProvider;
 import org.knime.filehandling.core.connections.base.attributes.BaseFileAttributes;
 
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
@@ -197,7 +200,7 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
     @Override
     protected InputStream newInputStreamInternal(final S3Path path, final OpenOption... options) throws IOException {
 
-        InputStream inputStream;
+        final ResponseInputStream<GetObjectResponse> inputStream;
 
         if (path.getBlobName() == null) {
             throw new IOException("Cannot open input stream on bucket.");
@@ -216,7 +219,15 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             throw AwsUtils.toIOE(ex, path);
         }
 
-        return inputStream;
+        if (inputStream.response().contentLength() == 0) {
+            try {
+                inputStream.close();
+            } catch (Exception e) {} // NOSONAR
+
+            return new ByteArrayInputStream(new byte[0]);
+        } else {
+            return inputStream;
+        }
     }
 
     /**
