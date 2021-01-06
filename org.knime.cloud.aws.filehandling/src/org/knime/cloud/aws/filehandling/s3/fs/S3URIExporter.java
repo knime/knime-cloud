@@ -49,6 +49,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.knime.filehandling.core.connections.FSPath;
+import org.knime.filehandling.core.connections.uriexport.NoSettingsURIExporter;
 import org.knime.filehandling.core.connections.uriexport.URIExporter;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
 
@@ -57,7 +58,7 @@ import org.knime.filehandling.core.connections.uriexport.URIExporterID;
  *
  * @author Sascha Wolke, KNIME GmbH
  */
-final class S3URIExporter implements URIExporter {
+final class S3URIExporter extends NoSettingsURIExporter {
 
     private static final String SCHEME = "s3";
 
