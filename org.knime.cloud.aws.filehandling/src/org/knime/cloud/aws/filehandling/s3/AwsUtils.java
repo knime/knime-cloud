@@ -99,7 +99,7 @@ public final class AwsUtils {
         final AwsCredentialsProvider conCredentialProvider;
 
         if (con.useKeyChain()) {
-            conCredentialProvider = DefaultCredentialsProvider.create();
+            conCredentialProvider = DefaultCredentialsProvider.builder().build(); // always use a new instance
         } else if (con.isUseAnonymous()) {
             conCredentialProvider = AnonymousCredentialsProvider.create();
         } else {
