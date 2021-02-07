@@ -165,7 +165,7 @@ public abstract class S3PathIteratorFactory {
                 .continuationToken(m_continuationToken).build();
 
             try {
-                final ListObjectsV2Response objectsListing = fs.getClient().listObjectsV2(listRequest);
+                final ListObjectsV2Response objectsListing = fs.getClient().listObjects(listRequest);
                 final List<S3Path> nextPage = new ArrayList<>();
 
                 for (final S3Object objSummary : objectsListing.contents()) {
