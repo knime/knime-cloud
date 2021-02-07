@@ -62,8 +62,8 @@ import java.util.Iterator;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -80,14 +80,14 @@ public class S3PathIteratorFactoryTest {
 
     private S3FileSystem m_fs;
 
-    private S3Client m_client;
+    private MultiRegionS3Client m_client;
 
     @Before
     public void beforeTestCase() {
         m_fs = mock(S3FileSystem.class);
         when(m_fs.getSeparator()).thenReturn(S3FileSystem.PATH_SEPARATOR);
 
-        m_client = mock(S3Client.class);
+        m_client = mock(MultiRegionS3Client.class);
         when(m_fs.getClient()).thenReturn(m_client);
     }
 
@@ -103,7 +103,7 @@ public class S3PathIteratorFactoryTest {
                 .commonPrefixes(CommonPrefix.builder().prefix("prefix2/").build())//
                 .build();
 
-        when(m_client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(mockResult1).thenReturn(mockResult2);
+        when(m_client.listObjects(any(ListObjectsV2Request.class))).thenReturn(mockResult1).thenReturn(mockResult2);
 
         final S3Path bucketPath = new S3Path(m_fs, "/mockbucket/", new String[0]);
         final Iterator<S3Path> iter = S3PathIteratorFactory.create(bucketPath, ALL_FILTER);

@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.aws.filehandling.s3.testing;
 
+import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
@@ -55,10 +56,8 @@ import org.knime.filehandling.core.connections.base.BlobStorePath;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializer;
 
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
@@ -70,7 +69,7 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  */
 public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3FileSystem> {
 
-    private final S3Client m_s3Client;
+    private final MultiRegionS3Client m_s3Client;
 
     /**
      * Creates a initializer for s3 pointing to a special test bucket.
@@ -94,16 +93,14 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
         // create parent directory objects if necessary
         for (int i = 1; i < path.getNameCount() - 1; i++) {
             final String dirKey = path.subpath(1, i + 1).toString();
-            try {
-                m_s3Client.headObject(b -> b.bucket(path.getBucketName()).key(dirKey));
-            } catch (NoSuchKeyException e) {//NOSONAR object doesn't exist
-                m_s3Client.putObject(b -> b.bucket(path.getBucketName()).key(dirKey), RequestBody.empty());
+            if (m_s3Client.headObject(path.getBucketName(), dirKey) == null) {
+                m_s3Client.putObject(path.getBucketName(), dirKey, RequestBody.empty());
             }
         }
 
         // create the actual object with content
         final String key = path.subpath(1, path.getNameCount()).toString();
-        m_s3Client.putObject(b -> b.bucket(path.getBucketName()).key(key), RequestBody.fromString(content));
+        m_s3Client.putObject(path.getBucketName(), key, RequestBody.fromString(content));
 
         return path;
     }
@@ -112,11 +109,8 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
     protected void beforeTestCaseInternal() {
         final BlobStorePath scratchDir = getTestCaseScratchDir().toDirectoryPath();
 
-        try {
-            m_s3Client.headObject(b -> b.bucket(scratchDir.getBucketName()).key(scratchDir.getBlobName()));
-        } catch (NoSuchKeyException e) {//NOSONAR object doesn't exist
-            m_s3Client.putObject(b -> b.bucket(scratchDir.getBucketName()).key(scratchDir.getBlobName()),
-                RequestBody.empty());
+        if (m_s3Client.headObject(scratchDir.getBucketName(), scratchDir.getBlobName()) == null) {
+            m_s3Client.putObject(scratchDir.getBucketName(), scratchDir.getBlobName(), RequestBody.empty());
         }
     }
 
@@ -131,11 +125,11 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
                 .prefix(scratchDir.getBlobName())//
                 .continuationToken(continuationToken)//
                 .build();
-            ListObjectsV2Response result = m_s3Client.listObjectsV2(req);
+            ListObjectsV2Response result = m_s3Client.listObjects(req);
 
             continuationToken = result.nextContinuationToken();
             for (S3Object obj : result.contents()) {
-                m_s3Client.deleteObject(b -> b.bucket(scratchDir.getBucketName()).key(obj.key()));
+                m_s3Client.deleteObject(scratchDir.getBucketName(), obj.key());
             }
         } while (continuationToken != null);
     }

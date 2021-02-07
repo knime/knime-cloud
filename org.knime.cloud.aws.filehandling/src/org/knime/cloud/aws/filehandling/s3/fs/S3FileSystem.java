@@ -50,24 +50,15 @@ package org.knime.cloud.aws.filehandling.s3.fs;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Collections;
 
-import org.knime.cloud.aws.filehandling.s3.AwsUtils;
+import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
 import org.knime.filehandling.core.connections.FSCategory;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
-
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 
 /**
  * The Amazon S3 implementation of the {@link FileSystem} interface.
@@ -86,14 +77,9 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public static final String FS_TYPE = "amazon-s3";
 
-    private final S3Client m_client;
+    private final MultiRegionS3Client m_client;
 
     private final boolean m_normalizePaths;
-    private final boolean m_hasListBucketPermission;
-
-    private final boolean m_sseEnabled;
-    private final SSEMode m_sseMode;
-    private final String m_kmsKeyId;
 
     /**
      * Constructs an S3FileSystem for the given URI
@@ -112,27 +98,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             createFSLocationSpec());
 
         m_normalizePaths = settings.getNormalizePath();
-        m_sseEnabled = settings.isSseEnabled();
-        m_sseMode = settings.getSseMode();
-        m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
         try {
-            m_client = createClient(settings, connectionInformation);
-            m_hasListBucketPermission = testListBucketPermissions();
+            m_client = new MultiRegionS3Client(settings, connectionInformation);
         } catch (final Exception ex) {
             throw new IllegalArgumentException(ex);
-        }
-    }
-
-    private boolean testListBucketPermissions() {
-        try {
-            m_client.listBuckets();
-            return true;
-        } catch (S3Exception e) {
-            if (e.statusCode() == 403) {
-                return false;
-            }
-
-            throw e;
         }
     }
 
@@ -143,50 +112,6 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      */
     public static FSLocationSpec createFSLocationSpec() {
         return new DefaultFSLocationSpec(FSCategory.CONNECTED, FS_TYPE);
-    }
-
-    private static S3Client createClient(final S3ConnectorNodeSettings settings, final CloudConnectionInformation con) {
-        Duration socketTimeout = Duration.ofSeconds(settings.getSocketTimeout());
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder()//
-            .connectionTimeout(Duration.ofMillis(con.getTimeout()))//
-            .socketTimeout(socketTimeout)//
-            .connectionTimeToLive(socketTimeout);
-
-        return S3Client.builder()//
-            .region(Region.of(con.getHost()))//
-            .credentialsProvider(AwsUtils.getCredentialProvider(con))//
-            .httpClientBuilder(httpClientBuilder)//
-            .build();
-    }
-
-    /**
-     * Sets up necessary SSE parameters in case server-side encryption is enabled.
-     *
-     * @param request {@link PutObjectRequest} builder.
-     */
-    public void populateSseParams(final PutObjectRequest.Builder request) {
-        if (m_sseEnabled) {
-            request.serverSideEncryption(m_sseMode.getEncryption());
-
-            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
-                request.ssekmsKeyId(m_kmsKeyId);
-            }
-        }
-    }
-
-    /**
-     * Sets up necessary SSE parameters in case server-side encryption is enabled.
-     *
-     * @param request {@link CopyObjectRequest} builder.
-     */
-    public void populateSseParams(final CopyObjectRequest.Builder request) {
-        if (m_sseEnabled) {
-            request.serverSideEncryption(m_sseMode.getEncryption());
-
-            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
-                request.ssekmsKeyId(m_kmsKeyId);
-            }
-        }
     }
 
     @Override
@@ -200,9 +125,9 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
     }
 
     /**
-     * @return the {@link S3Client} client for this file system
+     * @return the {@link MultiRegionS3Client} instance.
      */
-    public S3Client getClient() {
+    public MultiRegionS3Client getClient() {
         return m_client;
     }
 
@@ -223,11 +148,4 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         return m_normalizePaths;
     }
 
-    /**
-     * @return <code>true</code> if the current account has enough permissions to perform <code>listBuckets</code> call,
-     *         otherwise <code>false</code>.
-     */
-    public boolean hasListBucketPermission() {
-        return m_hasListBucketPermission;
-    }
 }
