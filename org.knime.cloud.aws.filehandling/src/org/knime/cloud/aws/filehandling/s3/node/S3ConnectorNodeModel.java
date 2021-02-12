@@ -139,64 +139,47 @@ public class S3ConnectorNodeModel extends NodeModel {
                 final String msg = "The credentials provided have restricted permissions. File browsing might not work as expected.";
                 LOG.debug(msg, e);
                 setWarningMessage(msg);
+            } else {
+                setWarningMessage("Unable to test S3 connection using list buckets: "
+                    + e.awsErrorDetails().errorMessage() + " For details see View > Open KNIME log.");
+                LOG.warn("Unable to test S3 connection using list buckets.", e);
             }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
         setWarningMessage("S3 connection no longer available. Please re-execute the node.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
         throws IOException, CanceledExecutionException {
         //nothing to save
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
         m_settings.saveSettingsTo(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_settings.validateSettings(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_settings.loadSettingsFrom(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onDispose() {
         //close the file system also when the workflow is closed
         reset();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void reset() {
         if (m_fsConn != null) {
