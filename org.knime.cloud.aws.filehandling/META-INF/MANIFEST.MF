@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Amazon S3 Filehandling
 Bundle-SymbolicName: org.knime.cloud.aws.filehandling;singleton:=true
 Bundle-Version: 4.4.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
 Require-Bundle: org.knime.cloud.core;bundle-version="[4.1.0,5.0.0)",
  org.knime.core;bundle-version="[4.1.0,5.0.0)",
@@ -38,3 +38,4 @@ Bundle-ClassPath: cloud_aws_filehandling.jar,
  libs/aws-json-protocol-2.15.14.jar,
  libs/kms-2.15.14.jar
 Export-Package: org.knime.cloud.aws.filehandling.s3.fs
+Automatic-Module-Name: org.knime.cloud.aws.filehandling
