@@ -52,8 +52,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
@@ -126,8 +126,8 @@ public class MultiRegionS3Client implements AutoCloseable {
         m_sseMode = settings.getSseMode();
         m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
 
-        m_regionByBucket = new HashMap<>();
-        m_clientByRegion = new HashMap<>();
+        m_regionByBucket = new ConcurrentHashMap<>();
+        m_clientByRegion = new ConcurrentHashMap<>();
 
         Region region = Region.of(connectionInfo.getHost());
         m_defaultClient = getClientForRegion(region);
