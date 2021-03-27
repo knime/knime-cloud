@@ -48,19 +48,19 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
-import org.knime.filehandling.core.connections.uriexport.URIExporter;
+import org.knime.filehandling.core.connections.uriexport.URIExporterFactory;
+import org.knime.filehandling.core.connections.uriexport.URIExporterFactoryMapBuilder;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
 import org.knime.filehandling.core.connections.uriexport.URIExporterIDs;
-import org.knime.filehandling.core.connections.uriexport.URIExporterMapBuilder;
 import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
 
 /**
@@ -70,9 +70,11 @@ import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
  */
 public class S3FSConnection implements FSConnection {
 
-    private static final Map<URIExporterID, URIExporter> URI_EXPORTERS = new URIExporterMapBuilder() //
-            .add(URIExporterIDs.DEFAULT, S3URIExporter.getInstance()) //
-            .add(URIExporterIDs.DEFAULT_HADOOP, S3URIExporter.getInstance()) //
+    private static final Map<URIExporterID, URIExporterFactory> URI_EXPORTER_FACTORIES =
+        new URIExporterFactoryMapBuilder() //
+            .add(URIExporterIDs.DEFAULT, S3URIExporterFactory.getInstance()) //
+            .add(URIExporterIDs.DEFAULT_HADOOP, S3URIExporterFactory.getInstance()) //
+            .add(S3URIExporterFactory.EXPORTER_ID, S3URIExporterFactory.getInstance()) //
             .build();
 
     private static final long CACHE_TTL_MILLIS = 6000;
@@ -80,27 +82,25 @@ public class S3FSConnection implements FSConnection {
     private final S3FileSystem m_fileSystem;
 
     /**
-     * Creates a new {@link S3FSConnection} for the given connection information.
+     * Creates a new {@link S3FSConnection} for the given connection information and settings.
      *
      * @param connInfo the cloud connection information
      * @param settings the node settings
-     * @throws IOException
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo,
-        final S3ConnectorNodeSettings settings) throws IOException {
+    public S3FSConnection(final CloudConnectionInformation connInfo, final S3ConnectorNodeSettings settings) {
 
         CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
         CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
-
 
         m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS);
     }
 
     /**
+     * Creates a new {@link S3FSConnection} for the given connection information.
+     *
      * @param connInfo the cloud connection information
-     * @throws IOException
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo) throws IOException {
+    public S3FSConnection(final CloudConnectionInformation connInfo) {
         this(connInfo, new S3ConnectorNodeSettings());
     }
 
@@ -115,7 +115,7 @@ public class S3FSConnection implements FSConnection {
     }
 
     @Override
-    public Map<URIExporterID, URIExporter> getURIExporters() {
-        return URI_EXPORTERS;
+    public Map<URIExporterID, URIExporterFactory> getURIExporterFactories() {
+        return URI_EXPORTER_FACTORIES;
     }
 }

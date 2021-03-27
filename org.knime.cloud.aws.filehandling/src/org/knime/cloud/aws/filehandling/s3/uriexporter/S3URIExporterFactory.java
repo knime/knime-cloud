@@ -42,56 +42,51 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
+ *
+ * History
+ *   2021-03-16 (Ayaz Ali Qureshi, KNIME GmbH, Berlin, Germany): created
  */
-package org.knime.cloud.aws.filehandling.s3.fs;
+package org.knime.cloud.aws.filehandling.s3.uriexporter;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
-import org.knime.filehandling.core.connections.FSPath;
-import org.knime.filehandling.core.connections.uriexport.NoSettingsURIExporter;
-import org.knime.filehandling.core.connections.uriexport.URIExporter;
+import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
+import org.knime.filehandling.core.connections.uriexport.URIExporterFactory;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
+import org.knime.filehandling.core.connections.uriexport.base.BaseURIExporterMetaInfo;
+import org.knime.filehandling.core.connections.uriexport.noconfig.NoConfigURIExporterFactory;
 
 /**
- * {@link URIExporter} implementation using "s3" as scheme.
+ * {@link URIExporterFactory} implementation using "s3" as scheme.
  *
- * @author Sascha Wolke, KNIME GmbH
+ * @author Ayaz Ali Qureshi, KNIME GmbH, Berlin, Germany
  */
-final class S3URIExporter extends NoSettingsURIExporter {
+public final class S3URIExporterFactory extends NoConfigURIExporterFactory {
 
     private static final String SCHEME = "s3";
 
     /**
      * Unique identifier of this exporter.
      */
-    public static final URIExporterID ID = new URIExporterID("amazon-s3-url");
+    public static final URIExporterID EXPORTER_ID = new URIExporterID("amazon-s3-url");
 
-    private static final S3URIExporter INSTANCE = new S3URIExporter();
+    private static final BaseURIExporterMetaInfo META_INFO =
+        new BaseURIExporterMetaInfo("S3 URI", "Exports the path as S3 URI.");
 
-    private S3URIExporter() {
+    private static final S3URIExporterFactory INSTANCE = new S3URIExporterFactory();
+
+    private S3URIExporterFactory() {
+        super(META_INFO, p -> {
+            final S3Path s3Path = (S3Path)p.toAbsolutePath();
+            return new URI(SCHEME, s3Path.getBucketName(), '/' + s3Path.getBlobName(), null);
+        });
     }
 
     /**
-     * @return singleton instance of this exporter
+     * @return singleton instance of this exporter factory
      */
-    public static S3URIExporter getInstance() {
+    public static S3URIExporterFactory getInstance() {
         return INSTANCE;
     }
 
-    @Override
-    public String getLabel() {
-        return SCHEME + " URIs";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Exports URIs with scheme '" + SCHEME + "'.";
-    }
-
-    @Override
-    public URI toUri(final FSPath path) throws URISyntaxException {
-        final S3Path s3Path = (S3Path)path.toAbsolutePath();
-        return new URI(SCHEME, s3Path.getBucketName(), '/' + s3Path.getBlobName(), null);
-    }
 }
