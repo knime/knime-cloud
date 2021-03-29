@@ -75,14 +75,17 @@ import software.amazon.awssdk.services.s3.model.S3Object;
  *
  * @author Bjoern Lohrmann, KNIME GmbH
  */
-public abstract class S3PathIteratorFactory {
+public final class S3PathIteratorFactory {
+
+    private S3PathIteratorFactory() {
+    }
 
     /**
      * Creates a new iterator instance.
      *
      * @param path path to iterate.
      * @param filter {@link Filter} instance.
-     * @return {@link S3PathIterator} instance.
+     * @return a path iterator.
      * @throws IOException
      */
     public static Iterator<S3Path> create(final S3Path path, final Filter<? super Path> filter) throws IOException {
@@ -105,7 +108,6 @@ public abstract class S3PathIteratorFactory {
         protected BucketIterator(final S3Path path, final Filter<? super Path> filter) throws IOException {
             super(path, filter);
 
-            @SuppressWarnings("resource")
             final S3FileSystem fs = path.getFileSystem();
 
             try {
@@ -119,7 +121,7 @@ public abstract class S3PathIteratorFactory {
                 }
                 setFirstPage(bucketPaths.iterator());//NOSONAR
             } catch (final SdkException e) {
-                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) { // NOSONAR
                     // ignore
                 } else {
                     throw AwsUtils.toIOE(e, path);
@@ -142,7 +144,7 @@ public abstract class S3PathIteratorFactory {
         protected BlobIterator(final S3Path path, final Filter<? super Path> filter) throws IOException {
             super(path, filter);
             m_continuationToken = null;
-            setFirstPage(loadNextPage());
+            setFirstPage(loadNextPage()); // NOSONAR by design
         }
 
         @Override
@@ -179,7 +181,7 @@ public abstract class S3PathIteratorFactory {
                 m_continuationToken = objectsListing.nextContinuationToken();
                 return nextPage.iterator();
             } catch (final SdkException e) {
-                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) {
+                if ((e instanceof AbortedException) || (e.getCause() instanceof AbortedException)) { // NOSONAR
                     return Collections.emptyIterator();
                 } else {
                     throw AwsUtils.toIOE(e, m_path);
