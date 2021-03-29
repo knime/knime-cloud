@@ -60,6 +60,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -78,6 +79,8 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
 public class S3ConnectorNodeModel extends NodeModel {
+
+    private static final NodeLogger LOG = NodeLogger.getLogger(S3ConnectorNodeModel.class);
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
 
@@ -111,8 +114,6 @@ public class S3ConnectorNodeModel extends NodeModel {
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         m_awsConnectionInfo = (AmazonConnectionInformationPortObject)inObjects[0];
 
-        //TODO: Test if connection is available and if switch role is required!!!
-
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
         m_fsConn = new S3FSConnection(conInfo, m_settings);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
@@ -133,10 +134,11 @@ public class S3ConnectorNodeModel extends NodeModel {
             fileSystem.getClient().listBuckets();
         } catch (final AwsServiceException e) {
             if (Objects.equals(e.awsErrorDetails().errorCode(), "InvalidAccessKeyId")) {
-                throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.");
+                throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.", e);
             } else if (Objects.equals(e.awsErrorDetails().errorCode(), "AccessDenied")) {
-                setWarningMessage("The credentials provided have restricted permissions. "
-                    + "File browsing might not work as expected.");
+                final String msg = "The credentials provided have restricted permissions. File browsing might not work as expected.";
+                LOG.debug(msg, e);
+                setWarningMessage(msg);
             }
         }
     }

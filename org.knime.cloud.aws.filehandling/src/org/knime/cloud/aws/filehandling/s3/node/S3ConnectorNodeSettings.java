@@ -160,7 +160,7 @@ public class S3ConnectorNodeSettings {
     /**
      * @return the normalizePath
      */
-    public boolean getNormalizePath() {
+    public boolean shouldNormalizePath() {
         return m_normalizePath.getBooleanValue();
     }
 
@@ -303,14 +303,13 @@ public class S3ConnectorNodeSettings {
         } else {
             m_sseEnabled.setBooleanValue(DEFAULT_SSE_ENABLED);
             m_sseMode.setStringValue(DEFAULT_SSE_MODE);
-            m_sseKmsUseAwsManaged.setBooleanValue(DEFAULT_SSE_KMS_USE_AWS_MANAGED);;
+            m_sseKmsUseAwsManaged.setBooleanValue(DEFAULT_SSE_KMS_USE_AWS_MANAGED);
             m_sseKmsKeyId.setStringValue(DEFAULT_SSE_KMS_KEY_ID);
         }
         updateEnabledness();
     }
 
-    @Override
-    protected S3ConnectorNodeSettings clone() {
+    S3ConnectorNodeSettings createClone() {
         NodeSettings transferSettings = new NodeSettings("ignored");
         saveSettingsTo(transferSettings);
 

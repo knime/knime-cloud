@@ -97,10 +97,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             settings.getWorkingDirectory(), //
             createFSLocationSpec());
 
-        m_normalizePaths = settings.getNormalizePath();
+        m_normalizePaths = settings.shouldNormalizePath();
         try {
             m_client = new MultiRegionS3Client(settings, connectionInformation);
-        } catch (final Exception ex) {
+        } catch (final RuntimeException ex) {
             throw new IllegalArgumentException(ex);
         }
     }
