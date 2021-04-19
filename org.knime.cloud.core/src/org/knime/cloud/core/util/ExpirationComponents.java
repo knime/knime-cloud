@@ -82,6 +82,8 @@ public class ExpirationComponents {
 	private final DialogComponentDate m_dateComp;
 
 	private final DialogComponentButtonGroup m_buttonComp;
+	
+	private final String m_borderTitle;
 
 	/**
 	 * Constructor
@@ -92,9 +94,25 @@ public class ExpirationComponents {
 		m_timeComp = new DialogComponentDuration(m_settings.getTimeModel(), null, false);
 		m_dateComp = new DialogComponentDate(m_settings.getDateModel(), null, false, false);
 		m_buttonComp = new DialogComponentButtonGroup(m_settings.getButtonModel(), null, false, ExpirationMode.values());
+		m_borderTitle = "Expiration";
 	}
 
-	/**
+
+    /**
+     * Constructor
+     * @param settings The corresponding {@link ExpirationSettings}
+     * @param borderText Text for the panel border
+     */
+    public ExpirationComponents(final ExpirationSettings settings, final String borderText) {
+        m_settings = settings;
+        m_timeComp = new DialogComponentDuration(m_settings.getTimeModel(), null, false);
+        m_dateComp = new DialogComponentDate(m_settings.getDateModel(), null, false, false);
+        m_buttonComp =
+            new DialogComponentButtonGroup(m_settings.getButtonModel(), null, false, ExpirationMode.values());
+        m_borderTitle = borderText;
+    }
+
+    /**
 	 *
 	 */
 	private void setDefaultVisibility() {
@@ -123,7 +141,11 @@ public class ExpirationComponents {
 		final JPanel panel = new JPanel(new GridBagLayout());
 		final JPanel rootPanel = createRootPanel();
 		final GridBagConstraints gbc = new GridBagConstraints();
-		panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Expiration"));
+		
+        if (!m_borderTitle.isEmpty()) {
+            panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), m_borderTitle));
+        }
+		
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		panel.add(getButtonPanel(), gbc);

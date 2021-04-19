@@ -184,8 +184,8 @@ public class ExpirationSettings {
 	}
 
 	/**
-	 * Set the date for the {@link SettingsModelDate} in milliseconds
-	 * @param date the date to be set in milliseconds
+	 * Set the date for the {@link SettingsModelDate} in milliseconds since the epoch.
+	 * @param date the date to be set in milliseconds since the epoch.
 	 */
 	public void setDateInMillis(final long date) {
 		m_dateModel.setTimeInMillis(date);

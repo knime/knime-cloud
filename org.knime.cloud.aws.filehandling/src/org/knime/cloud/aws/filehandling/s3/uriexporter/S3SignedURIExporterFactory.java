@@ -48,45 +48,58 @@
  */
 package org.knime.cloud.aws.filehandling.s3.uriexporter;
 
-import java.net.URI;
-
-import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
+import org.knime.cloud.core.filehandling.signedurl.SignedUrlConfig;
+import org.knime.cloud.core.filehandling.signedurl.SignedUrlPanel;
+import org.knime.filehandling.core.connections.uriexport.URIExporter;
+import org.knime.filehandling.core.connections.uriexport.URIExporterConfig;
 import org.knime.filehandling.core.connections.uriexport.URIExporterFactory;
 import org.knime.filehandling.core.connections.uriexport.URIExporterID;
+import org.knime.filehandling.core.connections.uriexport.base.BaseURIExporterFactory;
 import org.knime.filehandling.core.connections.uriexport.base.BaseURIExporterMetaInfo;
-import org.knime.filehandling.core.connections.uriexport.noconfig.NoConfigURIExporterFactory;
 
 /**
- * {@link URIExporterFactory} implementation using "s3" as scheme.
+ * {@link URIExporterFactory} implementation to generate signed https:// urls to access data on S3.
  *
  * @author Ayaz Ali Qureshi, KNIME GmbH, Berlin, Germany
  */
-public final class S3URIExporterFactory extends NoConfigURIExporterFactory {
-
-    private static final String SCHEME = "s3";
+public class S3SignedURIExporterFactory extends BaseURIExporterFactory {
 
     /**
      * Unique identifier of this exporter.
      */
-    public static final URIExporterID EXPORTER_ID = new URIExporterID("amazon-s3-url");
+    public static final URIExporterID EXPORTER_ID = new URIExporterID("amazon-s3-signed-url");
 
-    private static final BaseURIExporterMetaInfo META_INFO =
-        new BaseURIExporterMetaInfo("s3:// URL", "Generates s3://<bucket>/<object> URLs.");
+    private static final BaseURIExporterMetaInfo META_INFO = new BaseURIExporterMetaInfo("Presigned https:// URL", //
+        "Generates https:// URLs that allow to download files for a certain amount of time.");
 
-    private static final S3URIExporterFactory INSTANCE = new S3URIExporterFactory();
+    private static final S3SignedURIExporterFactory INSTANCE = new S3SignedURIExporterFactory(META_INFO);
 
-    private S3URIExporterFactory() {
-        super(META_INFO, p -> {
-            final S3Path s3Path = (S3Path)p.toAbsolutePath();
-            return new URI(SCHEME, s3Path.getBucketName(), '/' + s3Path.getBlobName(), null);
-        });
+    /**
+     * @param metaInfo the label and description of the exporter
+     */
+    protected S3SignedURIExporterFactory(final BaseURIExporterMetaInfo metaInfo) {
+        super(metaInfo);
     }
 
     /**
      * @return singleton instance of this exporter factory
      */
-    public static S3URIExporterFactory getInstance() {
+    public static S3SignedURIExporterFactory getInstance() {
         return INSTANCE;
     }
 
+    @Override
+    public final SignedUrlPanel createPanel(final URIExporterConfig config) {
+        return new SignedUrlPanel((SignedUrlConfig)config);
+    }
+
+    @Override
+    public final SignedUrlConfig initConfig() {
+        return new SignedUrlConfig();
+    }
+
+    @Override
+    public final URIExporter createExporter(final URIExporterConfig config) {
+        return new S3SignedURIExporter((SignedUrlConfig)config);
+    }
 }

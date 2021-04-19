@@ -51,6 +51,7 @@ package org.knime.cloud.aws.filehandling.s3.fs;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3SignedURIExporterFactory;
 import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
@@ -75,6 +76,7 @@ public class S3FSConnection implements FSConnection {
             .add(URIExporterIDs.DEFAULT, S3URIExporterFactory.getInstance()) //
             .add(URIExporterIDs.DEFAULT_HADOOP, S3URIExporterFactory.getInstance()) //
             .add(S3URIExporterFactory.EXPORTER_ID, S3URIExporterFactory.getInstance()) //
+            .add(S3SignedURIExporterFactory.EXPORTER_ID, S3SignedURIExporterFactory.getInstance()) //
             .build();
 
     private static final long CACHE_TTL_MILLIS = 6000;
