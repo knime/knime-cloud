@@ -49,9 +49,16 @@
 
 package org.knime.cloud.aws.filehandling.s3.fs;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import org.knime.filehandling.core.connections.base.BlobStorePath;
+
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 /**
  * {@link Path} implementation for {@link S3FileSystem}
@@ -139,12 +146,35 @@ public class S3Path extends BlobStorePath {
         return super.relativize(other);
     }
 
-
     /**
      * @return an {@link S3Path} for which {@link #isDirectory()} returns true.
      */
     @Override
     public S3Path toDirectoryPath() {
-        return (S3Path) super.toDirectoryPath();
+        return (S3Path)super.toDirectoryPath();
     }
+
+    /**
+     * Generate a pre-signed url for a S3 file using the incoming duration parameter
+     *
+     * @param expirationDuration A Duration object which is used to set the expiration of URL
+     *
+     * @return A Presigned URL
+     */
+    public URL getPreSignedUrl(final Duration expirationDuration) {
+
+        //Retrieve the S3Presigner Object from MultiRegionS3Client instance
+        try (S3Presigner presigner = getFileSystem().getClient().getS3Presigner(getBucketName())) {
+            GetObjectRequest getObjectRequest =
+                GetObjectRequest.builder().bucket(getBucketName()).key(getBlobName()).build();
+            GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(expirationDuration).getObjectRequest(getObjectRequest).build();
+
+            // Generate the presigned request
+            PresignedGetObjectRequest presignedGetObjectRequest = presigner.presignGetObject(getObjectPresignRequest);
+
+            return presignedGetObjectRequest.url();
+        }
+    }
+
 }

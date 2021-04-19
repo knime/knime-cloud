@@ -59,6 +59,7 @@ import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -76,38 +77,38 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
  * Class provides access to S3 API with several additional features:
  * <ul>
- * <li>
- * Multiregion support. Additional {@link S3Client} instances are created for accessing buckets from the different
- * regions (when needed). Appropriate client is selected to make calls depending on the bucket region.
- * </li>
- * <li>
- * Server-side encryption. Appropriate headers included when necessary if SSE is enabled in settings
- * </li>
- * <li>
- * Workaround for 'list-buckets' permission restrictions. <code>getBucket</code> method is implemented that way that
+ * <li>Multiregion support. Additional {@link S3Client} instances are created for accessing buckets from the different
+ * regions (when needed). Appropriate client is selected to make calls depending on the bucket region.</li>
+ * <li>Server-side encryption. Appropriate headers included when necessary if SSE is enabled in settings</li>
+ * <li>Workaround for 'list-buckets' permission restrictions. <code>getBucket</code> method is implemented that way that
  * a dummy {@link Bucket} object is returned in case when bucket exists, but cannot be retrieved since user is lacking
- * 'list-buckets' permission
- * </li>
+ * 'list-buckets' permission</li>
  * </ul>
  *
  * @author Alexander Bondaletov
  */
 public class MultiRegionS3Client implements AutoCloseable {
     private final Duration m_socketTimeout;
+
     private final CloudConnectionInformation m_connectionInfo;
 
     private final boolean m_sseEnabled;
+
     private final SSEMode m_sseMode;
+
     private final String m_kmsKeyId;
 
     private final Map<String, Region> m_regionByBucket;
+
     private final Map<Region, S3Client> m_clientByRegion;
 
     private final S3Client m_defaultClient;
+
     private final S3Client m_pathStyleClient;
 
     private final boolean m_hasListBucketPermission;
@@ -390,5 +391,19 @@ public class MultiRegionS3Client implements AutoCloseable {
             client.close();
         }
         m_pathStyleClient.close();
+    }
+
+    /**
+     * Return an object for S3Presigner for request S3 bucket. The bucket name is required because the S3Presigner
+     * depends on S3 Region information
+     *
+     * @param bucketName Name of the S3 against which the presigner should be issued
+     *
+     * @return An object of S3Presigner
+     */
+    public S3Presigner getS3Presigner(final String bucketName) {
+        final Region region = getRegionForBucket(bucketName);
+        AwsCredentialsProvider awsCreds = AwsUtils.getCredentialProvider(m_connectionInfo);
+        return S3Presigner.builder().credentialsProvider(awsCreds).region(region).build();
     }
 }
