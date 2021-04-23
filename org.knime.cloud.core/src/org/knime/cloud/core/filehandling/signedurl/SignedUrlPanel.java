@@ -160,8 +160,6 @@ public class SignedUrlPanel extends BaseURIExporterPanel<SignedUrlConfig> {
 
     @Override
     protected void saveAdditionalSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-        m_config.validate();
-
         m_expirationDuration.saveSettingsTo(settings);
         m_expirationDateTime.saveSettingsTo(settings);
         m_config.saveSettingsForPanel(settings);

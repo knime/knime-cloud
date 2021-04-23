@@ -29,6 +29,14 @@
                     <li>Followed by the name of an object within the bucket ("myfolder/myfile" in the above example).</li>
                 </ol>
             </p>
+            
+            <p><b>URI formats:</b> When you apply the <i>Path to URI</i> node to paths coming from this connector, you can create URIs with the following formats:
+                <ol>
+                    <li><b>Presigned https:// URLs</b> which contain credentials, that allow to access files for a certain amount of time
+                    (see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html">AWS documentation</a>).</li>
+                    <li><b>s3:// URLs</b> to access Amazon S3 with the <tt>aws</tt> command line interface, or inside Hadoop environments.</li>
+                </ol>
+            </p>
         </intro>
         <tab name="Settings">
         	<option name="Working directory">
