@@ -79,6 +79,8 @@ public final class SignedUrlConfig implements URIExporterConfig {
     
     private static final String CFG_EXPIRATION_DATETIME = "expiration_datetime";
     
+    private final Duration m_maximumDuration;
+    
     private final SettingsModelDuration m_expirationDuration;
     
     private final SettingsModelDateTime m_expirationDateTime;
@@ -87,8 +89,10 @@ public final class SignedUrlConfig implements URIExporterConfig {
     
     /**
      * Constructor.
+     * @param maximumExpiryTime The expiration duration that the user can select.
      */
-    public SignedUrlConfig() {
+    public SignedUrlConfig(final Duration maximumExpiryTime) {
+        m_maximumDuration = maximumExpiryTime;
         m_expirationDuration = new SettingsModelDuration(CFG_EXPIRATION_DURATION, Duration.ofMinutes(60));
         m_expirationDateTime = new SettingsModelDateTime(CFG_EXPIRATION_DATETIME, ZonedDateTime.now().plusMinutes(60));
         m_expirationMode = new SettingsModelString(CFG_EXPIRATION_MODE, ExpirationMode.DURATION.getActionCommand());
@@ -172,12 +176,28 @@ public final class SignedUrlConfig implements URIExporterConfig {
 
     @Override
     public void validate() throws InvalidSettingsException {
-        if (getExpirationMode() == ExpirationMode.DURATION) {
-            CheckUtils.checkSetting(m_expirationDuration.getDuration().getSeconds() >= 1, "URL must be valid for at least one second");
-        } else {
-            CheckUtils.checkSetting(m_expirationDateTime.getZonedDateTime().isAfter(ZonedDateTime.now().plusSeconds(1)),
-                "URL must be valid for at least one second");
-        }
+        CheckUtils.checkSetting(getValidityDuration().getSeconds() >= 1, "URL must be valid for at least one second");
+        
+        final Duration remainder = getValidityDuration().minus(m_maximumDuration);
+        CheckUtils.checkSetting(remainder.isNegative() || remainder.isZero(), "URL can be valid for max. " + formatDuration(m_maximumDuration));
+    }
+    
+    private static String formatDuration(Duration duration) {
+        Duration remaining = duration;
+        
+        final long days = remaining.toDays();
+        remaining = remaining.minusDays(days);
+        
+        final long hours = remaining.toHours();
+        remaining = remaining.minusHours(hours);
+        
+        final long minutes = remaining.toMinutes();
+        remaining = remaining.minusMinutes(minutes);
+        
+        final long secs = remaining.getSeconds();
+        remaining = remaining.minusSeconds(secs);
+
+        return String.format("%d days, %d hours, %d minutes %d seconds", days, hours, minutes, secs);
     }
 
     @Override

@@ -71,7 +71,7 @@ public final class S3URIExporterFactory extends NoConfigURIExporterFactory {
     public static final URIExporterID EXPORTER_ID = new URIExporterID("amazon-s3-url");
 
     private static final BaseURIExporterMetaInfo META_INFO =
-        new BaseURIExporterMetaInfo("s3:// URL", "Generates s3://<bucket>/<object> URLs.");
+        new BaseURIExporterMetaInfo("s3:// URL", "Generates s3://&lt;bucket&gt;/&lt;object&gt; URLs.");
 
     private static final S3URIExporterFactory INSTANCE = new S3URIExporterFactory();
 

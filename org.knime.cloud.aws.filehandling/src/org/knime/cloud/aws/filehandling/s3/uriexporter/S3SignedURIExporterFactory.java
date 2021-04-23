@@ -48,6 +48,8 @@
  */
 package org.knime.cloud.aws.filehandling.s3.uriexporter;
 
+import java.time.Duration;
+
 import org.knime.cloud.core.filehandling.signedurl.SignedUrlConfig;
 import org.knime.cloud.core.filehandling.signedurl.SignedUrlPanel;
 import org.knime.filehandling.core.connections.uriexport.URIExporter;
@@ -70,7 +72,7 @@ public class S3SignedURIExporterFactory extends BaseURIExporterFactory {
     public static final URIExporterID EXPORTER_ID = new URIExporterID("amazon-s3-signed-url");
 
     private static final BaseURIExporterMetaInfo META_INFO = new BaseURIExporterMetaInfo("Presigned https:// URL", //
-        "Generates https:// URLs that allow to download files for a certain amount of time.");
+        "Generates https:// URLs that contain credentials, which allow to access files for a certain amount of time.");
 
     private static final S3SignedURIExporterFactory INSTANCE = new S3SignedURIExporterFactory(META_INFO);
 
@@ -95,7 +97,7 @@ public class S3SignedURIExporterFactory extends BaseURIExporterFactory {
 
     @Override
     public final SignedUrlConfig initConfig() {
-        return new SignedUrlConfig();
+        return new SignedUrlConfig(Duration.ofDays(7));
     }
 
     @Override
