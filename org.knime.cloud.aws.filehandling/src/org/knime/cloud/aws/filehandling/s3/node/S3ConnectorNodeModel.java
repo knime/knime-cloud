@@ -119,8 +119,7 @@ public class S3ConnectorNodeModel extends NodeModel {
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
 
         if (conInfo.isUseAnonymous()) {
-            setWarningMessage("You are using anonymous credentials." + "File browsing might not work as expected.\n"
-                + "Browsing will only be available when bucket name is given in file/URL field.");
+            setWarningMessage("You are using anonymous credentials. File browsing will only work inside public buckets.");
         } else {
             testFileSystemConnection(m_fsConn);
         }
