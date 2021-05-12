@@ -45,14 +45,18 @@
  */
 package org.knime.cloud.aws.filehandling.s3.uriexporter;
 
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
 import org.knime.cloud.core.filehandling.signedurl.SignedUrlConfig;
 import org.knime.filehandling.core.connections.FSPath;
 import org.knime.filehandling.core.connections.uriexport.URIExporter;
 import org.knime.filehandling.core.connections.uriexport.base.BaseURIExporter;
+
+import software.amazon.awssdk.core.exception.SdkException;
 
 /**
  * {@link URIExporter} implementation using generating signed https:// urls to access data on S3.
@@ -71,6 +75,10 @@ public class S3SignedURIExporter extends BaseURIExporter<SignedUrlConfig> {
     @Override
     public URI toUri(final FSPath path) throws URISyntaxException {
         final S3Path s3Path = (S3Path)path.toAbsolutePath();
-        return s3Path.getPreSignedUrl(getConfig().getValidityDuration()).toURI();
+        try {
+            return s3Path.getPreSignedUrl(getConfig().getValidityDuration()).toURI();
+        } catch (SdkException ex) {
+            throw new UncheckedIOException(AwsUtils.toIOE(ex, path));
+        }
     }
 }

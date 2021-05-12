@@ -52,6 +52,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,6 +62,7 @@ import org.knime.cloud.core.util.port.CloudConnectionInformation;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -160,16 +162,20 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     private boolean testListBucketPermissions() {
-        try {
-            listBuckets();
-            return true;
-        } catch (S3Exception e) {
-            if (e.statusCode() == 403) {
-                return false;
-            }
+        boolean canListBucketsInAccount = false;
 
-            throw e;
+        if (!m_connectionInfo.isUseAnonymous()) {
+            try {
+                listBuckets();
+                canListBucketsInAccount = true;
+            } catch (S3Exception e) {
+                if (e.statusCode() != 403) {
+                    throw e;
+                }
+            }
         }
+
+        return canListBucketsInAccount;
     }
 
     /**
@@ -344,15 +350,33 @@ public class MultiRegionS3Client implements AutoCloseable {
         return m_regionByBucket.computeIfAbsent(bucket, this::fetchRegionForBucket);
     }
 
+    /**
+     * First, try to fetch the region by getBucketLocation. This returns HttpStatusCode.FORBIDDEN if
+     * s3:GetBucketLocation permission is not there. In this case, try again with headBucket which requires no
+     * permissions (according to the documentation if requires s3:ListBucket, but S3 behaves differently).
+     *
+     * @param bucket
+     * @return null when the bucket does not exist
+     * @throws SdkExceptionwhen if the bucket exists but the region could not be retrieved.
+     */
     private Region fetchRegionForBucket(final String bucket) {
+        try {
+            return fetchRegionWithGetBucketLocation(bucket);
+        } catch (S3Exception e) { // NOSONAR can be ignored, because we use headBucket as fallback
+            return fetchRegionWithHeadBucket(bucket);
+        }
+    }
+
+    private Region fetchRegionWithGetBucketLocation(final String bucket) {
         Region region = null;
 
         try {
-            String location = m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
+            // requires s3:GetBucketLocation permission
+            final String location = m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
 
-            //Javadoc for getBucketLocation states that
-            //  'Buckets in Region us-east-1 have a LocationConstraint of null.'
-            //But, in fact, it is an empty string, so we check for both cases.
+            // Javadoc for getBucketLocation states that
+            // 'Buckets in Region us-east-1 have a LocationConstraint of null.'
+            // But, in fact, it is an empty string, so we check for both cases.
             if (location == null || location.isEmpty()) {
                 region = Region.US_EAST_1;
             } else {
@@ -363,6 +387,30 @@ public class MultiRegionS3Client implements AutoCloseable {
         }
 
         return region;
+    }
+
+    private Region fetchRegionWithHeadBucket(final String bucket) {
+        S3Exception exception = null;
+
+        Map<String, List<String>> responseHeaders;
+        try {
+            // does not require any permission at all
+            responseHeaders = m_defaultClient.headBucket(b -> b.bucket(bucket)).sdkHttpResponse().headers();
+        } catch (NoSuchBucketException ex) { //NOSONAR the bucket doesn't exist
+            return null;
+        } catch (S3Exception ex) { // NOSONAR
+            // headBucket often returns HTTP 301/307, but the headers contain the region
+            responseHeaders = ex.awsErrorDetails().sdkHttpResponse().headers();
+            exception = ex;
+        }
+
+        if (responseHeaders.containsKey("x-amz-bucket-region")) {
+            return Region.of(responseHeaders.get("x-amz-bucket-region").get(0));
+        } else if (exception != null){
+            throw exception;
+        } else {
+            throw SdkException.builder().message("Could not determine region of bucket " + bucket).build();
+        }
     }
 
     private void populateSseParams(final PutObjectRequest.Builder request) {
@@ -403,6 +451,9 @@ public class MultiRegionS3Client implements AutoCloseable {
      */
     public S3Presigner getS3Presigner(final String bucketName) {
         final Region region = getRegionForBucket(bucketName);
+        if (region == null) {
+            throw NoSuchBucketException.builder().message("The specified bucket does not exist").build();
+        }
         AwsCredentialsProvider awsCreds = AwsUtils.getCredentialProvider(m_connectionInfo);
         return S3Presigner.builder().credentialsProvider(awsCreds).region(region).build();
     }
