@@ -48,13 +48,17 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 
 import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
 import org.knime.filehandling.core.connections.FSCategory;
 import org.knime.filehandling.core.connections.FSLocationSpec;
@@ -87,9 +91,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      * @param connectionInformation the {@link CloudConnectionInformation}
      * @param settings The node settings
      * @param cacheTTL The time to live for cache entries in the attributes cache
+     * @param credentials The credential provider.
      */
     public S3FileSystem(final CloudConnectionInformation connectionInformation, final S3ConnectorNodeSettings settings,
-        final long cacheTTL) {
+        final long cacheTTL, final CredentialsProvider credentials) {
 
         super(new S3FileSystemProvider(), //
             connectionInformation.toURI(), //
@@ -99,8 +104,8 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
         m_normalizePaths = settings.shouldNormalizePath();
         try {
-            m_client = new MultiRegionS3Client(settings, connectionInformation);
-        } catch (final RuntimeException ex) {
+            m_client = new MultiRegionS3Client(settings, connectionInformation, credentials);
+        } catch (final RuntimeException | NoSuchAlgorithmException | IOException | InvalidSettingsException ex) {
             throw new IllegalArgumentException(ex);
         }
     }

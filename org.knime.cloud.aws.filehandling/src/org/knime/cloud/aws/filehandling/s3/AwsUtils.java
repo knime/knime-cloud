@@ -54,11 +54,13 @@ import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.util.KnimeEncryption;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
@@ -86,6 +88,8 @@ public final class AwsUtils {
     private static final int UNAUTHORIZED = 401;
     private static final int FORBIDDEN = 403;
     private static final int NOT_FOUND = 404;
+
+    private static final int CUSTOMER_KEY_SIZE = 32;
 
     /**
      * Builds appropriate {@link AwsCredentialsProvider} object from the provided {@link CloudConnectionInformation}.
@@ -196,5 +200,28 @@ public final class AwsUtils {
      */
     public static IOException toIOE(final SdkException ex, final Path file) {
         return toIOE(ex, file, null);
+    }
+
+    /**
+     * Converts base64 representation of the customer encryption key into byte array.
+     *
+     * @param base64Key The key in base64 encoding.
+     * @return The key bytes.
+     * @throws InvalidSettingsException If the key is not a valid base64 string or if the key size is different from 32
+     *             bytes.
+     */
+    public static byte[] getCustomerKeyBytes(final String base64Key) throws InvalidSettingsException {
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+
+            if (keyBytes.length != CUSTOMER_KEY_SIZE) {
+                throw new InvalidSettingsException(String.format(
+                    "Invalid key length. Expected %d bytes, but got %d bytes", CUSTOMER_KEY_SIZE, keyBytes.length));
+            }
+
+            return keyBytes;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidSettingsException("Encryption key is not a valid base64 string", e);
+        }
     }
 }

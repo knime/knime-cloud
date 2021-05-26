@@ -82,7 +82,7 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         settings.getWorkingDirectoryModel().setStringValue(workingDir);
         settings.getSocketTimeoutModel().setIntValue(CONNECTION_TIMEOUT);
 
-        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, settings);
+        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, settings, null);
 
         return new S3FSTestInitializer(s3Connection);
     }

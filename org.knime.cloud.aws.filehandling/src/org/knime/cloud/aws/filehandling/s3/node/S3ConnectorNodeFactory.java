@@ -48,22 +48,41 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
+import java.util.Optional;
+
+import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
+import org.knime.core.node.ConfigurableNodeFactory;
 import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
+import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.filehandling.core.port.FileSystemPortObject;
 
 /**
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectorNodeFactory extends NodeFactory<S3ConnectorNodeModel> {
+public class S3ConnectorNodeFactory extends ConfigurableNodeFactory<S3ConnectorNodeModel> {
+
+    /**
+     * File System Connection port name.
+     */
+    public static final String FILE_SYSTEM_CONNECTION_PORT_NAME = "File System Connection";
+
+    @Override
+    protected Optional<PortsConfigurationBuilder> createPortsConfigBuilder() {
+        final PortsConfigurationBuilder builder = new PortsConfigurationBuilder();
+        builder.addFixedInputPortGroup("Connection information port", AmazonConnectionInformationPortObject.TYPE);
+        builder.addOptionalInputPortGroup(FILE_SYSTEM_CONNECTION_PORT_NAME, FileSystemPortObject.TYPE);
+        builder.addFixedOutputPortGroup("S3 File System Connection", FileSystemPortObject.TYPE);
+        return Optional.of(builder);
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public S3ConnectorNodeModel createNodeModel() {
-        return new S3ConnectorNodeModel();
+    protected S3ConnectorNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
+        return new S3ConnectorNodeModel(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
     /**
@@ -94,8 +113,8 @@ public class S3ConnectorNodeFactory extends NodeFactory<S3ConnectorNodeModel> {
      * {@inheritDoc}
      */
     @Override
-    protected NodeDialogPane createNodeDialogPane() {
-        return new S3ConnectorNodeDialog();
+    protected NodeDialogPane createNodeDialogPane(final NodeCreationConfiguration creationConfig) {
+        return new S3ConnectorNodeDialog(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
 }

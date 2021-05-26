@@ -48,10 +48,14 @@
  */
 package org.knime.cloud.aws.filehandling.s3;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +63,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
+import org.knime.core.node.workflow.CredentialsProvider;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -70,7 +77,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -95,6 +104,10 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
  * @author Alexander Bondaletov
  */
 public class MultiRegionS3Client implements AutoCloseable {
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(MultiRegionS3Client.class);
+
+    private static final String AES256 = "AES256";
+
     private final Duration m_socketTimeout;
 
     private final CloudConnectionInformation m_connectionInfo;
@@ -104,6 +117,9 @@ public class MultiRegionS3Client implements AutoCloseable {
     private final SSEMode m_sseMode;
 
     private final String m_kmsKeyId;
+
+    private final String m_customerKey;
+    private final String m_customerKeyMD5;
 
     private final Map<String, Region> m_regionByBucket;
 
@@ -118,16 +134,24 @@ public class MultiRegionS3Client implements AutoCloseable {
     /**
      * @param settings The node settings.
      * @param connectionInfo The connection information
+     * @param credentials Credentials provider.
+     * @throws InvalidSettingsException When {@link InvalidSettingsException} happens during loading customer-provided
+     *             encryption key.
+     * @throws IOException When {@link IOException} happens during loading customer-provided encryption key.
+     * @throws NoSuchAlgorithmException Should not happen
      *
      */
-    public MultiRegionS3Client(final S3ConnectorNodeSettings settings,
-        final CloudConnectionInformation connectionInfo) {
+    public MultiRegionS3Client(final S3ConnectorNodeSettings settings, final CloudConnectionInformation connectionInfo,
+        final CredentialsProvider credentials) throws IOException, InvalidSettingsException, NoSuchAlgorithmException {
         m_socketTimeout = Duration.ofSeconds(settings.getSocketTimeout());
         m_connectionInfo = connectionInfo;
 
         m_sseEnabled = settings.isSseEnabled();
         m_sseMode = settings.getSseMode();
         m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
+
+        m_customerKey = settings.getCustomerKey(credentials);
+        m_customerKeyMD5 = computeCustomerKeyMD5(m_customerKey);
 
         m_regionByBucket = new ConcurrentHashMap<>();
         m_clientByRegion = new ConcurrentHashMap<>();
@@ -137,6 +161,18 @@ public class MultiRegionS3Client implements AutoCloseable {
         m_pathStyleClient = createClientForRegion(region, true);
 
         m_hasListBucketPermission = testListBucketPermissions();
+    }
+
+    private static String computeCustomerKeyMD5(final String customerKey)
+        throws NoSuchAlgorithmException, InvalidSettingsException {
+        if (customerKey == null) {
+            return null;
+        }
+
+        byte[] keyBytes = AwsUtils.getCustomerKeyBytes(customerKey);
+        byte[] md5 = MessageDigest.getInstance("MD5").digest(keyBytes);
+
+        return Base64.getEncoder().encodeToString(md5);
     }
 
     private S3Client getClientForRegion(final Region region) {
@@ -231,8 +267,36 @@ public class MultiRegionS3Client implements AutoCloseable {
      */
     @SuppressWarnings("resource")
     public HeadObjectResponse headObject(final String bucket, final String key) {
+        HeadObjectRequest.Builder builder = HeadObjectRequest.builder().bucket(bucket).key(key);
+        S3Client client = getClientForBucket(bucket);
+
+        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+            HeadObjectRequest req = builder.copy()//
+                .sseCustomerAlgorithm(AES256)//
+                .sseCustomerKey(m_customerKey)//
+                .sseCustomerKeyMD5(m_customerKeyMD5)//
+                .build();
+
+            try {
+                return headObject(req, client);
+            } catch (S3Exception ex) {
+                if (ex.statusCode() == 400) {
+                    //do nothing, possibly object is not encrypted, will retry request without SSE params
+                    LOGGER.warnWithFormat(
+                        "Failed to query metadata for /%s/%s using SSE-C params. Retrying request without encryption enabled.",
+                        bucket, key);
+                } else {
+                    throw ex;
+                }
+            }
+        }
+
+        return headObject(builder.build(), client);
+    }
+
+    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) {
         try {
-            return getClientForBucket(bucket).headObject(b -> b.bucket(bucket).key(key));
+            return client.headObject(request);
         } catch (NoSuchKeyException ex) {//NOSONAR object doesn't exist
             return null;
         }
@@ -251,10 +315,26 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @param bucket The bucket name.
      * @param key The object key.
      * @return The input stream for the object.
+     * @throws IOException
      */
     @SuppressWarnings("resource")
-    public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) {
-        return getClientForBucket(bucket).getObject(b -> b.bucket(bucket).key(key));
+    public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) throws IOException {
+        GetObjectRequest.Builder request = GetObjectRequest.builder()//
+            .bucket(bucket)//
+            .key(key);
+
+        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED && checkCustomerEncryption(bucket, key)) {
+            request.sseCustomerAlgorithm(AES256);
+            request.sseCustomerKey(m_customerKey);
+            request.sseCustomerKeyMD5(m_customerKeyMD5);
+        }
+
+        return getClientForBucket(bucket).getObject(request.build());
+    }
+
+    private boolean checkCustomerEncryption(final String bucket, final String blob) throws IOException {
+        HeadObjectResponse metadata = headObject(bucket, blob);
+        return metadata.sseCustomerAlgorithm() != null;
     }
 
     /**
@@ -275,13 +355,27 @@ public class MultiRegionS3Client implements AutoCloseable {
      */
     @SuppressWarnings("resource")
     public void putObject(final String bucket, final String key, final RequestBody body) {
-        PutObjectRequest req = PutObjectRequest.builder()//
+        PutObjectRequest.Builder builder = PutObjectRequest.builder()//
             .bucket(bucket)//
-            .key(key)//
-            .applyMutation(this::populateSseParams)//
-            .build();
+            .key(key);
 
-        getClientForBucket(bucket).putObject(req, body);
+        if (m_sseEnabled) {
+            if (m_sseMode == SSEMode.S3 || m_sseMode == SSEMode.KMS) {
+                builder.serverSideEncryption(m_sseMode.getEncryption());
+            }
+
+            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
+                builder.ssekmsKeyId(m_kmsKeyId);
+            }
+
+            if (m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+                builder.sseCustomerAlgorithm(AES256);
+                builder.sseCustomerKey(m_customerKey);
+                builder.sseCustomerKeyMD5(m_customerKeyMD5);
+            }
+        }
+
+        getClientForBucket(bucket).putObject(builder.build(), body);
     }
 
     /**
@@ -291,16 +385,39 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @param srcKey The object key of the source object.
      * @param dstBucket The bucket name of the destination object.
      * @param dstKey The object key of the destination object.
+     * @throws IOException
      */
     @SuppressWarnings("resource")
-    public void copyObject(final String srcBucket, final String srcKey, final String dstBucket, final String dstKey) {
-        CopyObjectRequest req = CopyObjectRequest.builder()//
-            .copySource(encodeCopySource(srcBucket, srcKey)).destinationBucket(dstBucket)//
-            .destinationKey(dstKey)//
-            .applyMutation(this::populateSseParams)//
-            .build();
+    public void copyObject(final String srcBucket, final String srcKey, final String dstBucket, final String dstKey)
+        throws IOException {
+        CopyObjectRequest.Builder builder = CopyObjectRequest.builder()//
+            .copySource(encodeCopySource(srcBucket, srcKey))//
+            .destinationBucket(dstBucket)//
+            .destinationKey(dstKey);
 
-        getClientForBucket(dstBucket).copyObject(req);
+        if (m_sseEnabled) {
+            if (m_sseMode == SSEMode.S3 || m_sseMode == SSEMode.KMS) {
+                builder.serverSideEncryption(m_sseMode.getEncryption());
+            }
+
+            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
+                builder.ssekmsKeyId(m_kmsKeyId);
+            }
+
+            if (m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+                if (checkCustomerEncryption(srcBucket, srcKey)) {
+                    builder.copySourceSSECustomerAlgorithm(AES256);
+                    builder.copySourceSSECustomerKey(m_customerKey);
+                    builder.copySourceSSECustomerKeyMD5(m_customerKeyMD5);
+                }
+
+                builder.sseCustomerAlgorithm(AES256);
+                builder.sseCustomerKey(m_customerKey);
+                builder.sseCustomerKeyMD5(m_customerKeyMD5);
+            }
+        }
+
+        getClientForBucket(dstBucket).copyObject(builder.build());
     }
 
     private static String encodeCopySource(final String bucket, final String blob) {
@@ -410,26 +527,6 @@ public class MultiRegionS3Client implements AutoCloseable {
             throw exception;
         } else {
             throw SdkException.builder().message("Could not determine region of bucket " + bucket).build();
-        }
-    }
-
-    private void populateSseParams(final PutObjectRequest.Builder request) {
-        if (m_sseEnabled) {
-            request.serverSideEncryption(m_sseMode.getEncryption());
-
-            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
-                request.ssekmsKeyId(m_kmsKeyId);
-            }
-        }
-    }
-
-    private void populateSseParams(final CopyObjectRequest.Builder request) {
-        if (m_sseEnabled) {
-            request.serverSideEncryption(m_sseMode.getEncryption());
-
-            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
-                request.ssekmsKeyId(m_kmsKeyId);
-            }
         }
     }
 

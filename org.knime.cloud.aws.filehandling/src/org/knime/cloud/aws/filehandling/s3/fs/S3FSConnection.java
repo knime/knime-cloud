@@ -56,6 +56,7 @@ import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.FileSystemBrowser;
+import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
 import org.knime.filehandling.core.connections.uriexport.URIExporterFactory;
@@ -88,13 +89,15 @@ public class S3FSConnection implements FSConnection {
      *
      * @param connInfo the cloud connection information
      * @param settings the node settings
+     * @param credentials The credentials provider.
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo, final S3ConnectorNodeSettings settings) {
+    public S3FSConnection(final CloudConnectionInformation connInfo, final S3ConnectorNodeSettings settings,
+        final CredentialsProvider credentials) {
 
         CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
         CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
 
-        m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS);
+        m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS, credentials);
     }
 
     /**
@@ -103,7 +106,7 @@ public class S3FSConnection implements FSConnection {
      * @param connInfo the cloud connection information
      */
     public S3FSConnection(final CloudConnectionInformation connInfo) {
-        this(connInfo, new S3ConnectorNodeSettings());
+        this(connInfo, new S3ConnectorNodeSettings(), null);
     }
 
     @Override
