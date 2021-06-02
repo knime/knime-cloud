@@ -51,7 +51,6 @@ package org.knime.cloud.aws.filehandling.s3.fs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 
 import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
@@ -92,9 +91,11 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
      * @param settings The node settings
      * @param cacheTTL The time to live for cache entries in the attributes cache
      * @param credentials The credential provider.
+     * @throws InvalidSettingsException
+     * @throws IOException
      */
     public S3FileSystem(final CloudConnectionInformation connectionInformation, final S3ConnectorNodeSettings settings,
-        final long cacheTTL, final CredentialsProvider credentials) {
+        final long cacheTTL, final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
 
         super(new S3FileSystemProvider(), //
             connectionInformation.toURI(), //
@@ -102,12 +103,11 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             settings.getWorkingDirectory(), //
             createFSLocationSpec());
 
+        // FIXME: we should not be dealing with code paths that throw InvalidSettingsException as it messes up the
+        // exception handling. This should be fixed by refactorings when the extension point (AP-14001) is introduced.
+
         m_normalizePaths = settings.shouldNormalizePath();
-        try {
-            m_client = new MultiRegionS3Client(settings, connectionInformation, credentials);
-        } catch (final RuntimeException | NoSuchAlgorithmException | IOException | InvalidSettingsException ex) {
-            throw new IllegalArgumentException(ex);
-        }
+        m_client = new MultiRegionS3Client(settings, connectionInformation, credentials);
     }
 
     /**

@@ -138,11 +138,10 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @throws InvalidSettingsException When {@link InvalidSettingsException} happens during loading customer-provided
      *             encryption key.
      * @throws IOException When {@link IOException} happens during loading customer-provided encryption key.
-     * @throws NoSuchAlgorithmException Should not happen
      *
      */
     public MultiRegionS3Client(final S3ConnectorNodeSettings settings, final CloudConnectionInformation connectionInfo,
-        final CredentialsProvider credentials) throws IOException, InvalidSettingsException, NoSuchAlgorithmException {
+        final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
         m_socketTimeout = Duration.ofSeconds(settings.getSocketTimeout());
         m_connectionInfo = connectionInfo;
 
@@ -164,13 +163,19 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     private static String computeCustomerKeyMD5(final String customerKey)
-        throws NoSuchAlgorithmException, InvalidSettingsException {
+        throws InvalidSettingsException {
         if (customerKey == null) {
             return null;
         }
 
         byte[] keyBytes = AwsUtils.getCustomerKeyBytes(customerKey);
-        byte[] md5 = MessageDigest.getInstance("MD5").digest(keyBytes);
+        byte[] md5;
+        try {
+            md5 = MessageDigest.getInstance("MD5").digest(keyBytes);
+        } catch (NoSuchAlgorithmException ex) {
+            // should never happen, therefore we make it a RuntimeException
+            throw new IllegalStateException(ex.getMessage(), ex);
+        }
 
         return Base64.getEncoder().encodeToString(md5);
     }

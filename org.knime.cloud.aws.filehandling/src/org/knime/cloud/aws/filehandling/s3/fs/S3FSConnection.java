@@ -48,12 +48,14 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
 import org.knime.cloud.aws.filehandling.s3.uriexporter.S3SignedURIExporterFactory;
 import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.core.node.workflow.CredentialsProvider;
@@ -90,22 +92,29 @@ public class S3FSConnection implements FSConnection {
      * @param connInfo the cloud connection information
      * @param settings the node settings
      * @param credentials The credentials provider.
+     * @throws IOException
      */
     public S3FSConnection(final CloudConnectionInformation connInfo, final S3ConnectorNodeSettings settings,
-        final CredentialsProvider credentials) {
+        final CredentialsProvider credentials) throws IOException {
 
         CheckUtils.checkArgumentNotNull(connInfo, "CloudConnectionInformation must not be null");
         CheckUtils.checkArgumentNotNull(settings, "S3ConnectorNodeSettings must not be null");
 
-        m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS, credentials);
+        try {
+            m_fileSystem = new S3FileSystem(connInfo, settings, CACHE_TTL_MILLIS, credentials);
+        } catch (InvalidSettingsException ex) {
+            // convert to an IOE because that's the only thing we should be throwing here
+            throw new IOException(ex.getMessage(), ex);
+        }
     }
 
     /**
      * Creates a new {@link S3FSConnection} for the given connection information.
      *
      * @param connInfo the cloud connection information
+     * @throws IOException
      */
-    public S3FSConnection(final CloudConnectionInformation connInfo) {
+    public S3FSConnection(final CloudConnectionInformation connInfo) throws IOException {
         this(connInfo, new S3ConnectorNodeSettings(), null);
     }
 

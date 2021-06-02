@@ -53,6 +53,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -262,7 +263,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         m_customerKeyInput.setEnabled(enabled);
     }
 
-    private FSConnection createFSConnection() {
+    private FSConnection createFSConnection() throws IOException {
         S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
         return new S3FSConnection(m_connInfo, clonedSettings, getCredentialsProvider());
     }
