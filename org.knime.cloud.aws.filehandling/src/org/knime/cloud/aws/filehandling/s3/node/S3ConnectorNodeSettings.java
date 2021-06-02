@@ -48,13 +48,17 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.function.Consumer;
 
+import org.apache.commons.io.IOUtils;
 import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.core.node.InvalidSettingsException;
@@ -381,8 +385,27 @@ public class S3ConnectorNodeSettings {
 
         try (ReadPathAccessor accessor = m_customerKeyFile.createReadPathAccessor()) {
             FSPath path = accessor.getRootPath(statusConsumer);
-            byte[] bytes = Files.readAllBytes(path);
+            byte[] bytes = readCustomerKeyBytesFromFile(path);
             return Base64.getEncoder().encodeToString(bytes);
+        }
+    }
+
+    /**
+     * Read key from given path or fail if file does not contain exactly 32 bytes.
+     * @throws InvalidSettingsException
+     */
+    private static byte[] readCustomerKeyBytesFromFile(final FSPath path) throws IOException, InvalidSettingsException {
+        try (final InputStream is = Files.newInputStream(path, StandardOpenOption.READ)) {
+            byte[] bytes = IOUtils.readFully(is, 32);
+
+            if (is.read() != -1) {
+                throw new InvalidSettingsException(String.format("SSE-C key file %s contains more than the expected 32 bytes.", path.toString()));
+            }
+
+            return bytes;
+        } catch (EOFException e) {
+            throw new IOException(
+                String.format("SSE-C key file %s contains less than the expected 32 bytes.", path.toString()), e);
         }
     }
 
