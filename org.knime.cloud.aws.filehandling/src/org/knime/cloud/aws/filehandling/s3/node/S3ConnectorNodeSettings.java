@@ -366,7 +366,13 @@ public class S3ConnectorNodeSettings {
         if (creds == null) {
             throw new InvalidSettingsException("Credentials not found: " + name);
         }
-        return creds.getPassword();
+
+        final String password = creds.getPassword();
+        if (password == null || password.isBlank()) {
+            throw new InvalidSettingsException("Empty password in credentials found.");
+        }
+
+        return password;
     }
 
     private String getCustomerKeyFromFile() throws IOException, InvalidSettingsException {
@@ -440,10 +446,30 @@ public class S3ConnectorNodeSettings {
             if (keySource == null) {
                 throw new InvalidSettingsException("Invalid customer key source: " + key);
             }
+        }
 
-            if (keySource == CustomerKeySource.SETTINGS) {
-                //Validate that the key is base64 string of the proper size
-                AwsUtils.getCustomerKeyBytes(settings.getString(KEY_SSE_CUSTOMER_KEY));
+        final S3ConnectorNodeSettings tmpSettings = new S3ConnectorNodeSettings(m_portConfig);
+        tmpSettings.loadSettingsFrom(settings);
+        tmpSettings.validate();
+    }
+
+    /**
+     * Validate values of this settings instance.
+     *
+     * @throws InvalidSettingsException on invalid settings
+     */
+    private void validate() throws InvalidSettingsException {
+        if (isSseEnabled()) {
+            if (getSseMode() == SSEMode.KMS && !sseKmsUseAwsManaged()) {
+                if (getKmsKeyId() == null || getKmsKeyId().isBlank()) {
+                    throw new InvalidSettingsException("SSE-KMS key id or AWS default key required.");
+                }
+
+            } else if (getSseMode() == SSEMode.CUSTOMER_PROVIDED
+                && getCustomerKeySource() == CustomerKeySource.SETTINGS) {
+
+                // Validate that the key is base64 string of the proper size
+                AwsUtils.getCustomerKeyBytes(m_customerKey.getStringValue());
             }
         }
     }
