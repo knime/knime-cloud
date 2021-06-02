@@ -197,7 +197,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         checkboxPanel.add(Box.createHorizontalGlue());
 
         JPanel encryptionPanel = new JPanel(new GridBagLayout());
-        encryptionPanel.setBorder(BorderFactory.createTitledBorder("Server side encryption"));
+        encryptionPanel.setBorder(BorderFactory.createTitledBorder("Server-side encryption"));
 
         final GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -273,6 +273,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        m_settings.validate();
         m_settings.saveSettingsTo(settings);
         m_workingDirChooser.addCurrentSelectionToHistory();
     }
@@ -288,7 +289,12 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
             LOGGER.warn(ex.getMessage(), ex);
         }
 
-        m_connInfo = ((CloudConnectionInformationPortObjectSpec)specs[0]).getConnectionInformation();
+        if (specs.length > 0 && specs[0] != null) {
+            m_workingDirChooser.setEnableBrowsing(true);
+            m_connInfo = ((CloudConnectionInformationPortObjectSpec)specs[0]).getConnectionInformation();
+        } else {
+            m_workingDirChooser.setEnableBrowsing(false);
+        }
 
         m_customerKeyInput.onSettingsLoaded(settings, specs);
         settingsLoaded();

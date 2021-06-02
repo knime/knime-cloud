@@ -481,7 +481,7 @@ public class S3ConnectorNodeSettings {
      *
      * @throws InvalidSettingsException on invalid settings
      */
-    private void validate() throws InvalidSettingsException {
+    public void validate() throws InvalidSettingsException {
         if (isSseEnabled()) {
             if (getSseMode() == SSEMode.KMS && !sseKmsUseAwsManaged()) {
                 if (getKmsKeyId() == null || getKmsKeyId().isBlank()) {
