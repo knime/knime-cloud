@@ -312,24 +312,43 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     /**
+     * Get object using SSE-C parameters if present in settings and fallback on request without encryption parameters on
+     * error code 400 to read a possible not encrypted object.
+     *
      * @param bucket The bucket name.
      * @param key The object key.
      * @return The input stream for the object.
-     * @throws IOException
      */
     @SuppressWarnings("resource")
-    public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) throws IOException {
-        GetObjectRequest.Builder request = GetObjectRequest.builder()//
+    public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) {
+        GetObjectRequest.Builder builder = GetObjectRequest.builder()//
             .bucket(bucket)//
             .key(key);
+        S3Client client = getClientForBucket(bucket);
 
-        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED && checkCustomerEncryption(bucket, key)) {
-            request.sseCustomerAlgorithm(AES256);
-            request.sseCustomerKey(m_customerKey);
-            request.sseCustomerKeyMD5(m_customerKeyMD5);
+
+        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+            GetObjectRequest sseReq = builder.copy() //
+                .sseCustomerAlgorithm(AES256) //
+                .sseCustomerKey(m_customerKey) //
+                .sseCustomerKeyMD5(m_customerKeyMD5) //
+                .build();
+
+            try {
+                return client.getObject(sseReq);
+            } catch (S3Exception ex) {
+                if (ex.statusCode() == 400) {
+                    // possibly object is not encrypted, retry request without SSE params
+                    LOGGER.warnWithFormat(
+                        "Failed to get object /%s/%s using SSE-C params. Retrying request without encryption enabled.",
+                        bucket, key);
+                } else {
+                    throw ex;
+                }
+            }
         }
 
-        return getClientForBucket(bucket).getObject(request.build());
+        return client.getObject(builder.build()); // rerun request without SSE-C params
     }
 
     private boolean checkCustomerEncryption(final String bucket, final String blob) throws IOException {
