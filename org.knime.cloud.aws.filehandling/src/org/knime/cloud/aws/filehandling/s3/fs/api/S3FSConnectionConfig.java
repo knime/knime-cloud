@@ -48,6 +48,7 @@
  */
 package org.knime.cloud.aws.filehandling.s3.fs.api;
 
+import java.net.URI;
 import java.time.Duration;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
@@ -83,6 +84,12 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
     private String m_customerKey;
 
     private final CloudConnectionInformation m_connectionInfo;
+
+    private boolean m_endpointOverride = false;
+
+    private URI m_endpointUrl;
+
+    private boolean m_pathStyle = false;
 
     /**
      *
@@ -197,6 +204,48 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
      */
     public CloudConnectionInformation getConnectionInfo() {
         return m_connectionInfo;
+    }
+
+    /**
+     * @param override {@code true} if custom endpoint should be used
+     */
+    public void setOverrideEndpoint(final boolean override) {
+        m_endpointOverride = override;
+    }
+
+    /**
+     * @return {@code true} if a custom endpoint should be used
+     */
+    public boolean overrideEndpoint() {
+        return m_endpointOverride;
+    }
+
+    /**
+     * @param endpoint URL of endpoint to use
+     */
+    public void setEndpointUrl(final URI endpoint) {
+        m_endpointUrl = endpoint;
+    }
+
+    /**
+     * @return URL of endpoint
+     */
+    public URI getEndpointUrl() {
+        return m_endpointUrl;
+    }
+
+    /**
+     * @param pathStyle {@code true} if client should always use path style access
+     */
+    public void setPathStyle(final boolean pathStyle) {
+        m_pathStyle = pathStyle;
+    }
+
+    /**
+     * @return {@code true} if client should always use path style access
+     */
+    public boolean usePathStyle() {
+        return m_pathStyle;
     }
 
     /**

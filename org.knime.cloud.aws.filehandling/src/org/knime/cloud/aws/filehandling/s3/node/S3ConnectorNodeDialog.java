@@ -59,6 +59,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 
@@ -76,6 +77,7 @@ import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
 import org.knime.core.node.port.PortObjectSpec;
+import org.knime.core.node.util.StringHistoryPanel;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
 
@@ -104,11 +106,27 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
 
     private CustomerKeyInputPanel m_customerKeyInput;
 
+    private final ChangeListener m_overrideEndpointChangeListener;
+
+    private final JLabel m_endpointUrlLabel;
+
+    private final StringHistoryPanel m_endpointUrlPanel;
+
+    private final DialogComponentBoolean m_pathStyle;
+
     S3ConnectorNodeDialog(final PortsConfiguration portsConfig) {
         m_settings = new S3ConnectorNodeSettings(portsConfig);
         m_workdirListener = e -> m_settings.getWorkingDirectoryModel()
             .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
         m_sseKmsUseAwsManagedListener = e -> onSseEnabledChanged();
+
+        m_endpointUrlLabel = new JLabel("URL:");
+        m_endpointUrlPanel = new StringHistoryPanel("s3-endpoint");
+        m_overrideEndpointChangeListener = e -> {
+            m_endpointUrlLabel.setEnabled(m_settings.overrideEndpoint());
+            m_endpointUrlPanel.setEnabled(m_settings.overrideEndpoint());
+        };
+        m_pathStyle = new DialogComponentBoolean(m_settings.getPathStyleModel(), "Use path-style requests");
 
         addTab("Settings", createSettingsPanel());
         addTab("Advanced", createAdvancedTab());
@@ -156,6 +174,9 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
 
         gbc.gridy++;
         panel.add(createEncryptionPanel(), gbc);
+
+        gbc.gridy++;
+        panel.add(createEndpointPanel(), gbc);
 
         gbc.gridy++;
         gbc.fill = GridBagConstraints.BOTH;
@@ -226,6 +247,43 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
         return encryptionPanel;
     }
 
+    private JComponent createEndpointPanel() {
+        DialogComponentBoolean override = new DialogComponentBoolean(m_settings.getOverrideEndpointModel(), "Override endpoint URL");
+        final JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Endpoint"));
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(override.getComponentPanel(), gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.weightx = 0;
+        gbc.gridwidth = 1;
+        gbc.insets = new Insets(5, 35, 5, 0);
+        panel.add(m_endpointUrlLabel, gbc);
+
+        gbc.gridx++;
+        gbc.insets = new Insets(5, 5, 5, 15);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        panel.add(m_endpointUrlPanel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(m_pathStyle.getComponentPanel(), gbc);
+
+        return panel;
+    }
+
     private JPanel createSseKmsPanel() {
         final JPanel panel = new JPanel(new GridBagLayout());
 
@@ -270,6 +328,9 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     private FSConnection createFSConnection() throws IOException {
         try {
             S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
+            if (clonedSettings.overrideEndpoint()) {
+                clonedSettings.getEndpointURLModel().setStringValue(m_endpointUrlPanel.getSelectedString());
+            }
             return new S3FSConnection(clonedSettings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
         } catch (InvalidSettingsException ex) {
             throw new IOException("Unable to create connection configuration: " + ex.getMessage(), ex);
@@ -281,6 +342,9 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        if (m_settings.overrideEndpoint()) {
+            m_settings.getEndpointURLModel().setStringValue(m_endpointUrlPanel.getSelectedString());
+        }
         m_settings.validate();
         m_settings.saveSettingsTo(settings);
         m_workingDirChooser.addCurrentSelectionToHistory();
@@ -305,6 +369,15 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
             m_workingDirChooser.setEnableBrowsing(false);
         }
 
+        m_endpointUrlLabel.setEnabled(m_settings.overrideEndpoint());
+        m_endpointUrlPanel.setEnabled(m_settings.overrideEndpoint());
+        final String endpoint = m_settings.getEndpointURLModel().getStringValue();
+        m_endpointUrlPanel.setSelectedString(endpoint);
+        if (!endpoint.isBlank()) {
+            m_endpointUrlPanel.commitSelectedToHistory();
+            m_endpointUrlPanel.updateHistory();
+        }
+
         m_customerKeyInput.onSettingsLoaded(settings, specs);
         settingsLoaded();
     }
@@ -319,6 +392,7 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     public void onOpen() {
         m_workingDirChooser.addListener(m_workdirListener);
         m_settings.getSseKmsUseAwsManagedModel().addChangeListener(m_sseKmsUseAwsManagedListener);
+        m_settings.getOverrideEndpointModel().addChangeListener(m_overrideEndpointChangeListener);
         onSseEnabledChanged();
     }
 
@@ -326,6 +400,7 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     public void onClose() {
         m_workingDirChooser.removeListener(m_workdirListener);
         m_settings.getSseKmsUseAwsManagedModel().removeChangeListener(m_sseKmsUseAwsManagedListener);
+        m_settings.getOverrideEndpointModel().removeChangeListener(m_overrideEndpointChangeListener);
         m_workingDirChooser.onClose();
     }
 }

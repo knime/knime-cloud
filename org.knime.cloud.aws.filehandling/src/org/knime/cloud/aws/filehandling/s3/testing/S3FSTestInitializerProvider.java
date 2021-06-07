@@ -49,6 +49,7 @@
 package org.knime.cloud.aws.filehandling.s3.testing;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 
@@ -85,8 +86,14 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         s3config.setNormalizePath(true);
         s3config.setSocketTimeout(Duration.ofSeconds(S3FSConnectionConfig.DEFAULT_SOCKET_TIMEOUT_SECONDS));
 
-        final S3FSConnection s3Connection = new S3FSConnection(s3config);
-        return new S3FSTestInitializer(s3Connection);
+        final String endpointUrl = config.get("endpoint");
+        if (endpointUrl != null && !endpointUrl.isBlank()) {
+            s3config.setOverrideEndpoint(true);
+            s3config.setEndpointUrl(URI.create(endpointUrl));
+            s3config.setPathStyle(true);
+        }
+
+        return new S3FSTestInitializer(new S3FSConnection(s3config));
     }
 
     private static CloudConnectionInformation createCloudConnectionInformation(final Map<String, String> config) {

@@ -51,6 +51,8 @@ package org.knime.cloud.aws.filehandling.s3.node;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -110,6 +112,12 @@ final class S3ConnectorNodeSettings {
 
     private static final String DEFAULT_CUSTOMER_KEY_VAR = "";
 
+    private static final boolean DEFAULT_ENDPOINT_OVERRIDE = false;
+
+    private static final String DEFAULT_ENDPOINT_URL = "";
+
+    private static final boolean DEFAULT_PATH_STYLE = true;
+
     private static final String KEY_SOCKET_TIMEOUTS = "readWriteTimeoutInSeconds";
 
     private static final String KEY_NORMALIZE_PATHS = "normalizePaths";
@@ -132,6 +140,12 @@ final class S3ConnectorNodeSettings {
 
     private static final String KEY_SSE_CUSTOMER_KEY_FILE = "sseCustomerKeyFile";
 
+    private static final String KEY_ENDPOINT_OVERRIDE = "endpointOverride";
+
+    private static final String KEY_ENDPOINT_URL = "endpointURL";
+
+    private static final String KEY_PATH_STYLE = "pathStyle";
+
     private final SettingsModelIntegerBounded m_socketTimeout;
 
     private final SettingsModelBoolean m_normalizePath;
@@ -153,6 +167,12 @@ final class S3ConnectorNodeSettings {
     private final SettingsModelString m_customerKeyVar;
 
     private final SettingsModelReaderFileChooser m_customerKeyFile;
+
+    private final SettingsModelBoolean m_endpointOverride;
+
+    private final SettingsModelString m_endpointURL;
+
+    private final SettingsModelBoolean m_pathStyle;
 
     private final PortsConfiguration m_portConfig;
 
@@ -187,6 +207,12 @@ final class S3ConnectorNodeSettings {
 
         m_sseEnabled.addChangeListener(e -> updateEnabledness());
         m_sseKmsUseAwsManaged.addChangeListener(e -> updateEnabledness());
+
+        m_endpointOverride = new SettingsModelBoolean(KEY_ENDPOINT_OVERRIDE, DEFAULT_ENDPOINT_OVERRIDE);
+        m_endpointOverride.addChangeListener(e -> updateEnabledness());
+        m_endpointURL = new SettingsModelString(KEY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
+        m_pathStyle = new SettingsModelBoolean(KEY_PATH_STYLE, DEFAULT_PATH_STYLE);
+
         updateEnabledness();
     }
 
@@ -194,6 +220,8 @@ final class S3ConnectorNodeSettings {
         m_sseMode.setEnabled(isSseEnabled());
         m_sseKmsUseAwsManaged.setEnabled(isSseEnabled());
         m_sseKmsKeyId.setEnabled(isSseEnabled() && sseKmsUseAwsManaged());
+        m_endpointURL.setEnabled(overrideEndpoint());
+        m_pathStyle.setEnabled(overrideEndpoint());
     }
 
     /**
@@ -413,6 +441,48 @@ final class S3ConnectorNodeSettings {
     }
 
     /**
+     * @return settings model of override endpoint
+     */
+    public SettingsModelBoolean getOverrideEndpointModel() {
+        return m_endpointOverride;
+    }
+
+    /**
+     * @return {@code true} if custom endpoint URL should be used
+     */
+    public boolean overrideEndpoint() {
+        return m_endpointOverride.getBooleanValue();
+    }
+
+    /**
+     * @return settings model of endpoint URL
+     */
+    public SettingsModelString getEndpointURLModel() {
+        return m_endpointURL;
+    }
+
+    /**
+     * @return custom endpoint URL
+     */
+    public URI getEndpointURL() {
+        return URI.create(m_endpointURL.getStringValue());
+    }
+
+    /**
+     * @return path style settings model
+     */
+    public SettingsModelBoolean getPathStyleModel() {
+        return m_pathStyle;
+    }
+
+    /**
+     * @return {@code true} if client should always use path style access
+     */
+    public boolean usePathStyle() {
+        return m_pathStyle.getBooleanValue();
+    }
+
+    /**
      * Saves the settings in this instance to the given {@link NodeSettingsWO}
      *
      * @param settings Node settings.
@@ -431,6 +501,9 @@ final class S3ConnectorNodeSettings {
         if (m_customerKeyFile != null) {
             m_customerKeyFile.saveSettingsTo(settings);
         }
+        m_endpointOverride.saveSettingsTo(settings);
+        m_endpointURL.saveSettingsTo(settings);
+        m_pathStyle.saveSettingsTo(settings);
     }
 
     /**
@@ -473,6 +546,11 @@ final class S3ConnectorNodeSettings {
                 throw new InvalidSettingsException("Invalid customer key source: " + key);
             }
         }
+        if (settings.containsKey(KEY_ENDPOINT_OVERRIDE)) {
+            m_endpointOverride.validateSettings(settings);
+            m_endpointURL.validateSettings(settings);
+            m_pathStyle.validateSettings(settings);
+        }
 
         final S3ConnectorNodeSettings tmpSettings = new S3ConnectorNodeSettings(m_portConfig);
         tmpSettings.loadSettingsFrom(settings);
@@ -484,6 +562,7 @@ final class S3ConnectorNodeSettings {
      *
      * @throws InvalidSettingsException on invalid settings
      */
+    @SuppressWarnings("unused")
     public void validate() throws InvalidSettingsException {
         if (isSseEnabled()) {
             if (getSseMode() == SSEMode.KMS && !sseKmsUseAwsManaged()) {
@@ -500,6 +579,19 @@ final class S3ConnectorNodeSettings {
                 } catch (IOException ex) {
                     throw new InvalidSettingsException(ex);
                 }
+            }
+        }
+
+        if (overrideEndpoint()) {
+            final String endpointUrl = m_endpointURL.getStringValue();
+            if (endpointUrl == null || endpointUrl.isBlank()) {
+                throw new InvalidSettingsException("URL required on endpoint override.");
+            }
+
+            try {
+                new URI(endpointUrl);
+            } catch (final URISyntaxException ex) {
+                throw new InvalidSettingsException("Invalid endpoint URL: " + ex.getMessage(), ex);
             }
         }
     }
@@ -545,6 +637,11 @@ final class S3ConnectorNodeSettings {
             m_customerKey.setStringValue(DEFAULT_CUSTOMER_KEY);
             m_customerKeyVar.setStringValue(DEFAULT_CUSTOMER_KEY_VAR);
             m_customerKeySource = DEFAULT_CUSTOMER_KEY_SOURCE;
+        }
+        if (settings.containsKey(KEY_ENDPOINT_OVERRIDE)) {
+            m_endpointOverride.loadSettingsFrom(settings);
+            m_endpointURL.loadSettingsFrom(settings);
+            m_pathStyle.loadSettingsFrom(settings);
         }
         updateEnabledness();
     }
@@ -655,6 +752,11 @@ final class S3ConnectorNodeSettings {
         config.setSocketTimeout(Duration.ofSeconds(getSocketTimeout()));
         if (credentials != null) {
             config.setCustomerKey(getCustomerKey(credentials));
+        }
+        if (overrideEndpoint()) {
+            config.setOverrideEndpoint(true);
+            config.setEndpointUrl(getEndpointURL());
+            config.setPathStyle(usePathStyle());
         }
         return config;
     }

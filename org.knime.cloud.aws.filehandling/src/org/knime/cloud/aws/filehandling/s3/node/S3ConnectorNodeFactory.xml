@@ -67,6 +67,9 @@
         	could be provided. The base64 encoded key could be entered directly or provided via credentials variable using the encoded key as password
         	(username can be anything or left empty). The third way is to select a file that contains exactly 32 bytes (256 bit) that should be used as key.
         	</option>
+        	<option name="Endpoint">Select override to use a custom endpoint URL. The client uses virtual hosted-style requests if possible.
+        	This feature can be disabled using the path-style requests option (see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/RESTAPI.html">AWS documentation</a>).
+        	Note that the endpoint must be API compatible to the AWS Java SDK v2.</option>
         </tab>
     </fullDescription>
 	<ports>

@@ -50,6 +50,7 @@ package org.knime.cloud.aws.filehandling.s3;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -124,9 +125,17 @@ public class MultiRegionS3Client implements AutoCloseable {
 
     private final Map<Region, S3Client> m_clientByRegion;
 
+    private final Region m_defaultRegion;
+
     private final S3Client m_defaultClient;
 
     private final S3Client m_pathStyleClient;
+
+    private final boolean m_endpointOverride;
+
+    private final URI m_endpointURL;
+
+    private final boolean m_pathStyle;
 
     private final boolean m_hasListBucketPermission;
 
@@ -149,9 +158,13 @@ public class MultiRegionS3Client implements AutoCloseable {
         m_regionByBucket = new ConcurrentHashMap<>();
         m_clientByRegion = new ConcurrentHashMap<>();
 
-        Region region = Region.of(config.getConnectionInfo().getHost());
-        m_defaultClient = getClientForRegion(region);
-        m_pathStyleClient = createClientForRegion(region, true);
+        m_endpointOverride = config.overrideEndpoint();
+        m_endpointURL = config.getEndpointUrl();
+        m_pathStyle = config.usePathStyle();
+
+        m_defaultRegion = Region.of(config.getConnectionInfo().getHost());
+        m_defaultClient = getClientForRegion(m_defaultRegion);
+        m_pathStyleClient = createClientForRegion(m_defaultRegion, true);
 
         m_hasListBucketPermission = testListBucketPermissions();
     }
@@ -188,7 +201,11 @@ public class MultiRegionS3Client implements AutoCloseable {
             .credentialsProvider(AwsUtils.getCredentialProvider(m_connectionInfo))//
             .httpClientBuilder(httpClientBuilder);//
 
-        if (pathStyleAccess) {
+        if (m_endpointOverride) {
+            builder.endpointOverride(m_endpointURL);
+        }
+
+        if (pathStyleAccess || m_pathStyle) {
             builder.serviceConfiguration(b -> b.pathStyleAccessEnabled(true));
         }
 
@@ -480,7 +497,11 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     private Region getRegionForBucket(final String bucket) {
-        return m_regionByBucket.computeIfAbsent(bucket, this::fetchRegionForBucket);
+        if (m_endpointOverride) {
+            return m_defaultRegion;
+        } else {
+            return m_regionByBucket.computeIfAbsent(bucket, this::fetchRegionForBucket);
+        }
     }
 
     /**
@@ -568,7 +589,14 @@ public class MultiRegionS3Client implements AutoCloseable {
         if (region == null) {
             throw NoSuchBucketException.builder().message("The specified bucket does not exist").build();
         }
-        AwsCredentialsProvider awsCreds = AwsUtils.getCredentialProvider(m_connectionInfo);
-        return S3Presigner.builder().credentialsProvider(awsCreds).region(region).build();
+
+        final AwsCredentialsProvider awsCreds = AwsUtils.getCredentialProvider(m_connectionInfo);
+        final S3Presigner.Builder builder = S3Presigner.builder().credentialsProvider(awsCreds).region(region);
+
+        if (m_endpointOverride) {
+            builder.endpointOverride(m_endpointURL);
+        }
+
+        return builder.build();
     }
 }
