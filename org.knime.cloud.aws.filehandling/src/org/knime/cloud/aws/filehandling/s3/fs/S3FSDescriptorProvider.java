@@ -44,96 +44,46 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
+ *   2021-06-02 (modithahewasinghage): created
  */
 package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.util.Collections;
-
-import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
-import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
-import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
-import org.knime.filehandling.core.connections.FSCategory;
-import org.knime.filehandling.core.connections.FSLocationSpec;
-import org.knime.filehandling.core.connections.base.BaseFileSystem;
+import org.knime.cloud.aws.filehandling.s3.testing.S3FSTestInitializerProvider;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3SignedURIExporterFactory;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
+import org.knime.filehandling.core.connections.meta.FSDescriptorProvider;
+import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.filehandling.core.connections.meta.FSTypeRegistry;
+import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptor;
+import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptorProvider;
+import org.knime.filehandling.core.connections.uriexport.URIExporterIDs;
 
 /**
- * The Amazon S3 implementation of the {@link FileSystem} interface.
+ * {@link FSDescriptorProvider} implementation for the Amazon S3 file system.
  *
- * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
+ * @author modithahewasinghage
  */
-public class S3FileSystem extends BaseFileSystem<S3Path> {
+public class S3FSDescriptorProvider extends BaseFSDescriptorProvider {
 
     /**
-     * Path separator for the S3 file system.
+     * FSType for the S3 file system
      */
-    public static final String PATH_SEPARATOR = "/";
-
-    private final MultiRegionS3Client m_client;
-
-    private final boolean m_normalizePaths;
+    public static final FSType FS_TYPE = FSTypeRegistry.getOrCreateFSType("amazon-s3", "Amazon S3");
 
     /**
-     * Constructs an S3FileSystem for the given URI
-     *
-     * @param config
-     * @param cacheTTL The time to live for cache entries in the attributes cache
-     * @throws IOException
+     * Constructor.
      */
-    public S3FileSystem(final S3FSConnectionConfig config, final long cacheTTL) throws IOException {
-        super(new S3FileSystemProvider(), //
-            cacheTTL, //
-            config.getWorkingDirectory(), //
-            createFSLocationSpec());
-
-        m_normalizePaths = config.isNormalizePath();
-        m_client = new MultiRegionS3Client(config);
+    public S3FSDescriptorProvider() {
+        super(S3FSDescriptorProvider.FS_TYPE, //
+            new BaseFSDescriptor.Builder() //
+                .withSeparator(S3FileSystem.PATH_SEPARATOR) //
+                .withConnectionFactory(S3FSConnection::new) //
+                .withURIExporterFactory(URIExporterIDs.DEFAULT, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(URIExporterIDs.DEFAULT_HADOOP, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(S3URIExporterFactory.EXPORTER_ID, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(S3SignedURIExporterFactory.EXPORTER_ID,
+                    S3SignedURIExporterFactory.getInstance()) //
+                .withTestInitializerProvider(new S3FSTestInitializerProvider()) //
+                .build());
     }
-
-    /**
-     * Creates an {@link FSLocationSpec} for an S3 file system.
-     *
-     * @return an {@link FSLocationSpec} for an S3 file system.
-     */
-    public static FSLocationSpec createFSLocationSpec() {
-        return new DefaultFSLocationSpec(FSCategory.CONNECTED, S3FSDescriptorProvider.FS_TYPE.getTypeId());
-    }
-
-    @Override
-    public String getSeparator() {
-        return PATH_SEPARATOR;
-    }
-
-    @Override
-    public Iterable<Path> getRootDirectories() {
-        return Collections.singletonList(getPath(PATH_SEPARATOR));
-    }
-
-    /**
-     * @return the {@link MultiRegionS3Client} instance.
-     */
-    public MultiRegionS3Client getClient() {
-        return m_client;
-    }
-
-    @Override
-    public S3Path getPath(final String first, final String... more) {
-        return new S3Path(this, first, more);
-    }
-
-    @Override
-    public void prepareClose() {
-        m_client.close();
-    }
-
-    /**
-     * @return whether to normalize paths.
-     */
-    public boolean normalizePaths() {
-        return m_normalizePaths;
-    }
-
 }

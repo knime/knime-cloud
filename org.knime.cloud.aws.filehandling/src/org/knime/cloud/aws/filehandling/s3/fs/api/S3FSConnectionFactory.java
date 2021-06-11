@@ -44,51 +44,43 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
+ *   2021-06-13 (bjoern): created
  */
-package org.knime.cloud.aws.filehandling.s3.fs;
+package org.knime.cloud.aws.filehandling.s3.fs.api;
 
 import java.io.IOException;
 
-import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
-import org.knime.core.node.util.CheckUtils;
-import org.knime.core.node.util.FileSystemBrowser;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
 import org.knime.filehandling.core.connections.FSConnection;
-import org.knime.filehandling.core.connections.FSFileSystem;
-import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
+import org.knime.filehandling.core.connections.meta.FSType;
 
 /**
- * The Amazon S3 implementation of the {@link FSConnection} interface.
+ * Temporary factory for S3 {@link FSConnection}s.
  *
- * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
+ * @author Bjoern Lohrmann, KNIME GmbH
+ * @noreference non-public API
  */
-public class S3FSConnection implements FSConnection {
+public final class S3FSConnectionFactory {
 
-    private static final long CACHE_TTL_MILLIS = 6000;
-
-    private final S3FileSystem m_fileSystem;
+    private S3FSConnectionFactory() {
+    }
 
     /**
-     * Creates a new {@link S3FSConnection} for the given connection information and settings.
-     *
-     * @param config
-     * @throws IOException
+     * @return {@link FSType} for the S3 file system
      */
-    public S3FSConnection(final S3FSConnectionConfig config) throws IOException {
-        CheckUtils.checkArgumentNotNull(config, "S3FSConnectionConfig must not be null");
-        CheckUtils.checkArgumentNotNull(config.getConnectionInfo(), "CloudConnectionInformation must not be null");
-
-        m_fileSystem = new S3FileSystem(config, CACHE_TTL_MILLIS);
+    public static FSType getFSType() {
+        return S3FSDescriptorProvider.FS_TYPE;
     }
 
-    @Override
-    public FSFileSystem<?> getFileSystem() {
-        return m_fileSystem;
+    /**
+     * Creates a new S3 {@link FSConnection}.
+     *
+     * @param config How to configure the connection.
+     * @return a new S3 {@link FSConnection}
+     * @throws IOException When something went wrong creating the connection.
+     */
+    public static FSConnection createConnection(final S3FSConnectionConfig config) throws IOException {
+        return new S3FSConnection(config);
     }
-
-    @Override
-    public FileSystemBrowser getFileSystemBrowser() {
-        return new NioFileSystemBrowser(this);
-    }
-
 }

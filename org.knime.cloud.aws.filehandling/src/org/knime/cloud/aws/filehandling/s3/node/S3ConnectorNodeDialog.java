@@ -63,7 +63,7 @@ import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.cloud.core.util.port.CloudConnectionInformationPortObjectSpec;
 import org.knime.core.node.InvalidSettingsException;
@@ -84,19 +84,24 @@ import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectorNodeDialog extends NodeDialogPane {
+final class S3ConnectorNodeDialog extends NodeDialogPane {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectorNodeDialog.class);
 
     private final ChangeListener m_workdirListener;
+
     private final ChangeListener m_sseKmsUseAwsManagedListener;
 
     private final S3ConnectorNodeSettings m_settings;
+
     private final WorkingDirectoryChooser m_workingDirChooser =
         new WorkingDirectoryChooser("s3.workingDir", this::createFSConnection);
 
     private CloudConnectionInformation m_connInfo;
+
     private JComboBox<SSEMode> m_sseModeCombobox;
+
     private KmsKeyInputPanel m_kmsKeyInput;
+
     private CustomerKeyInputPanel m_customerKeyInput;
 
     S3ConnectorNodeDialog(final PortsConfiguration portsConfig) {
@@ -124,13 +129,13 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         c.insets = new Insets(0, 10, 0, 0);
         panel.add(m_workingDirChooser, c);
 
-        c.gridy +=1;
+        c.gridy += 1;
         c.insets = new Insets(0, 0, 0, 0);
         panel.add(normalizePath.getComponentPanel(), c);
 
         c.fill = GridBagConstraints.BOTH;
         c.weighty = 1;
-        c.gridy +=1;
+        c.gridy += 1;
         panel.add(Box.createVerticalGlue(), c);
 
         panel.setBorder(BorderFactory.createTitledBorder("File system settings"));
@@ -162,7 +167,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
 
     private JComponent createTimeoutsPanel() {
         DialogComponentNumber socketTimeout =
-                new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
+            new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
 
         socketTimeout.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
         socketTimeout.getComponentPanel().setBorder(BorderFactory.createTitledBorder("Connection settings"));
@@ -189,7 +194,6 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
             m_settings.getSseModeModel().setStringValue(mode.getKey());
             ((CardLayout)cards.getLayout()).show(cards, mode.getKey());
         });
-
 
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         checkboxPanel.add(sseEnabled.getComponentPanel());
@@ -231,8 +235,8 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
         gbc.insets = new Insets(0, 15, 0, 5);
         gbc.anchor = GridBagConstraints.LINE_START;
         gbc.fill = GridBagConstraints.NONE;
-        panel.add(new DialogComponentBoolean(m_settings.getSseKmsUseAwsManagedModel(),
-                "Use default AWS managed key").getComponentPanel(), gbc);
+        panel.add(new DialogComponentBoolean(m_settings.getSseKmsUseAwsManagedModel(), "Use default AWS managed key")
+            .getComponentPanel(), gbc);
 
         gbc.gridx++;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -265,7 +269,7 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
 
     private FSConnection createFSConnection() throws IOException {
         S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
-        return new S3FSConnection(m_connInfo, clonedSettings, getCredentialsProvider());
+        return new S3FSConnection(clonedSettings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
     }
 
     /**
@@ -282,7 +286,8 @@ public class S3ConnectorNodeDialog extends NodeDialogPane {
      * {@inheritDoc}
      */
     @Override
-    protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs) throws NotConfigurableException {
+    protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
+        throws NotConfigurableException {
         try {
             m_settings.loadSettingsFrom(settings);
         } catch (InvalidSettingsException ex) {

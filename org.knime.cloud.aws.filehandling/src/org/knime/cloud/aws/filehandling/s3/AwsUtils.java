@@ -60,7 +60,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.util.KnimeEncryption;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
@@ -85,8 +84,11 @@ public final class AwsUtils {
     }
 
     private static final int MOVED_PERMANENTLY = 301;
+
     private static final int UNAUTHORIZED = 401;
+
     private static final int FORBIDDEN = 403;
+
     private static final int NOT_FOUND = 404;
 
     private static final int CUSTOMER_KEY_BYTE_SIZE = 32;
@@ -207,15 +209,15 @@ public final class AwsUtils {
      *
      * @param base64Key The key in base64 encoding.
      * @return The key bytes.
-     * @throws InvalidSettingsException If the key is not a valid base64 string or the key size is not 256 bits.
+     * @throws IOException If the key is not a valid base64 string or the key size is not 256 bits.
      */
-    public static byte[] getCustomerKeyBytes(final String base64Key) throws InvalidSettingsException {
+    public static byte[] getCustomerKeyBytes(final String base64Key) throws IOException {
         try {
             final byte[] keyBytes = Base64.getDecoder().decode(base64Key);
 
             if (keyBytes.length != CUSTOMER_KEY_BYTE_SIZE) {
-                throw new InvalidSettingsException(String
-                    .format("Invalid SSE-C key length! Expected %d bytes (which is %d bits), but got %d bytes.", //
+                throw new IOException(
+                    String.format("Invalid SSE-C key length! Expected %d bytes (which is %d bits), but got %d bytes.", //
                         CUSTOMER_KEY_BYTE_SIZE, //
                         CUSTOMER_KEY_BYTE_SIZE * 8, //
                         keyBytes.length));
@@ -223,7 +225,7 @@ public final class AwsUtils {
 
             return keyBytes;
         } catch (IllegalArgumentException e) {
-            throw new InvalidSettingsException("Encryption key is not a valid base64 string", e);
+            throw new IOException("Encryption key is not a valid base64 string", e);
         }
     }
 }

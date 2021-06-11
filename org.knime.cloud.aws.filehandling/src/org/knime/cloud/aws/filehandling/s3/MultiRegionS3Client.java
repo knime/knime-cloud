@@ -60,12 +60,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
-import org.knime.core.node.workflow.CredentialsProvider;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -119,6 +117,7 @@ public class MultiRegionS3Client implements AutoCloseable {
     private final String m_kmsKeyId;
 
     private final String m_customerKey;
+
     private final String m_customerKeyMD5;
 
     private final Map<String, Region> m_regionByBucket;
@@ -132,38 +131,32 @@ public class MultiRegionS3Client implements AutoCloseable {
     private final boolean m_hasListBucketPermission;
 
     /**
-     * @param settings The node settings.
-     * @param connectionInfo The connection information
-     * @param credentials Credentials provider.
-     * @throws InvalidSettingsException When {@link InvalidSettingsException} happens during loading customer-provided
-     *             encryption key.
+     * @param config
      * @throws IOException When {@link IOException} happens during loading customer-provided encryption key.
      *
      */
-    public MultiRegionS3Client(final S3ConnectorNodeSettings settings, final CloudConnectionInformation connectionInfo,
-        final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
-        m_socketTimeout = Duration.ofSeconds(settings.getSocketTimeout());
-        m_connectionInfo = connectionInfo;
+    public MultiRegionS3Client(final S3FSConnectionConfig config) throws IOException {
+        m_socketTimeout = config.getSocketTimeout();
+        m_connectionInfo = config.getConnectionInfo();
 
-        m_sseEnabled = settings.isSseEnabled();
-        m_sseMode = settings.getSseMode();
-        m_kmsKeyId = settings.sseKmsUseAwsManaged() ? "" : settings.getKmsKeyId();
+        m_sseEnabled = config.isSseEnabled();
+        m_sseMode = config.getSseMode();
+        m_kmsKeyId = config.isSseKmsUseAwsManaged() ? "" : config.getSseKmsKeyId();
 
-        m_customerKey = settings.getCustomerKey(credentials);
+        m_customerKey = config.getCustomerKey();
         m_customerKeyMD5 = computeCustomerKeyMD5(m_customerKey);
 
         m_regionByBucket = new ConcurrentHashMap<>();
         m_clientByRegion = new ConcurrentHashMap<>();
 
-        Region region = Region.of(connectionInfo.getHost());
+        Region region = Region.of(config.getConnectionInfo().getHost());
         m_defaultClient = getClientForRegion(region);
         m_pathStyleClient = createClientForRegion(region, true);
 
         m_hasListBucketPermission = testListBucketPermissions();
     }
 
-    private static String computeCustomerKeyMD5(final String customerKey)
-        throws InvalidSettingsException {
+    private static String computeCustomerKeyMD5(final String customerKey) throws IOException {
         if (customerKey == null) {
             return null;
         }
@@ -330,7 +323,6 @@ public class MultiRegionS3Client implements AutoCloseable {
             .bucket(bucket)//
             .key(key);
         S3Client client = getClientForBucket(bucket);
-
 
         if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
             GetObjectRequest sseReq = builder.copy() //
@@ -513,7 +505,8 @@ public class MultiRegionS3Client implements AutoCloseable {
 
         try {
             // requires s3:GetBucketLocation permission
-            final String location = m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
+            final String location =
+                m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
 
             // Javadoc for getBucketLocation states that
             // 'Buckets in Region us-east-1 have a LocationConstraint of null.'
@@ -547,7 +540,7 @@ public class MultiRegionS3Client implements AutoCloseable {
 
         if (responseHeaders.containsKey("x-amz-bucket-region")) {
             return Region.of(responseHeaders.get("x-amz-bucket-region").get(0));
-        } else if (exception != null){
+        } else if (exception != null) {
             throw exception;
         } else {
             throw SdkException.builder().message("Could not determine region of bucket " + bucket).build();

@@ -61,6 +61,9 @@ import java.util.function.Consumer;
 import org.apache.commons.io.IOUtils;
 import org.knime.cloud.aws.filehandling.s3.AwsUtils;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
+import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettings;
 import org.knime.core.node.NodeSettingsRO;
@@ -82,27 +85,29 @@ import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusCon
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
 
-import software.amazon.awssdk.http.SdkHttpConfigurationOption;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
-
 /**
- * Settings for {@link S3ConnectorNodeModel}.
+ * Settings model for S3Connector
  *
  * @author Alexander Bondaletov
  */
-public class S3ConnectorNodeSettings {
+final class S3ConnectorNodeSettings {
 
     private static final boolean DEFAULT_NORMALIZE = true;
 
     private static final String DEFAULT_WORKING_DIR = S3FileSystem.PATH_SEPARATOR;
 
     private static final boolean DEFAULT_SSE_ENABLED = false;
+
     private static final String DEFAULT_SSE_MODE = SSEMode.getDefault().getKey();
+
     private static final boolean DEFAULT_SSE_KMS_USE_AWS_MANAGED = true;
+
     private static final String DEFAULT_SSE_KMS_KEY_ID = "";
 
     private static final CustomerKeySource DEFAULT_CUSTOMER_KEY_SOURCE = CustomerKeySource.SETTINGS;
+
     private static final String DEFAULT_CUSTOMER_KEY = "";
+
     private static final String DEFAULT_CUSTOMER_KEY_VAR = "";
 
     private static final String KEY_SOCKET_TIMEOUTS = "readWriteTimeoutInSeconds";
@@ -112,13 +117,19 @@ public class S3ConnectorNodeSettings {
     private static final String KEY_WORKING_DIRECTORY = "workingDirectory";
 
     private static final String KEY_SSE_ENABLED = "sseEnabled";
+
     private static final String KEY_SSE_MODE = "sseMode";
+
     private static final String KEY_SSE_KMS_USE_AWS_MANAGED = "sseKmsUseAwsManaged";
+
     private static final String KEY_SSE_KMS_KEY_ID = "sseKmsKeyId";
 
     private static final String KEY_SSE_CUSTOMER_KEY_SOURCE = "sseCustomerKeySource";
+
     private static final String KEY_SSE_CUSTOMER_KEY = "sseCustomerKey";
+
     private static final String KEY_SSE_CUSTOMER_KEY_VAR = "sseCustomerKeyVar";
+
     private static final String KEY_SSE_CUSTOMER_KEY_FILE = "sseCustomerKeyFile";
 
     private final SettingsModelIntegerBounded m_socketTimeout;
@@ -128,35 +139,33 @@ public class S3ConnectorNodeSettings {
     private final SettingsModelString m_workingDirectory;
 
     private final SettingsModelBoolean m_sseEnabled;
+
     private final SettingsModelString m_sseMode;
 
     private final SettingsModelBoolean m_sseKmsUseAwsManaged;
+
     private final SettingsModelString m_sseKmsKeyId;
 
     private CustomerKeySource m_customerKeySource;
+
     private final SettingsModelString m_customerKey;
+
     private final SettingsModelString m_customerKeyVar;
+
     private final SettingsModelReaderFileChooser m_customerKeyFile;
 
     private final PortsConfiguration m_portConfig;
-
-    /**
-     * Constructor intended to be used outside of the {@link S3ConnectorNodeModel} (e.g. integration tests).
-     */
-    public S3ConnectorNodeSettings() {
-        this(null);
-    }
 
     /**
      * Creates new instance
      *
      * @param portsConfig Ports configuration.
      */
-    public S3ConnectorNodeSettings(final PortsConfiguration portsConfig) {
+    S3ConnectorNodeSettings(final PortsConfiguration portsConfig) {
         m_portConfig = portsConfig;
 
-        m_socketTimeout = new SettingsModelIntegerBounded(KEY_SOCKET_TIMEOUTS, Math.max(1, getDefaultSocketTimeout()),
-            0, Integer.MAX_VALUE);
+        m_socketTimeout = new SettingsModelIntegerBounded(KEY_SOCKET_TIMEOUTS,
+            S3FSConnectionConfig.DEFAULT_SOCKET_TIMEOUT_SECONDS, 0, Integer.MAX_VALUE);
         m_normalizePath = new SettingsModelBoolean(KEY_NORMALIZE_PATHS, DEFAULT_NORMALIZE);
         m_workingDirectory = new SettingsModelString(KEY_WORKING_DIRECTORY, DEFAULT_WORKING_DIR);
 
@@ -185,15 +194,6 @@ public class S3ConnectorNodeSettings {
         m_sseMode.setEnabled(isSseEnabled());
         m_sseKmsUseAwsManaged.setEnabled(isSseEnabled());
         m_sseKmsKeyId.setEnabled(isSseEnabled() && sseKmsUseAwsManaged());
-    }
-
-    private static int getDefaultSocketTimeout() {
-        Duration duration =
-            SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.READ_TIMEOUT);
-        if (duration != null) {
-            return (int)duration.getSeconds();
-        }
-        return 0;
     }
 
     /**
@@ -359,7 +359,8 @@ public class S3ConnectorNodeSettings {
         return key;
     }
 
-    private String getCustomerKeyFromCredentials(final CredentialsProvider credentials) throws InvalidSettingsException {
+    private String getCustomerKeyFromCredentials(final CredentialsProvider credentials)
+        throws InvalidSettingsException {
         if (credentials == null) {
             throw new InvalidSettingsException("No credential provider is available");
         }
@@ -392,6 +393,7 @@ public class S3ConnectorNodeSettings {
 
     /**
      * Read key from given path or fail if file does not contain exactly 32 bytes.
+     *
      * @throws InvalidSettingsException
      */
     private static byte[] readCustomerKeyBytesFromFile(final FSPath path) throws IOException, InvalidSettingsException {
@@ -399,7 +401,8 @@ public class S3ConnectorNodeSettings {
             byte[] bytes = IOUtils.readFully(is, 32);
 
             if (is.read() != -1) {
-                throw new InvalidSettingsException(String.format("SSE-C key file %s contains more than the expected 32 bytes.", path.toString()));
+                throw new InvalidSettingsException(
+                    String.format("SSE-C key file %s contains more than the expected 32 bytes.", path.toString()));
             }
 
             return bytes;
@@ -456,7 +459,7 @@ public class S3ConnectorNodeSettings {
         if (settings.containsKey(KEY_SSE_KMS_KEY_ID)) {
             m_sseKmsKeyId.validateSettings(settings);
         }
-        if(settings.containsKey(KEY_SSE_CUSTOMER_KEY)) {
+        if (settings.containsKey(KEY_SSE_CUSTOMER_KEY)) {
             m_customerKey.validateSettings(settings);
             m_customerKeyVar.validateSettings(settings);
 
@@ -492,7 +495,11 @@ public class S3ConnectorNodeSettings {
                 && getCustomerKeySource() == CustomerKeySource.SETTINGS) {
 
                 // Validate that the key is base64 string of the proper size
-                AwsUtils.getCustomerKeyBytes(m_customerKey.getStringValue());
+                try {
+                    AwsUtils.getCustomerKeyBytes(m_customerKey.getStringValue());
+                } catch (IOException ex) {
+                    throw new InvalidSettingsException(ex);
+                }
             }
         }
     }
@@ -569,75 +576,6 @@ public class S3ConnectorNodeSettings {
     }
 
     /**
-     * Enum representing different available S3 server-side encryption modes.
-     *
-     */
-    public enum SSEMode {
-            /**
-             * SSE-S3 mode
-             */
-            S3("S3-Managed Keys (SSE-S3)", "SSE-S3",ServerSideEncryption.AES256),
-            /**
-             * SSE-KMS mode
-             */
-            KMS("Keys in KMS (SSE-KMS)", "SSE-KMS", ServerSideEncryption.AWS_KMS),
-            /**
-             * SSE-C mode
-             */
-            CUSTOMER_PROVIDED("Customer-provided encryption keys (SSE-C)", "SSE-C", null);
-
-        private String m_title;
-        private String m_key;
-
-        private ServerSideEncryption m_encryption;
-
-        private SSEMode(final String title, final String key, final ServerSideEncryption encryption) {
-            m_title = title;
-            m_key = key;
-            m_encryption = encryption;
-        }
-
-        /**
-         * @return the key
-         */
-        public String getKey() {
-            return m_key;
-        }
-
-        /**
-         * @return the encryption
-         */
-        public ServerSideEncryption getEncryption() {
-            return m_encryption;
-        }
-
-        @Override
-        public String toString() {
-            return m_title;
-        }
-
-        /**
-         * @return The default mode.
-         */
-        public static SSEMode getDefault() {
-            return S3;
-        }
-
-        /**
-         * @param key The mode key.
-         * @return The mode with the given key or the default mode in case no mode with a given key is found.
-         */
-        public static SSEMode fromKey(final String key) {
-            for (SSEMode mode : values()) {
-                if(mode.getKey().equals(key)) {
-                    return mode;
-                }
-            }
-            return getDefault();
-        }
-    }
-
-    /**
      * Enum representing different sources for the customer provided key.
      */
     public enum CustomerKeySource {
@@ -696,5 +634,31 @@ public class S3ConnectorNodeSettings {
             }
             return null;
         }
+    }
+
+    /**
+     *
+     * @param connInfo
+     * @param credentials
+     * @return The FSConnectionConfig for S3
+     * @throws IOException
+     */
+    public S3FSConnectionConfig toFSConnectionConfig(final CloudConnectionInformation connInfo,
+        final CredentialsProvider credentials) throws IOException {
+        S3FSConnectionConfig config = new S3FSConnectionConfig(getWorkingDirectory(), connInfo);
+        try {
+            config.setNormalizePath(getNormalizePathModel().getBooleanValue());
+            config.setSseEnabled(getSseEnabledModel().getBooleanValue());
+            config.setSseMode(getSseMode());
+            config.setSseKmsUseAwsManaged(getSseKmsUseAwsManagedModel().getBooleanValue());
+            config.setSseKmsKeyId(getKmsKeyId());
+            config.setSocketTimeout(Duration.ofSeconds(getSocketTimeout()));
+            if (credentials != null) {
+                config.setCustomerKey(getCustomerKey(credentials));
+            }
+        } catch (InvalidSettingsException ex) {
+            throw new IOException("Unable to create Config", ex);
+        }
+        return config;
     }
 }

@@ -55,8 +55,9 @@ import java.util.Objects;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.CustomerKeySource;
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.SSEMode;
 import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.CanceledExecutionException;
@@ -83,7 +84,8 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3ConnectorNodeModel extends NodeModel {
+
+final class S3ConnectorNodeModel extends NodeModel {
     private static final NodeLogger LOG = NodeLogger.getLogger(S3ConnectorNodeModel.class);
 
     private static final String FILE_SYSTEM_NAME = "Amazon S3";
@@ -104,7 +106,7 @@ public class S3ConnectorNodeModel extends NodeModel {
      *
      * @param portsConfig Ports configuration
      */
-    public S3ConnectorNodeModel(final PortsConfiguration portsConfig) {
+    S3ConnectorNodeModel(final PortsConfiguration portsConfig) {
         super(portsConfig.getInputPorts(), portsConfig.getOutputPorts());
         m_settings = new S3ConnectorNodeSettings(portsConfig);
     }
@@ -136,11 +138,13 @@ public class S3ConnectorNodeModel extends NodeModel {
         m_awsConnectionInfo = (AmazonConnectionInformationPortObject)inObjects[0];
 
         final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-        m_fsConn = new S3FSConnection(conInfo, m_settings, getCredentialsProvider());
+        final S3FSConnectionConfig config = m_settings.toFSConnectionConfig(conInfo, getCredentialsProvider());
+        m_fsConn = new S3FSConnection(config);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
 
         if (conInfo.isUseAnonymous()) {
-            setWarningMessage("You are using anonymous credentials. File browsing will only work inside public buckets.");
+            setWarningMessage(
+                "You are using anonymous credentials. File browsing will only work inside public buckets.");
         } else {
             testFileSystemConnection(m_fsConn);
         }
@@ -156,7 +160,8 @@ public class S3ConnectorNodeModel extends NodeModel {
             if (Objects.equals(e.awsErrorDetails().errorCode(), "InvalidAccessKeyId")) {
                 throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.", e);
             } else if (Objects.equals(e.awsErrorDetails().errorCode(), "AccessDenied")) {
-                final String msg = "The credentials provided have restricted permissions. File browsing might not work as expected.";
+                final String msg =
+                    "The credentials provided have restricted permissions. File browsing might not work as expected.";
                 LOG.debug(msg, e);
                 setWarningMessage(msg);
             } else {

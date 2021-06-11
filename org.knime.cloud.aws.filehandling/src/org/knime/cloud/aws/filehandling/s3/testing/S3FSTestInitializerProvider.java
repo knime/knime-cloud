@@ -49,19 +49,22 @@
 package org.knime.cloud.aws.filehandling.s3.testing;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.util.CheckUtils;
 import org.knime.filehandling.core.connections.FSLocationSpec;
+import org.knime.filehandling.core.connections.meta.FSType;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializerProvider;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection
- * to s3.
+ * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
+ * s3.
  *
  * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
  */
@@ -78,12 +81,11 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         final String workingDir =
             generateRandomizedWorkingDir(config.get("workingDirPrefix"), S3FileSystem.PATH_SEPARATOR);
 
-        S3ConnectorNodeSettings settings = new S3ConnectorNodeSettings();
-        settings.getWorkingDirectoryModel().setStringValue(workingDir);
-        settings.getSocketTimeoutModel().setIntValue(CONNECTION_TIMEOUT);
+        final S3FSConnectionConfig s3config = new S3FSConnectionConfig(workingDir, s3ConnectionInformation);
+        s3config.setNormalizePath(true);
+        s3config.setSocketTimeout(Duration.ofSeconds(S3FSConnectionConfig.DEFAULT_SOCKET_TIMEOUT_SECONDS));
 
-        final S3FSConnection s3Connection = new S3FSConnection(s3ConnectionInformation, settings, null);
-
+        final S3FSConnection s3Connection = new S3FSConnection(s3config);
         return new S3FSTestInitializer(s3Connection);
     }
 
@@ -118,8 +120,8 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
     }
 
     @Override
-    public String getFSType() {
-        return S3FileSystem.FS_TYPE;
+    public FSType getFSType() {
+        return S3FSDescriptorProvider.FS_TYPE;
     }
 
     @Override
@@ -127,4 +129,3 @@ public class S3FSTestInitializerProvider extends DefaultFSTestInitializerProvide
         return S3FileSystem.createFSLocationSpec();
     }
 }
-
