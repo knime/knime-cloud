@@ -268,8 +268,12 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     }
 
     private FSConnection createFSConnection() throws IOException {
-        S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
-        return new S3FSConnection(clonedSettings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
+        try {
+            S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
+            return new S3FSConnection(clonedSettings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
+        } catch (InvalidSettingsException ex) {
+            throw new IOException("Unable to create connection configuration: " + ex.getMessage(), ex);
+        }
     }
 
     /**

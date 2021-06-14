@@ -642,22 +642,19 @@ final class S3ConnectorNodeSettings {
      * @param credentials
      * @return The FSConnectionConfig for S3
      * @throws IOException
+     * @throws InvalidSettingsException
      */
     public S3FSConnectionConfig toFSConnectionConfig(final CloudConnectionInformation connInfo,
-        final CredentialsProvider credentials) throws IOException {
+        final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
         S3FSConnectionConfig config = new S3FSConnectionConfig(getWorkingDirectory(), connInfo);
-        try {
-            config.setNormalizePath(getNormalizePathModel().getBooleanValue());
-            config.setSseEnabled(getSseEnabledModel().getBooleanValue());
-            config.setSseMode(getSseMode());
-            config.setSseKmsUseAwsManaged(getSseKmsUseAwsManagedModel().getBooleanValue());
-            config.setSseKmsKeyId(getKmsKeyId());
-            config.setSocketTimeout(Duration.ofSeconds(getSocketTimeout()));
-            if (credentials != null) {
-                config.setCustomerKey(getCustomerKey(credentials));
-            }
-        } catch (InvalidSettingsException ex) {
-            throw new IOException("Unable to create Config", ex);
+        config.setNormalizePath(getNormalizePathModel().getBooleanValue());
+        config.setSseEnabled(getSseEnabledModel().getBooleanValue());
+        config.setSseMode(getSseMode());
+        config.setSseKmsUseAwsManaged(getSseKmsUseAwsManagedModel().getBooleanValue());
+        config.setSseKmsKeyId(getKmsKeyId());
+        config.setSocketTimeout(Duration.ofSeconds(getSocketTimeout()));
+        if (credentials != null) {
+            config.setCustomerKey(getCustomerKey(credentials));
         }
         return config;
     }
