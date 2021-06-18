@@ -48,6 +48,8 @@
  */
 package org.knime.cloud.aws.filehandling.s3.testing;
 
+import java.io.IOException;
+
 import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
@@ -82,12 +84,12 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
     }
 
     @Override
-    public S3Path createFile(final String... pathComponents) {
+    public S3Path createFile(final String... pathComponents) throws IOException {
         return createFileWithContent("", pathComponents);
     }
 
     @Override
-    public S3Path createFileWithContent(final String content, final String... pathComponents) {
+    public S3Path createFileWithContent(final String content, final String... pathComponents) throws IOException {
         final S3Path path = makePath(pathComponents);
 
         // create parent directory objects if necessary
@@ -106,7 +108,7 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
     }
 
     @Override
-    protected void beforeTestCaseInternal() {
+    protected void beforeTestCaseInternal() throws IOException {
         final BlobStorePath scratchDir = getTestCaseScratchDir().toDirectoryPath();
 
         if (m_s3Client.headObject(scratchDir.getBucketName(), scratchDir.getBlobName()) == null) {

@@ -261,10 +261,11 @@ public class MultiRegionS3Client implements AutoCloseable {
     /**
      * @param bucket The bucket name.
      * @param key The object key.
+     * @throws IOException if object uses SSE-C, but this client does not contain SSE-C keys
      * @return The head object response.
      */
     @SuppressWarnings("resource")
-    public HeadObjectResponse headObject(final String bucket, final String key) {
+    public HeadObjectResponse headObject(final String bucket, final String key) throws IOException {
         HeadObjectRequest.Builder builder = HeadObjectRequest.builder().bucket(bucket).key(key);
         S3Client client = getClientForBucket(bucket);
 
@@ -292,11 +293,20 @@ public class MultiRegionS3Client implements AutoCloseable {
         return headObject(builder.build(), client);
     }
 
-    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) {
+    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) throws IOException {
         try {
             return client.headObject(request);
         } catch (NoSuchKeyException ex) {//NOSONAR object doesn't exist
             return null;
+        } catch (S3Exception ex) {
+            if (ex.statusCode() == 400 && ex.awsErrorDetails().errorMessage() == null) {
+                // possibly object is encrypted, but AWS does not return a useful error message
+                throw new IOException(String.format(
+                    "Failed to query metadata for /%s/%s, the object might be stored using a form of Server Side Encryption.",
+                    request.bucket(), request.key()), ex);
+            } else {
+                throw ex;
+            }
         }
     }
 
@@ -304,8 +314,9 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @param bucket The bucket name.
      * @param key The object key.
      * @return <code>true</code> if object exists, <code>false</code> otherwise.
+     * @throws IOException
      */
-    public boolean doesObjectExist(final String bucket, final String key) {
+    public boolean doesObjectExist(final String bucket, final String key) throws IOException {
         return headObject(bucket, key) != null;
     }
 
