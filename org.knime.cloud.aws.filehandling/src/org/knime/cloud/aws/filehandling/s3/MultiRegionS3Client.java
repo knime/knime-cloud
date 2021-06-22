@@ -293,20 +293,21 @@ public class MultiRegionS3Client implements AutoCloseable {
         return headObject(builder.build(), client);
     }
 
-    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) throws IOException {
+    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) {
         try {
             return client.headObject(request);
         } catch (NoSuchKeyException ex) {//NOSONAR object doesn't exist
             return null;
         } catch (S3Exception ex) {
-            if (ex.statusCode() == 400 && ex.awsErrorDetails().errorMessage() == null) {
-                // possibly object is encrypted, but AWS does not return a useful error message
-                throw new IOException(String.format(
-                    "Failed to query metadata for /%s/%s, the object might be stored using a form of Server Side Encryption.",
-                    request.bucket(), request.key()), ex);
-            } else {
-                throw ex;
-            }
+          if (ex.statusCode() == 400 && ex.awsErrorDetails().errorMessage() == null) {
+              // possibly object is encrypted, but AWS does not return a useful error message
+              final String msg = String.format(
+                  "Failed to query metadata for /%s/%s, the object might be stored using a form of Server Side Encryption.",
+                  request.bucket(), request.key());
+              throw ex.toBuilder().awsErrorDetails(ex.awsErrorDetails().toBuilder().errorMessage(msg).build()).build();
+          } else {
+              throw ex;
+          }
         }
     }
 
