@@ -258,58 +258,66 @@ public class MultiRegionS3Client implements AutoCloseable {
         return getRegionForBucket(bucket) != null;
     }
 
+    private static final String HEAD_OBJECT_RETRY = "Failed to query metadata for /%s/%s. Retrying without SSE-C.";
+
+    private static final String HEAD_OBJECT_FAIL =
+        "Failed to query metadata for /%s/%s, the object might be stored using a form of encryption (SSE).";
+
     /**
      * @param bucket The bucket name.
      * @param key The object key.
-     * @throws IOException if object uses SSE-C, but this client does not contain SSE-C keys
      * @return The head object response.
      */
-    @SuppressWarnings("resource")
-    public HeadObjectResponse headObject(final String bucket, final String key) throws IOException {
-        HeadObjectRequest.Builder builder = HeadObjectRequest.builder().bucket(bucket).key(key);
-        S3Client client = getClientForBucket(bucket);
+    public HeadObjectResponse headObject(final String bucket, final String key) {
 
-        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
-            HeadObjectRequest req = builder.copy()//
+        final boolean sseCEnabled = m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED;
+
+        try {
+            return headObject(bucket, key, true);
+        } catch (S3Exception ex) {
+
+            S3Exception toThrow = ex;
+
+            if (ex.statusCode() == 400) {
+                if (sseCEnabled) { // possibly object is not encrypted, retry without SSE params
+                    LOGGER.warnWithFormat(HEAD_OBJECT_RETRY, bucket, key);
+                    return headObject(bucket, key, false);
+                } else if (ex.awsErrorDetails().errorMessage() == null) { // possibly object is encrypted, but AWS does
+                                                                          // not return a useful error message
+                    toThrow = (S3Exception)S3Exception.builder() //
+                        .message(String.format(HEAD_OBJECT_FAIL, bucket, key)) //
+                        .cause(ex) //
+                        .build();
+                }
+            }
+
+            throw toThrow;
+        }
+    }
+
+    @SuppressWarnings("resource")
+    private HeadObjectResponse headObject(final String bucket, final String key, final boolean allowSseC) {
+        final boolean useSseC = allowSseC && m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED;
+
+        final HeadObjectRequest.Builder builder = HeadObjectRequest.builder().bucket(bucket).key(key);
+        final HeadObjectRequest req;
+        if (useSseC) {
+            req = builder.copy()//
                 .sseCustomerAlgorithm(AES256)//
                 .sseCustomerKey(m_customerKey)//
                 .sseCustomerKeyMD5(m_customerKeyMD5)//
                 .build();
-
-            try {
-                return headObject(req, client);
-            } catch (S3Exception ex) {
-                if (ex.statusCode() == 400) {
-                    //do nothing, possibly object is not encrypted, will retry request without SSE params
-                    LOGGER.warnWithFormat(
-                        "Failed to query metadata for /%s/%s using SSE-C params. Retrying request without encryption enabled.",
-                        bucket, key);
-                } else {
-                    throw ex;
-                }
-            }
+        } else {
+            req = builder.build();
         }
 
-        return headObject(builder.build(), client);
-    }
-
-    private static HeadObjectResponse headObject(final HeadObjectRequest request, final S3Client client) {
         try {
-            return client.headObject(request);
-        } catch (NoSuchKeyException ex) {//NOSONAR object doesn't exist
+            return getClientForBucket(bucket).headObject(req);
+        } catch (NoSuchKeyException e) { //NOSONAR object doesn't exist
             return null;
-        } catch (S3Exception ex) {
-          if (ex.statusCode() == 400 && ex.awsErrorDetails().errorMessage() == null) {
-              // possibly object is encrypted, but AWS does not return a useful error message
-              final String msg = String.format(
-                  "Failed to query metadata for /%s/%s, the object might be stored using a form of Server Side Encryption.",
-                  request.bucket(), request.key());
-              throw ex.toBuilder().awsErrorDetails(ex.awsErrorDetails().toBuilder().errorMessage(msg).build()).build();
-          } else {
-              throw ex;
-          }
         }
     }
+
 
     /**
      * @param bucket The bucket name.
