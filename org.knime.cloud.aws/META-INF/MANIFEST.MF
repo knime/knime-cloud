@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Amazon Cloud Connectors
 Bundle-SymbolicName: org.knime.cloud.aws;singleton:=true
-Bundle-Version: 4.4.0.qualifier
+Bundle-Version: 4.5.0.qualifier
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
 Export-Package: org.knime.cloud.aws.s3.filehandler,
  org.knime.cloud.aws.util
