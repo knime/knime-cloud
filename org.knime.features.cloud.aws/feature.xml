@@ -733,7 +733,7 @@ propagated with or for interoperation with KNIME.
          install-size="0"
          version="0.0.0"
          unpack="false"/>
-         
+
    <plugin
          id="org.knime.cloud.aws.filehandling"
          download-size="0"
@@ -743,20 +743,6 @@ propagated with or for interoperation with KNIME.
 
    <plugin
          id="org.knime.cloud.core"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="com.amazonaws.aws-java-sdk-core"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="com.amazonaws.aws-java-sdk-s3"
          download-size="0"
          install-size="0"
          version="0.0.0"
