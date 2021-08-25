@@ -458,7 +458,8 @@ public class MultiRegionS3Client implements AutoCloseable {
 
     private static String encodeCopySource(final String bucket, final String blob) {
         try {
-            return URLEncoder.encode(bucket + "/" + blob, StandardCharsets.UTF_8.toString());
+            // Note that URLEncoder uses the x-www-form-urlencoded format and we need a URL encoded version with spaces encoded as %20 not +
+            return URLEncoder.encode(bucket + "/" + blob, StandardCharsets.UTF_8.toString()).replace("+", "%20");
         } catch (UnsupportedEncodingException ex) {//NOSONAR should not happen
             return null;
         }
