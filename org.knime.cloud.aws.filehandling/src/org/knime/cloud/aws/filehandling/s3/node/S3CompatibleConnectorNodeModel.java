@@ -42,9 +42,6 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- *
- * History
- *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
@@ -53,13 +50,12 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Objects;
 
+import org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.CustomerKeySource;
-import org.knime.cloud.aws.util.AmazonConnectionInformationPortObject;
-import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -72,7 +68,6 @@ import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
-import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusConsumer;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
 import org.knime.filehandling.core.port.FileSystemPortObject;
@@ -81,22 +76,19 @@ import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
+ * Custom S3 compatible endpoint connector node.
  *
- * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
+ * @author Sascha Wolke, KNIME GmbH
  */
 
-final class S3ConnectorNodeModel extends NodeModel {
-    private static final NodeLogger LOG = NodeLogger.getLogger(S3ConnectorNodeModel.class);
+final class S3CompatibleConnectorNodeModel extends NodeModel {
+    private static final NodeLogger LOG = NodeLogger.getLogger(S3CompatibleConnectorNodeModel.class);
 
-    private static final String FILE_SYSTEM_NAME = "Amazon S3";
-
-    private S3ConnectorNodeSettings m_settings;
+    private S3CompatibleConnectorNodeSettings m_settings;
 
     private S3FSConnection m_fsConn;
 
     private String m_fsId;
-
-    private AmazonConnectionInformationPortObject m_awsConnectionInfo;
 
     private final NodeModelStatusConsumer m_statusConsumer =
         new NodeModelStatusConsumer(EnumSet.of(MessageType.ERROR, MessageType.WARNING));
@@ -106,15 +98,16 @@ final class S3ConnectorNodeModel extends NodeModel {
      *
      * @param portsConfig Ports configuration
      */
-    S3ConnectorNodeModel(final PortsConfiguration portsConfig) {
+    S3CompatibleConnectorNodeModel(final PortsConfiguration portsConfig) {
         super(portsConfig.getInputPorts(), portsConfig.getOutputPorts());
-        m_settings = new S3ConnectorNodeSettings(portsConfig);
+        m_settings = new S3CompatibleConnectorNodeSettings(portsConfig);
     }
 
     @Override
     protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
         m_fsId = FSConnectionRegistry.getInstance().getKey();
         configureFileChooser(inSpecs);
+        m_settings.configureInModel(inSpecs, getCredentialsProvider());
         return new PortObjectSpec[]{createSpec()};
     }
 
@@ -129,20 +122,18 @@ final class S3ConnectorNodeModel extends NodeModel {
     }
 
     private FileSystemPortObjectSpec createSpec() {
-        final FSLocationSpec fsLocationSpec = S3FileSystem.createFSLocationSpec(false);
-        return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, m_fsId, fsLocationSpec);
+        return new FileSystemPortObjectSpec(S3CompatibleFSDescriptorProvider.FS_TYPE.getName(), //
+            m_fsId, //
+            S3FSConnectionConfig.createCustomS3FSLocationSpec(m_settings.getEndpointURL()));
     }
 
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        m_awsConnectionInfo = (AmazonConnectionInformationPortObject)inObjects[0];
-
-        final CloudConnectionInformation conInfo = m_awsConnectionInfo.getConnectionInformation();
-        final S3FSConnectionConfig config = m_settings.toFSConnectionConfig(conInfo, getCredentialsProvider());
+        final S3FSConnectionConfig config = m_settings.toFSConnectionConfig(getCredentialsProvider());
         m_fsConn = new S3FSConnection(config);
         FSConnectionRegistry.getInstance().register(m_fsId, m_fsConn);
 
-        if (conInfo.isUseAnonymous()) {
+        if (config.getConnectionInfo().isUseAnonymous()) {
             setWarningMessage(
                 "You are using anonymous credentials. File browsing will only work inside public buckets.");
         } else {
@@ -211,7 +202,6 @@ final class S3ConnectorNodeModel extends NodeModel {
             m_fsConn.closeInBackground();
             m_fsConn = null;
         }
-        m_awsConnectionInfo = null;
         m_fsId = null;
     }
 }

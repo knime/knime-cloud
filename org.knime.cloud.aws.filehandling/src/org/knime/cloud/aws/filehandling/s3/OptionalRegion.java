@@ -42,44 +42,85 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- *
- * History
- *   Jan 6, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3;
 
-import java.io.IOException;
-import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.filehandling.core.connections.FSLocationSpec;
-import org.knime.filehandling.core.connections.meta.FSType;
+import software.amazon.awssdk.regions.Region;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
- * s3.
+ * A {@link Region} container that might be empty.
  *
- * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
+ * @author Sascha Wolke, KNIME GmbH
  */
-public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+final class OptionalRegion {
 
-    @SuppressWarnings("resource")
-    @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
-        validateConfiguration(config);
-        return new S3FSTestInitializer(new S3FSConnection(createConnConfig(config)));
+    private final Region m_region;
+
+    private OptionalRegion(final String region) {
+        if (StringUtils.isNotBlank(region)) {
+            m_region = Region.of(region);
+        } else {
+            m_region = null;
+        }
+    }
+
+    private OptionalRegion(final Region region) {
+        m_region = region;
+    }
+
+    private OptionalRegion() {
+        m_region = null;
+    }
+
+    static OptionalRegion of(final String region) {
+        return new OptionalRegion(region);
+    }
+
+    static OptionalRegion of(final Region region) {
+        return new OptionalRegion(region);
+    }
+
+    static OptionalRegion empty() {
+        return new OptionalRegion();
+    }
+
+    boolean isEmpty() {
+        return m_region == null;
+    }
+
+    Region get() {
+        return m_region;
     }
 
     @Override
-    public FSType getFSType() {
-        return S3FSDescriptorProvider.FS_TYPE;
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((m_region == null) ? 0 : m_region.hashCode());
+        return result;
     }
 
     @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        OptionalRegion other = (OptionalRegion)obj;
+        if (m_region == null) {
+            if (other.m_region != null) {
+                return false;
+            }
+        } else if (!m_region.equals(other.m_region)) {
+            return false;
+        }
+        return true;
     }
-
 }

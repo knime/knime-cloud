@@ -44,42 +44,31 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Jan 6, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
+ *   2021-06-02 (modithahewasinghage): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
-import java.util.Map;
-
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.filehandling.core.connections.FSLocationSpec;
+import org.knime.cloud.aws.filehandling.s3.testing.S3CompatibleFSTestInitializerProvider;
+import org.knime.filehandling.core.connections.meta.FSDescriptorProvider;
 import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.filehandling.core.connections.meta.FSTypeRegistry;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
- * s3.
+ * {@link FSDescriptorProvider} implementation for the Amazon S3 compatible file system.
  *
- * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
+ * @author Sascha Wolke, KNIME GmbH
  */
-public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+public class S3CompatibleFSDescriptorProvider extends AbstractS3FSDescriptorProvider {
 
-    @SuppressWarnings("resource")
-    @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
-        validateConfiguration(config);
-        return new S3FSTestInitializer(new S3FSConnection(createConnConfig(config)));
+    /**
+     * FSType for the compatible S3 file system
+     */
+    public static final FSType FS_TYPE = FSTypeRegistry.getOrCreateFSType("amazon-s3-compatible", "Amazon S3 (Custom endpoint)");
+
+    /**
+     * Constructor.
+     */
+    public S3CompatibleFSDescriptorProvider() {
+        super(FS_TYPE, new S3CompatibleFSTestInitializerProvider());
     }
-
-    @Override
-    public FSType getFSType() {
-        return S3FSDescriptorProvider.FS_TYPE;
-    }
-
-    @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
-    }
-
 }

@@ -44,42 +44,40 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Jan 6, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
+ *   2021-06-02 (modithahewasinghage): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
-import java.util.Map;
-
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.filehandling.core.connections.FSLocationSpec;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3SignedURIExporterFactory;
+import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
+import org.knime.filehandling.core.connections.meta.FSDescriptorProvider;
 import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptor;
+import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptorProvider;
+import org.knime.filehandling.core.connections.uriexport.URIExporterIDs;
+import org.knime.filehandling.core.testing.FSTestInitializerProvider;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
- * s3.
+ * Abstract {@link FSDescriptorProvider} implementation for the Amazon S3 file system.
  *
- * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
+ * @author modithahewasinghage
  */
-public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+class AbstractS3FSDescriptorProvider extends BaseFSDescriptorProvider {
 
-    @SuppressWarnings("resource")
-    @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
-        validateConfiguration(config);
-        return new S3FSTestInitializer(new S3FSConnection(createConnConfig(config)));
+    /**
+     * Constructor.
+     */
+    AbstractS3FSDescriptorProvider(final FSType fsType, final FSTestInitializerProvider testInitializerProvider) {
+        super(fsType, //
+            new BaseFSDescriptor.Builder() //
+                .withSeparator(S3FileSystem.PATH_SEPARATOR) //
+                .withConnectionFactory(S3FSConnection::new) //
+                .withURIExporterFactory(URIExporterIDs.DEFAULT, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(URIExporterIDs.DEFAULT_HADOOP, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(S3URIExporterFactory.EXPORTER_ID, S3URIExporterFactory.getInstance()) //
+                .withURIExporterFactory(S3SignedURIExporterFactory.EXPORTER_ID,
+                    S3SignedURIExporterFactory.getInstance()) //
+                .withTestInitializerProvider(testInitializerProvider) //
+                .build());
     }
-
-    @Override
-    public FSType getFSType() {
-        return S3FSDescriptorProvider.FS_TYPE;
-    }
-
-    @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
-    }
-
 }

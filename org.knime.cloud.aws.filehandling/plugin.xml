@@ -9,11 +9,19 @@
             factory-class="org.knime.cloud.aws.filehandling.nodes.S3connection.S3ConnectionNodeFactory">
       </node>
 
+      <node
+            category-path="/io/connectors"
+            factory-class="org.knime.cloud.aws.filehandling.s3.node.S3CompatibleConnectorNodeFactory">
+      </node>
+
    </extension>
    <extension
          point="org.knime.filehandling.core.FSDescriptorProvider">
       <FSDescriptorProvider
             class="org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider">
+      </FSDescriptorProvider>
+      <FSDescriptorProvider
+            class="org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider">
       </FSDescriptorProvider>
    </extension>
 

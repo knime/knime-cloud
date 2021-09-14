@@ -44,42 +44,75 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Jan 6, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
+ *   20.08.2019 (Mareike Hoeger, KNIME GmbH, Konstanz, Germany): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3.node;
 
-import java.io.IOException;
-import java.util.Map;
+import java.util.Optional;
 
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.filehandling.core.connections.FSLocationSpec;
-import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.core.node.ConfigurableNodeFactory;
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeView;
+import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.filehandling.core.port.FileSystemPortObject;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
- * s3.
  *
- * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
+ * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3CompatibleConnectorNodeModel> {
 
-    @SuppressWarnings("resource")
+    /**
+     * File System Connection port name.
+     */
+    public static final String FILE_SYSTEM_CONNECTION_PORT_NAME = "File System Connection";
+
     @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
-        validateConfiguration(config);
-        return new S3FSTestInitializer(new S3FSConnection(createConnConfig(config)));
+    protected Optional<PortsConfigurationBuilder> createPortsConfigBuilder() {
+        final PortsConfigurationBuilder builder = new PortsConfigurationBuilder();
+        builder.addOptionalInputPortGroup(FILE_SYSTEM_CONNECTION_PORT_NAME, FileSystemPortObject.TYPE);
+        builder.addFixedOutputPortGroup("S3 File System Connection", FileSystemPortObject.TYPE);
+        return Optional.of(builder);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public FSType getFSType() {
-        return S3FSDescriptorProvider.FS_TYPE;
+    protected S3CompatibleConnectorNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
+        return new S3CompatibleConnectorNodeModel(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
+    protected int getNrNodeViews() {
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public NodeView<S3CompatibleConnectorNodeModel> createNodeView(final int viewIndex, final S3CompatibleConnectorNodeModel nodeModel) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean hasDialog() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected NodeDialogPane createNodeDialogPane(final NodeCreationConfiguration creationConfig) {
+        return new S3CompatibleConnectorNodeDialog(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
 }

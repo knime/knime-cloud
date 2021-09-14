@@ -49,21 +49,16 @@
 package org.knime.cloud.aws.filehandling.s3.fs;
 
 import org.knime.cloud.aws.filehandling.s3.testing.S3FSTestInitializerProvider;
-import org.knime.cloud.aws.filehandling.s3.uriexporter.S3SignedURIExporterFactory;
-import org.knime.cloud.aws.filehandling.s3.uriexporter.S3URIExporterFactory;
 import org.knime.filehandling.core.connections.meta.FSDescriptorProvider;
 import org.knime.filehandling.core.connections.meta.FSType;
 import org.knime.filehandling.core.connections.meta.FSTypeRegistry;
-import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptor;
-import org.knime.filehandling.core.connections.meta.base.BaseFSDescriptorProvider;
-import org.knime.filehandling.core.connections.uriexport.URIExporterIDs;
 
 /**
  * {@link FSDescriptorProvider} implementation for the Amazon S3 file system.
  *
  * @author modithahewasinghage
  */
-public class S3FSDescriptorProvider extends BaseFSDescriptorProvider {
+public class S3FSDescriptorProvider extends AbstractS3FSDescriptorProvider {
 
     /**
      * FSType for the S3 file system
@@ -74,16 +69,6 @@ public class S3FSDescriptorProvider extends BaseFSDescriptorProvider {
      * Constructor.
      */
     public S3FSDescriptorProvider() {
-        super(S3FSDescriptorProvider.FS_TYPE, //
-            new BaseFSDescriptor.Builder() //
-                .withSeparator(S3FileSystem.PATH_SEPARATOR) //
-                .withConnectionFactory(S3FSConnection::new) //
-                .withURIExporterFactory(URIExporterIDs.DEFAULT, S3URIExporterFactory.getInstance()) //
-                .withURIExporterFactory(URIExporterIDs.DEFAULT_HADOOP, S3URIExporterFactory.getInstance()) //
-                .withURIExporterFactory(S3URIExporterFactory.EXPORTER_ID, S3URIExporterFactory.getInstance()) //
-                .withURIExporterFactory(S3SignedURIExporterFactory.EXPORTER_ID,
-                    S3SignedURIExporterFactory.getInstance()) //
-                .withTestInitializerProvider(new S3FSTestInitializerProvider()) //
-                .build());
+        super(FS_TYPE, new S3FSTestInitializerProvider());
     }
 }

@@ -49,6 +49,7 @@
 package org.knime.cloud.aws.filehandling.s3.node;
 
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -84,16 +85,16 @@ import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-final class S3ConnectorNodeDialog extends NodeDialogPane {
+class S3ConnectorNodeDialog extends NodeDialogPane {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(S3ConnectorNodeDialog.class);
 
     private final ChangeListener m_workdirListener;
 
     private final ChangeListener m_sseKmsUseAwsManagedListener;
 
-    private final S3ConnectorNodeSettings m_settings;
+    protected final S3ConnectorNodeSettings m_settings;
 
-    private final WorkingDirectoryChooser m_workingDirChooser =
+    protected final WorkingDirectoryChooser m_workingDirChooser =
         new WorkingDirectoryChooser("s3.workingDir", this::createFSConnection);
 
     private CloudConnectionInformation m_connInfo;
@@ -105,16 +106,40 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     private CustomerKeyInputPanel m_customerKeyInput;
 
     S3ConnectorNodeDialog(final PortsConfiguration portsConfig) {
-        m_settings = new S3ConnectorNodeSettings(portsConfig);
+        this(new S3ConnectorNodeSettings(portsConfig));
+    }
+
+    S3ConnectorNodeDialog(final S3ConnectorNodeSettings settings) {
+        m_settings = settings;
         m_workdirListener = e -> m_settings.getWorkingDirectoryModel()
             .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
         m_sseKmsUseAwsManagedListener = e -> onSseEnabledChanged();
 
-        addTab("Settings", createSettingsPanel());
+        addTab("Settings", createSettingsTab());
         addTab("Advanced", createAdvancedTab());
     }
 
-    private JComponent createSettingsPanel() {
+    protected JComponent createSettingsTab() {
+        JPanel panel = new JPanel(new GridBagLayout());
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        panel.add(createFileSystemPanel(), gbc);
+
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1;
+        panel.add(Box.createVerticalGlue(), gbc);
+
+        return panel;
+    }
+
+    JComponent createFileSystemPanel() {
         DialogComponentBoolean normalizePath =
             new DialogComponentBoolean(m_settings.getNormalizePathModel(), "Normalize Paths");
         normalizePath.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -126,23 +151,18 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
         c.weighty = 0;
         c.gridx = 0;
         c.gridy = 0;
-        c.insets = new Insets(0, 10, 0, 0);
+        c.insets = new Insets(0, 10, 0, 10);
         panel.add(m_workingDirChooser, c);
 
         c.gridy += 1;
         c.insets = new Insets(0, 0, 0, 0);
         panel.add(normalizePath.getComponentPanel(), c);
 
-        c.fill = GridBagConstraints.BOTH;
-        c.weighty = 1;
-        c.gridy += 1;
-        panel.add(Box.createVerticalGlue(), c);
-
         panel.setBorder(BorderFactory.createTitledBorder("File system settings"));
         return panel;
     }
 
-    private JComponent createAdvancedTab() {
+    protected JComponent createAdvancedTab() {
         JPanel panel = new JPanel(new GridBagLayout());
 
         final GridBagConstraints gbc = new GridBagConstraints();
@@ -165,17 +185,41 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
         return panel;
     }
 
-    private JComponent createTimeoutsPanel() {
-        DialogComponentNumber socketTimeout =
-            new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
-
-        socketTimeout.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
-        socketTimeout.getComponentPanel().setBorder(BorderFactory.createTitledBorder("Connection settings"));
-
-        return socketTimeout.getComponentPanel();
+    /**
+     * Create a wrapper panel that takes the entire horizontal space and aligns given component to the left.
+     */
+    private static JPanel createWrapperPanel(final Component c) {
+        final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        panel.add(c);
+        return panel;
     }
 
-    private JComponent createEncryptionPanel() {
+    JComponent createTimeoutsPanel(final Component... otherComponents) {
+        final DialogComponentNumber socketTimeout =
+            new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
+
+        final JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Connection settings"));
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 5, 0, 5);
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+
+        for (final Component component : otherComponents) {
+            panel.add(createWrapperPanel(component), gbc);
+            gbc.gridy++;
+        }
+
+        panel.add(createWrapperPanel(socketTimeout.getComponentPanel()), gbc);
+
+        return panel;
+    }
+
+    JComponent createEncryptionPanel() {
         m_kmsKeyInput = new KmsKeyInputPanel(m_settings.getKmsKeyIdModel());
         m_customerKeyInput = new CustomerKeyInputPanel(m_settings, this);
 
@@ -267,10 +311,9 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
         m_customerKeyInput.setEnabled(enabled);
     }
 
-    private FSConnection createFSConnection() throws IOException {
+    protected FSConnection createFSConnection() throws IOException {
         try {
-            S3ConnectorNodeSettings clonedSettings = m_settings.createClone();
-            return new S3FSConnection(clonedSettings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
+            return new S3FSConnection(m_settings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
         } catch (InvalidSettingsException ex) {
             throw new IOException("Unable to create connection configuration: " + ex.getMessage(), ex);
         }
@@ -282,7 +325,7 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
         m_settings.validate();
-        m_settings.saveSettingsTo(settings);
+        m_settings.saveSettingsForDialog(settings);
         m_workingDirChooser.addCurrentSelectionToHistory();
     }
 
@@ -293,7 +336,7 @@ final class S3ConnectorNodeDialog extends NodeDialogPane {
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
         try {
-            m_settings.loadSettingsFrom(settings);
+            m_settings.loadSettingsForDialog(settings);
         } catch (InvalidSettingsException ex) {
             LOGGER.warn(ex.getMessage(), ex);
         }

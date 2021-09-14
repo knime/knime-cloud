@@ -65,7 +65,6 @@ import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeSettings;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.ports.PortsConfiguration;
@@ -90,7 +89,7 @@ import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.Mess
  *
  * @author Alexander Bondaletov
  */
-final class S3ConnectorNodeSettings {
+class S3ConnectorNodeSettings {
 
     private static final boolean DEFAULT_NORMALIZE = true;
 
@@ -154,7 +153,7 @@ final class S3ConnectorNodeSettings {
 
     private final SettingsModelReaderFileChooser m_customerKeyFile;
 
-    private final PortsConfiguration m_portConfig;
+    final PortsConfiguration m_portConfig;
 
     /**
      * Creates new instance
@@ -187,6 +186,7 @@ final class S3ConnectorNodeSettings {
 
         m_sseEnabled.addChangeListener(e -> updateEnabledness());
         m_sseKmsUseAwsManaged.addChangeListener(e -> updateEnabledness());
+
         updateEnabledness();
     }
 
@@ -417,7 +417,7 @@ final class S3ConnectorNodeSettings {
      *
      * @param settings Node settings.
      */
-    public void saveSettingsTo(final NodeSettingsWO settings) {
+    private void saveSettingsTo(final NodeSettingsWO settings) {
         m_socketTimeout.saveSettingsTo(settings);
         m_normalizePath.saveSettingsTo(settings);
         m_workingDirectory.saveSettingsTo(settings);
@@ -431,6 +431,28 @@ final class S3ConnectorNodeSettings {
         if (m_customerKeyFile != null) {
             m_customerKeyFile.saveSettingsTo(settings);
         }
+    }
+
+    /**
+     * Saves settings to the given {@link NodeSettingsWO} (to be called by the node
+     * model).
+     *
+     * @param settings
+     *            The settings.
+     */
+    public void saveSettingsForModel(final NodeSettingsWO settings) {
+        saveSettingsTo(settings);
+    }
+
+    /**
+     * Saves settings to the given {@link NodeSettingsWO} (to be called by the node
+     * dialog).
+     *
+     * @param settings
+     *            The settings.
+     */
+    public void saveSettingsForDialog(final NodeSettingsWO settings) {
+        saveSettingsTo(settings);
     }
 
     /**
@@ -484,6 +506,7 @@ final class S3ConnectorNodeSettings {
      *
      * @throws InvalidSettingsException on invalid settings
      */
+    @SuppressWarnings("unused")
     public void validate() throws InvalidSettingsException {
         if (isSseEnabled()) {
             if (getSseMode() == SSEMode.KMS && !sseKmsUseAwsManaged()) {
@@ -510,7 +533,7 @@ final class S3ConnectorNodeSettings {
      * @param settings Node settings.
      * @throws InvalidSettingsException
      */
-    public void loadSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
+    private void loadSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_socketTimeout.loadSettingsFrom(settings);
         if (settings.containsKey(KEY_NORMALIZE_PATHS)) {
             m_normalizePath.loadSettingsFrom(settings);
@@ -549,17 +572,28 @@ final class S3ConnectorNodeSettings {
         updateEnabledness();
     }
 
-    S3ConnectorNodeSettings createClone() {
-        NodeSettings transferSettings = new NodeSettings("ignored");
-        saveSettingsTo(transferSettings);
+    /**
+     * Loads settings from the given {@link NodeSettingsRO} (to be called by the
+     * node model).
+     *
+     * @param settings
+     *            The settings.
+     * @throws InvalidSettingsException
+     */
+    public void loadSettingsForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
+        loadSettingsFrom(settings);
+    }
 
-        S3ConnectorNodeSettings clone = new S3ConnectorNodeSettings(m_portConfig);
-        try {
-            clone.loadSettingsFrom(transferSettings);
-        } catch (InvalidSettingsException ex) {
-            throw new IllegalStateException(ex);
-        }
-        return clone;
+    /**
+     * Loads settings from the given {@link NodeSettingsRO} (to be called by the
+     * node dialog).
+     *
+     * @param settings
+     *            The settings.
+     * @throws InvalidSettingsException
+     */
+    public void loadSettingsForDialog(final NodeSettingsRO settings) throws InvalidSettingsException {
+        loadSettingsFrom(settings);
     }
 
     /**

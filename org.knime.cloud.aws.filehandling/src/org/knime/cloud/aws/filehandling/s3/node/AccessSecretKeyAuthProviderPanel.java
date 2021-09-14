@@ -42,44 +42,31 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
- *
- * History
- *   Jan 6, 2020 (Tobias Urhaug, KNIME GmbH, Berlin, Germany): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3.node;
 
-import java.io.IOException;
-import java.util.Map;
-
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.filehandling.core.connections.FSLocationSpec;
-import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.core.node.NodeDialogPane;
+import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProviderPanel;
+import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProviderSettings;
 
 /**
- * Initializer provider for s3. Reads all s3 relevant properties from the configuration and establishes a connection to
- * s3.
+ * Access key ID and secret key authentication panel.
  *
- * @author Tobias Urhaug, KNIME GmbH, Berlin, Germany
+ * @author Sascha Wolke, KNIME GmbH
  */
-public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+@SuppressWarnings("serial")
+public class AccessSecretKeyAuthProviderPanel extends UserPasswordAuthProviderPanel {
 
-    @SuppressWarnings("resource")
-    @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
-        validateConfiguration(config);
-        return new S3FSTestInitializer(new S3FSConnection(createConnConfig(config)));
-    }
-
-    @Override
-    public FSType getFSType() {
-        return S3FSDescriptorProvider.FS_TYPE;
-    }
-
-    @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
+    /**
+     * Default constructor.
+     *
+     * @param settings Authentication settings.
+     * @param parentDialog The parent dialog pane (required by flow variable dialog component to list all flow
+     *            variables).
+     */
+    public AccessSecretKeyAuthProviderPanel(final UserPasswordAuthProviderSettings settings,
+        final NodeDialogPane parentDialog) {
+        super(settings, parentDialog, "Access Key ID", "Secret Key");
     }
 
 }
