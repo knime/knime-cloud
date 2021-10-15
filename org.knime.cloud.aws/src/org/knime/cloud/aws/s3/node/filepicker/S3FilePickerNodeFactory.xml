@@ -12,12 +12,6 @@
     
     <fullDescription>
         <intro>
-        	<p>
-        		<i>This is a legacy file handling node and will be replaced in the foreseeable future.
-        		For further information about the new file handling framework see the </i>
-        		<a href="https://docs.knime.com/latest/analytics_platform_file_handling_guide/index.html"><i>File Handling Guide.
-        		</i></a><br/>
-			</p>
 	        This node reads the Amazon S3 connection and generates a pre-signed URL that points to an Amazon S3 object.
 	        The URL is only valid for a specific period of time. Upon expiry, the URL will no longer remain active and an 
 	        attempt to access the URL once it has expired will generate an error. It is not needed to set the permission
@@ -25,6 +19,13 @@
 	        directly read the S3 object without having to fetch the object locally first.
 		    <br/><br/>
 		    URLs can be signed for a maximum of <b>7 days</b>.
+        	<p>
+        		<i>This is a legacy file handling node and has been replaced by the</i> <a href="https://kni.me/n/YMvcvDu5EC56OIFg">
+        		<i>Path to URI</i></a> node.
+        		<i>For further information about the new file handling framework see the </i>
+        		<a href="https://docs.knime.com/latest/analytics_platform_file_handling_guide/index.html"><i>File Handling Guide.
+        		</i></a><br/>
+			</p>
         </intro>
         
         <option name="Remote File">
