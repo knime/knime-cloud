@@ -13,14 +13,6 @@
     
     <fullDescription>
         <intro>
-			<p>
-				<i>This legacy file handling node has been replaced by the
-				</i><a href="https://kni.me/n/HttNHsyhE8i6Srwy"><i>Amazon S3 Connector</i></a><i>
-				and will become deprecated in the foreseeable future. For further information about the 
-				new file handling framework see the
-				</i><a href="https://docs.knime.com/latest/analytics_platform_file_handling_guide/index.html"><i>File Handling Guide.
-				</i></a><br/>
-			</p>
         	<p>
         		This node configures the connection information that will be used to connect to Amazon S3. Using this 
         		connection the other KNIME remote file handling nodes can be used to create directory, list, delete, 
@@ -41,6 +33,14 @@
         	<p>
         		For further documentation please take a look at the <a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html">AWS Documentation</a>.
         	</p>
+			<p>
+				<i>This legacy file handling node has been replaced by the
+				</i><a href="https://kni.me/n/HttNHsyhE8i6Srwy"><i>Amazon S3 Connector</i></a><i>
+				and will become deprecated in the foreseeable future. For further information about the 
+				new file handling framework see the
+				</i><a href="https://docs.knime.com/latest/analytics_platform_file_handling_guide/index.html"><i>File Handling Guide.
+				</i></a><br/>
+			</p>
         </intro>
         
         <option name="Authentication">
