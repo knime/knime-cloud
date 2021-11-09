@@ -20,7 +20,8 @@ try {
         dependencies: [
             repositories: [
                 'knime-cloud', 'knime-js-base', 'knime-filehandling', 'knime-textprocessing',
-                'knime-database', 'knime-kerberos', 'knime-streaming', 'knime-rest', 'knime-xml'
+                'knime-database', 'knime-kerberos', 'knime-streaming', 'knime-office365', 
+                'knime-rest', 'knime-xml'
             ]
         ]
     )
