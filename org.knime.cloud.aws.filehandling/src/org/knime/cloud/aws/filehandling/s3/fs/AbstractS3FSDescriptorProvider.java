@@ -60,7 +60,7 @@ import org.knime.filehandling.core.testing.FSTestInitializerProvider;
 /**
  * Abstract {@link FSDescriptorProvider} implementation for the Amazon S3 file system.
  *
- * @author modithahewasinghage
+ * @author Sascha Wolke, KNIME GmbH
  */
 class AbstractS3FSDescriptorProvider extends BaseFSDescriptorProvider {
 

@@ -144,14 +144,14 @@ final class S3CompatibleConnectorNodeModel extends NodeModel {
 
     @SuppressWarnings("resource")
     private void testFileSystemConnection(final S3FSConnection fsConn) throws InvalidSettingsException {
-        final S3FileSystem fileSystem = (S3FileSystem)fsConn.getFileSystem();
+        final var fileSystem = (S3FileSystem)fsConn.getFileSystem();
         try {
             fileSystem.getClient().listBuckets();
         } catch (final AwsServiceException e) {
             if (Objects.equals(e.awsErrorDetails().errorCode(), "InvalidAccessKeyId")) {
                 throw new InvalidSettingsException("Please check your Access Key ID / Secret Key.", e);
             } else if (Objects.equals(e.awsErrorDetails().errorCode(), "AccessDenied")) {
-                final String msg =
+                final var msg =
                     "The credentials provided have restricted permissions. File browsing might not work as expected.";
                 LOG.debug(msg, e);
                 setWarningMessage(msg);

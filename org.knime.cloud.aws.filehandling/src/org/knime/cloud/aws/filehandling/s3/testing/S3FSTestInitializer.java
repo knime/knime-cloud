@@ -54,7 +54,6 @@ import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
 import org.knime.cloud.aws.filehandling.s3.fs.S3Path;
 import org.knime.filehandling.core.connections.FSConnection;
-import org.knime.filehandling.core.connections.base.BlobStorePath;
 import org.knime.filehandling.core.testing.DefaultFSTestInitializer;
 
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -90,18 +89,18 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
 
     @Override
     public S3Path createFileWithContent(final String content, final String... pathComponents) throws IOException {
-        final S3Path path = makePath(pathComponents);
+        final var path = makePath(pathComponents);
 
         // create parent directory objects if necessary
-        for (int i = 1; i < path.getNameCount() - 1; i++) {
-            final String dirKey = path.subpath(1, i + 1).toString();
+        for (var i = 1; i < path.getNameCount() - 1; i++) {
+            final var dirKey = path.subpath(1, i + 1).toString();
             if (m_s3Client.headObject(path.getBucketName(), dirKey) == null) {
                 m_s3Client.putObject(path.getBucketName(), dirKey, RequestBody.empty());
             }
         }
 
         // create the actual object with content
-        final String key = path.subpath(1, path.getNameCount()).toString();
+        final var key = path.subpath(1, path.getNameCount()).toString();
         m_s3Client.putObject(path.getBucketName(), key, RequestBody.fromString(content));
 
         return path;
@@ -109,7 +108,7 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
 
     @Override
     protected void beforeTestCaseInternal() throws IOException {
-        final BlobStorePath scratchDir = getTestCaseScratchDir().toDirectoryPath();
+        final var scratchDir = getTestCaseScratchDir().toDirectoryPath();
 
         if (m_s3Client.headObject(scratchDir.getBucketName(), scratchDir.getBlobName()) == null) {
             m_s3Client.putObject(scratchDir.getBucketName(), scratchDir.getBlobName(), RequestBody.empty());
@@ -118,7 +117,7 @@ public class S3FSTestInitializer extends DefaultFSTestInitializer<S3Path, S3File
 
     @Override
     protected void afterTestCaseInternal() {
-        final BlobStorePath scratchDir = getTestCaseScratchDir();
+        final var scratchDir = getTestCaseScratchDir();
 
         String continuationToken = null;
         do {

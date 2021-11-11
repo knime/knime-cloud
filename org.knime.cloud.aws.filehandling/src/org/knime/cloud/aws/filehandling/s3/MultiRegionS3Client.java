@@ -73,7 +73,6 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -191,12 +190,12 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     private S3Client createClientForRegion(final OptionalRegion region, final boolean pathStyleAccess) {
-        ApacheHttpClient.Builder httpClientBuilder = ApacheHttpClient.builder()//
+        final var httpClientBuilder = ApacheHttpClient.builder()//
             .connectionTimeout(Duration.ofMillis(m_connectionInfo.getTimeout()))//
             .socketTimeout(m_socketTimeout)//
             .connectionTimeToLive(m_socketTimeout);
 
-        S3ClientBuilder builder = S3Client.builder()//
+        final var builder = S3Client.builder()//
             .credentialsProvider(AwsUtils.getCredentialProvider(m_connectionInfo))//
             .httpClientBuilder(httpClientBuilder);//
 
@@ -216,7 +215,7 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     private boolean testListBucketPermissions() {
-        boolean canListBucketsInAccount = false;
+        var canListBucketsInAccount = false;
 
         if (!m_connectionInfo.isUseAnonymous()) {
             try {
@@ -319,7 +318,7 @@ public class MultiRegionS3Client implements AutoCloseable {
     private HeadObjectResponse headObject(final String bucket, final String key, final boolean allowSseC) {
         final boolean useSseC = allowSseC && m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED;
 
-        final HeadObjectRequest.Builder builder = HeadObjectRequest.builder().bucket(bucket).key(key);
+        final var builder = HeadObjectRequest.builder().bucket(bucket).key(key);
         final HeadObjectRequest req;
         if (useSseC) {
             req = builder.copy()//
@@ -343,9 +342,8 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @param bucket The bucket name.
      * @param key The object key.
      * @return <code>true</code> if object exists, <code>false</code> otherwise.
-     * @throws IOException
      */
-    public boolean doesObjectExist(final String bucket, final String key) throws IOException {
+    public boolean doesObjectExist(final String bucket, final String key) {
         return headObject(bucket, key) != null;
     }
 
@@ -359,10 +357,10 @@ public class MultiRegionS3Client implements AutoCloseable {
      */
     @SuppressWarnings("resource")
     public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) {
-        GetObjectRequest.Builder builder = GetObjectRequest.builder()//
+        final var builder = GetObjectRequest.builder()//
             .bucket(bucket)//
             .key(key);
-        S3Client client = getClientForBucket(bucket);
+        final var client = getClientForBucket(bucket);
 
         if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
             GetObjectRequest sseReq = builder.copy() //
@@ -388,8 +386,8 @@ public class MultiRegionS3Client implements AutoCloseable {
         return client.getObject(builder.build()); // rerun request without SSE-C params
     }
 
-    private boolean checkCustomerEncryption(final String bucket, final String blob) throws IOException {
-        HeadObjectResponse metadata = headObject(bucket, blob);
+    private boolean checkCustomerEncryption(final String bucket, final String blob) {
+        final var metadata = headObject(bucket, blob);
         return metadata.sseCustomerAlgorithm() != null;
     }
 
@@ -411,7 +409,7 @@ public class MultiRegionS3Client implements AutoCloseable {
      */
     @SuppressWarnings("resource")
     public void putObject(final String bucket, final String key, final RequestBody body) {
-        PutObjectRequest.Builder builder = PutObjectRequest.builder()//
+        final var builder = PutObjectRequest.builder()//
             .bucket(bucket)//
             .key(key);
 
@@ -441,12 +439,10 @@ public class MultiRegionS3Client implements AutoCloseable {
      * @param srcKey The object key of the source object.
      * @param dstBucket The bucket name of the destination object.
      * @param dstKey The object key of the destination object.
-     * @throws IOException
      */
     @SuppressWarnings("resource")
-    public void copyObject(final String srcBucket, final String srcKey, final String dstBucket, final String dstKey)
-        throws IOException {
-        CopyObjectRequest.Builder builder = CopyObjectRequest.builder()//
+    public void copyObject(final String srcBucket, final String srcKey, final String dstBucket, final String dstKey) {
+        final var builder = CopyObjectRequest.builder()//
             .copySource(encodeCopySource(srcBucket, srcKey))//
             .destinationBucket(dstBucket)//
             .destinationKey(dstKey);
@@ -511,13 +507,12 @@ public class MultiRegionS3Client implements AutoCloseable {
             return m_defaultClient;
         }
 
-        OptionalRegion region = getRegionForBucket(bucket);
-
+        final var region = getRegionForBucket(bucket);
         if (region == null) {
             return m_defaultClient;
+        } else {
+            return getClientForRegion(region);
         }
-
-        return getClientForRegion(region);
     }
 
     private OptionalRegion getRegionForBucket(final String bucket) {
@@ -550,8 +545,7 @@ public class MultiRegionS3Client implements AutoCloseable {
 
         try {
             // requires s3:GetBucketLocation permission
-            final String location =
-                m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
+            final var location = m_pathStyleClient.getBucketLocation(b -> b.bucket(bucket)).locationConstraintAsString();
 
             // Javadoc for getBucketLocation states that
             // 'Buckets in Region us-east-1 have a LocationConstraint of null.'
@@ -615,7 +609,7 @@ public class MultiRegionS3Client implements AutoCloseable {
         }
 
         final AwsCredentialsProvider awsCreds = AwsUtils.getCredentialProvider(m_connectionInfo);
-        final S3Presigner.Builder builder = S3Presigner.builder().credentialsProvider(awsCreds);
+        final var builder = S3Presigner.builder().credentialsProvider(awsCreds);
 
         if (!region.isEmpty()) {
             builder.region(region.get());

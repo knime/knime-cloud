@@ -232,7 +232,7 @@ class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
         m_connectionTimeout.validateSettings(settings);
         super.validateSettings(settings);
 
-        final S3CompatibleConnectorNodeSettings tmpSettings = new S3CompatibleConnectorNodeSettings(m_portConfig);
+        final var tmpSettings = new S3CompatibleConnectorNodeSettings(m_portConfig);
         tmpSettings.loadSettingsForModel(settings);
         tmpSettings.validate();
     }
@@ -247,7 +247,7 @@ class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
     public void validate() throws InvalidSettingsException {
         super.validate();
 
-        final String endpointUrl = m_endpointURL.getStringValue();
+        final var endpointUrl = m_endpointURL.getStringValue();
         if (endpointUrl == null || endpointUrl.isBlank()) {
             throw new InvalidSettingsException("URL required on endpoint override.");
         }
@@ -305,11 +305,11 @@ class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
     }
 
     private CloudConnectionInformation toCloudConnInfo(final CredentialsProvider credentials) throws InvalidSettingsException {
-        final CloudConnectionInformation connInfo = new CloudConnectionInformation();
+        final var connInfo = new CloudConnectionInformation();
         connInfo.setProtocol("s3");
         connInfo.setTimeout(m_connectionTimeout.getIntValue() * 1000);  // timeout in milliseconds
 
-        final String region = m_region.getStringValue();
+        final var region = m_region.getStringValue();
         if (region != null && !region.isEmpty()) {
             connInfo.setHost(region);
         }

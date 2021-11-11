@@ -71,14 +71,14 @@ abstract class AbstractS3FSTestInitializerProvider extends DefaultFSTestInitiali
         final String workingDir =
             generateRandomizedWorkingDir(config.get("workingDirPrefix"), S3FileSystem.PATH_SEPARATOR);
 
-        final S3FSConnectionConfig s3config = new S3FSConnectionConfig(workingDir, s3ConnectionInformation);
+        final var s3config = new S3FSConnectionConfig(workingDir, s3ConnectionInformation);
         s3config.setNormalizePath(true);
         s3config.setSocketTimeout(Duration.ofSeconds(S3FSConnectionConfig.DEFAULT_SOCKET_TIMEOUT_SECONDS));
         return s3config;
     }
 
     private static CloudConnectionInformation createCloudConnectionInformation(final Map<String, String> config) {
-        final CloudConnectionInformation s3ConnectionInformation = new CloudConnectionInformation();
+        final var s3ConnectionInformation = new CloudConnectionInformation();
         s3ConnectionInformation.setHost(config.get("region"));
         s3ConnectionInformation.setProtocol("s3");
         if (config.containsKey("roleSwitchAccount")) {

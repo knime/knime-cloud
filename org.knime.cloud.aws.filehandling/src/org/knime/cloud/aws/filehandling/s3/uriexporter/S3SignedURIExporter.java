@@ -74,7 +74,7 @@ public class S3SignedURIExporter extends BaseURIExporter<SignedUrlConfig> {
 
     @Override
     public URI toUri(final FSPath path) throws URISyntaxException {
-        final S3Path s3Path = (S3Path)path.toAbsolutePath().normalize();
+        final var s3Path = (S3Path)path.toAbsolutePath().normalize();
         try {
             return s3Path.getPreSignedUrl(getConfig().getValidityDuration()).toURI();
         } catch (SdkException ex) {

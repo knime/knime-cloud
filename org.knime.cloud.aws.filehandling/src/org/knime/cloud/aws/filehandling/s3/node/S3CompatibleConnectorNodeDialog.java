@@ -95,9 +95,9 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
 
     @Override
     protected JComponent createSettingsTab() {
-        final JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -122,9 +122,9 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
 
     @Override
     protected JComponent createAdvancedTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -133,7 +133,7 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
         gbc.weightx = 1;
         panel.add(createAdvancedEndpointPanel(), gbc);
 
-        final DialogComponentNumber connectionTimeout = new DialogComponentNumber(
+        final var connectionTimeout = new DialogComponentNumber(
             getCompSettings().getConnectionTimeoutModel(), "Connect timeout in seconds: ", 10, 5);
 
         gbc.gridy++;
@@ -153,10 +153,10 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
     private JComponent createSettingsEndpointPanel() {
         m_endpointUrlPanel = new StringHistoryPanel("s3-compatible-endpoint");
 
-        final JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Endpoint"));
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0;
@@ -175,7 +175,7 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
     }
 
     private JComponent createAuthPanel() {
-        AuthSettings authSettings = getCompSettings().getAuthSettings();
+        final var authSettings = getCompSettings().getAuthSettings();
         m_authPanel = new AuthPanel(authSettings, //
             Arrays.asList( //
                 new EmptyAuthProviderPanel( //
@@ -193,16 +193,16 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
     private JComponent createAdvancedEndpointPanel() {
         m_regionPanel = new StringHistoryPanel("s3-compatible-region");
 
-        final JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Endpoint"));
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 5, 0, 15);
-        final DialogComponentBoolean pathStyle = new DialogComponentBoolean( //
+        final var pathStyle = new DialogComponentBoolean( //
             getCompSettings().getPathStyleModel(), "Use path-style requests");
         panel.add(pathStyle.getComponentPanel(), gbc);
 
@@ -257,7 +257,7 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
         super.loadSettingsFrom(settings, specs);
         m_workingDirChooser.setEnableBrowsing(true);
 
-        final String endpoint = getCompSettings().getEndpointURLModel().getStringValue();
+        final var endpoint = getCompSettings().getEndpointURLModel().getStringValue();
         m_endpointUrlPanel.setSelectedString(endpoint);
         if (!endpoint.isBlank()) {
             m_endpointUrlPanel.commitSelectedToHistory();
@@ -269,7 +269,7 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
         } catch (InvalidSettingsException e) { // NOSONAR ignore and use defaults
         }
 
-        final String region = getCompSettings().getRegionModel().getStringValue();
+        final var region = getCompSettings().getRegionModel().getStringValue();
         m_regionPanel.setSelectedString(region);
         if (!region.isBlank()) {
             m_regionPanel.commitSelectedToHistory();

@@ -78,16 +78,16 @@ public class S3CompatibleFSTestInitializerProvider extends AbstractS3FSTestIniti
         s3config.setEndpointUrl(URI.create(config.get("endpoint")));
         s3config.setPathStyle(true);
 
-        final S3FSConnection connetion = new S3FSConnection(s3config);
+        final var connection = new S3FSConnection(s3config);
 
         // we tests again an empty MinIO docker container, ensure the bucket exists
-        final MultiRegionS3Client client = ((S3FileSystem)connetion.getFileSystem()).getClient();
-        final String bucket = ((S3FileSystem)connetion.getFileSystem()).getPath(config.get("workingDirPrefix")).getBucketName();
+        final MultiRegionS3Client client = ((S3FileSystem)connection.getFileSystem()).getClient();
+        final String bucket = ((S3FileSystem)connection.getFileSystem()).getPath(config.get("workingDirPrefix")).getBucketName();
         if (client.getBucket(bucket) == null) {
             client.createBucket(bucket);
         }
 
-        return new S3FSTestInitializer(connetion);
+        return new S3FSTestInitializer(connection);
     }
 
     @Override
@@ -97,7 +97,6 @@ public class S3CompatibleFSTestInitializerProvider extends AbstractS3FSTestIniti
 
     @Override
     public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(true);
+        return S3FSConnectionConfig.createCustomS3FSLocationSpec(URI.create(config.get("endpoint")));
     }
-
 }

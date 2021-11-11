@@ -51,7 +51,12 @@ package org.knime.cloud.aws.filehandling.s3.fs.api;
 import java.net.URI;
 import java.time.Duration;
 
+import org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider;
+import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
+import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
+import org.knime.filehandling.core.connections.FSCategory;
+import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.meta.FSConnectionConfig;
 import org.knime.filehandling.core.connections.meta.base.BaseFSConnectionConfig;
 
@@ -323,4 +328,33 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
         }
     }
 
+    /**
+     * Creates an {@link FSLocationSpec} for an S3 file system.
+     *
+     * @return an {@link FSLocationSpec} for an S3 file system.
+     */
+    public FSLocationSpec createFSLocationSpec() {
+        if (overrideEndpoint()) {
+            return createCustomS3FSLocationSpec(m_endpointUrl);
+        } else {
+            return createStandardS3FSLocationSpec();
+        }
+    }
+
+    /**
+     * @return an {@link FSLocationSpec} for the standard S3 file system, that connects to AWS endpoints.
+     */
+    public static FSLocationSpec createStandardS3FSLocationSpec() {
+        return new DefaultFSLocationSpec(FSCategory.CONNECTED, //
+            S3FSDescriptorProvider.FS_TYPE.getTypeId());
+    }
+
+    /**
+     * @param endpoint The endpoint that the custom S3 file system will connect to.
+     * @return an {@link FSLocationSpec} for the custom S3 file system, that connects to a custom endpoint.
+     */
+    public static FSLocationSpec createCustomS3FSLocationSpec(final URI endpoint) {
+        return new DefaultFSLocationSpec(FSCategory.CONNECTED, //
+            String.format("%s:%s", S3CompatibleFSDescriptorProvider.FS_TYPE.getTypeId(), endpoint.getAuthority()));
+    }
 }

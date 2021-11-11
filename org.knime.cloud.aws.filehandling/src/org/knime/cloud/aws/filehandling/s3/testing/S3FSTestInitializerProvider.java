@@ -53,7 +53,7 @@ import java.util.Map;
 
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.meta.FSType;
 
@@ -79,7 +79,7 @@ public class S3FSTestInitializerProvider extends AbstractS3FSTestInitializerProv
 
     @Override
     public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FileSystem.createFSLocationSpec(false);
+        return S3FSConnectionConfig.createStandardS3FSLocationSpec();
     }
 
 }

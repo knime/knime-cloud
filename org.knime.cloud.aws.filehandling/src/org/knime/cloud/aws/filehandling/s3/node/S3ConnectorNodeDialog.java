@@ -115,14 +115,14 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
             .setStringValue(m_workingDirChooser.getSelectedWorkingDirectory());
         m_sseKmsUseAwsManagedListener = e -> onSseEnabledChanged();
 
-        addTab("Settings", createSettingsTab());
-        addTab("Advanced", createAdvancedTab());
+        addTab("Settings", createSettingsTab()); // NOSONAR intended
+        addTab("Advanced", createAdvancedTab()); // NOSONAR intended
     }
 
     protected JComponent createSettingsTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -140,32 +140,32 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
     }
 
     JComponent createFileSystemPanel() {
-        DialogComponentBoolean normalizePath =
+        final var normalizePath =
             new DialogComponentBoolean(m_settings.getNormalizePathModel(), "Normalize Paths");
         normalizePath.getComponentPanel().setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.weightx = 1;
-        c.weighty = 0;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets = new Insets(0, 10, 0, 10);
-        panel.add(m_workingDirChooser, c);
+        final var panel = new JPanel(new GridBagLayout());
+        final var gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        gbc.weighty = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 10, 0, 10);
+        panel.add(m_workingDirChooser, gbc);
 
-        c.gridy += 1;
-        c.insets = new Insets(0, 0, 0, 0);
-        panel.add(normalizePath.getComponentPanel(), c);
+        gbc.gridy += 1;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        panel.add(normalizePath.getComponentPanel(), gbc);
 
         panel.setBorder(BorderFactory.createTitledBorder("File system settings"));
         return panel;
     }
 
     protected JComponent createAdvancedTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -189,19 +189,19 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
      * Create a wrapper panel that takes the entire horizontal space and aligns given component to the left.
      */
     private static JPanel createWrapperPanel(final Component c) {
-        final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        final var panel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
         panel.add(c);
         return panel;
     }
 
     JComponent createTimeoutsPanel(final Component... otherComponents) {
-        final DialogComponentNumber socketTimeout =
+        final var socketTimeout =
             new DialogComponentNumber(m_settings.getSocketTimeoutModel(), "Read/write timeout in seconds: ", 10, 5);
 
-        final JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Connection settings"));
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 5, 0, 5);
@@ -223,12 +223,12 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
         m_kmsKeyInput = new KmsKeyInputPanel(m_settings.getKmsKeyIdModel());
         m_customerKeyInput = new CustomerKeyInputPanel(m_settings, this);
 
-        JPanel cards = new JPanel(new CardLayout());
+        final var cards = new JPanel(new CardLayout());
         cards.add(new JPanel(), SSEMode.S3.getKey());
         cards.add(createSseKmsPanel(), SSEMode.KMS.getKey());
         cards.add(m_customerKeyInput, SSEMode.CUSTOMER_PROVIDED.getKey());
 
-        DialogComponentBoolean sseEnabled =
+        final var sseEnabled =
             new DialogComponentBoolean(m_settings.getSseEnabledModel(), "Server-side encryption (SSE)");
         m_settings.getSseEnabledModel().addChangeListener(e -> onSseEnabledChanged());
 
@@ -239,15 +239,15 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
             ((CardLayout)cards.getLayout()).show(cards, mode.getKey());
         });
 
-        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        final var checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         checkboxPanel.add(sseEnabled.getComponentPanel());
         checkboxPanel.add(m_sseModeCombobox);
         checkboxPanel.add(Box.createHorizontalGlue());
 
-        JPanel encryptionPanel = new JPanel(new GridBagLayout());
+        final var encryptionPanel = new JPanel(new GridBagLayout());
         encryptionPanel.setBorder(BorderFactory.createTitledBorder("Server-side encryption"));
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 5);
@@ -271,9 +271,9 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
     }
 
     private JPanel createSseKmsPanel() {
-        final JPanel panel = new JPanel(new GridBagLayout());
+        final var panel = new JPanel(new GridBagLayout());
 
-        final GridBagConstraints gbc = new GridBagConstraints();
+        final var gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 15, 0, 5);

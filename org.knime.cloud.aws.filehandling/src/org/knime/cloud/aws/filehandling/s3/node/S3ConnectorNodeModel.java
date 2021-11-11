@@ -72,7 +72,6 @@ import org.knime.core.node.context.ports.PortsConfiguration;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.connections.FSConnectionRegistry;
-import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.defaultnodesettings.status.NodeModelStatusConsumer;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage.MessageType;
 import org.knime.filehandling.core.port.FileSystemPortObject;
@@ -129,8 +128,9 @@ final class S3ConnectorNodeModel extends NodeModel {
     }
 
     private FileSystemPortObjectSpec createSpec() {
-        final FSLocationSpec fsLocationSpec = S3FileSystem.createFSLocationSpec(false);
-        return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, m_fsId, fsLocationSpec);
+        return new FileSystemPortObjectSpec(FILE_SYSTEM_NAME, //
+            m_fsId, //
+            S3FSConnectionConfig.createStandardS3FSLocationSpec());
     }
 
     @Override

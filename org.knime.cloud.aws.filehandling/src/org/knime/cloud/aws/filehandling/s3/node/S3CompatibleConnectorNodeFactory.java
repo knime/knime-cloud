@@ -69,7 +69,7 @@ public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3
 
     @Override
     protected Optional<PortsConfigurationBuilder> createPortsConfigBuilder() {
-        final PortsConfigurationBuilder builder = new PortsConfigurationBuilder();
+        final var builder = new PortsConfigurationBuilder();
         builder.addOptionalInputPortGroup(FILE_SYSTEM_CONNECTION_PORT_NAME, FileSystemPortObject.TYPE);
         builder.addFixedOutputPortGroup("S3 File System Connection", FileSystemPortObject.TYPE);
         return Optional.of(builder);

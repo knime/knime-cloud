@@ -55,9 +55,6 @@ import java.util.Collections;
 
 import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
-import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
-import org.knime.filehandling.core.connections.FSCategory;
-import org.knime.filehandling.core.connections.FSLocationSpec;
 import org.knime.filehandling.core.connections.base.BaseFileSystem;
 
 /**
@@ -87,24 +84,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         super(new S3FileSystemProvider(), //
             cacheTTL, //
             config.getWorkingDirectory(), //
-            createFSLocationSpec(config.overrideEndpoint()));
+            config.createFSLocationSpec());
 
         m_normalizePaths = config.isNormalizePath();
         m_client = new MultiRegionS3Client(config);
-    }
-
-    /**
-     * Creates an {@link FSLocationSpec} for an S3 file system.
-     *
-     * @param compatible {@code true} if this is a compatible or {@code false} if this is an original Amazon S3 file system
-     * @return an {@link FSLocationSpec} for an S3 file system.
-     */
-    public static FSLocationSpec createFSLocationSpec(final boolean compatible) {
-        if (compatible) {
-            return new DefaultFSLocationSpec(FSCategory.CONNECTED, S3CompatibleFSDescriptorProvider.FS_TYPE.getTypeId());
-        } else {
-            return new DefaultFSLocationSpec(FSCategory.CONNECTED, S3FSDescriptorProvider.FS_TYPE.getTypeId());
-        }
     }
 
     @Override
