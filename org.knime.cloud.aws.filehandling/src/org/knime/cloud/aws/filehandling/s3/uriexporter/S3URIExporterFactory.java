@@ -77,7 +77,7 @@ public final class S3URIExporterFactory extends NoConfigURIExporterFactory {
 
     private S3URIExporterFactory() {
         super(META_INFO, p -> {
-            final S3Path s3Path = (S3Path)p.toAbsolutePath();
+            final var s3Path = (S3Path)p.toAbsolutePath().normalize();
             return new URI(SCHEME, s3Path.getBucketName(), '/' + s3Path.getBlobName(), null);
         });
     }
