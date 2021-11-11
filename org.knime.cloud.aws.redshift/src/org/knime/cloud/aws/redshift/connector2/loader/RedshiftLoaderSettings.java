@@ -42,60 +42,100 @@
  *  when such Node is propagated with or for interoperation with KNIME.
  * ------------------------------------------------------------------------
  */
-package org.knime.cloud.aws.redshift.connector2.utility;
+package org.knime.cloud.aws.redshift.connector2.loader;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableSet;
-import static org.knime.database.agent.loader.DBLoaderMode.REMOTE_TEMPORARY_FILE;
+import static java.util.Objects.requireNonNull;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
-import org.knime.core.data.DataTableSpec;
-import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.defaultnodesettings.SettingsModel;
-import org.knime.core.node.port.PortObjectSpec;
-import org.knime.database.agent.loader.DBLoaderMode;
-import org.knime.database.node.component.dbrowser.SettingsModelDBMetadata;
-import org.knime.database.node.io.load.impl.ConnectableCsvLoaderNode;
-import org.knime.database.node.io.load.impl.ConnectableCsvLoaderNodeSettings;
-import org.knime.database.port.DBDataPortObject;
-import org.knime.database.port.DBDataPortObjectSpec;
-import org.knime.database.port.DBSessionPortObjectSpec;
+import org.knime.base.node.io.csvwriter.FileWriterSettings;
 
 /**
- * Implementation of the loader node for the Redshift database.
+ * Additional settings for {@link RedshiftDBLoader}.
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
-public class RedshiftDBLoaderNode extends ConnectableCsvLoaderNode {
-    private static final Set<DBLoaderMode> MODES =
-        unmodifiableSet(new LinkedHashSet<>(asList(REMOTE_TEMPORARY_FILE)));
+@SuppressWarnings("deprecation")
+public class RedshiftLoaderSettings {
+
+    private final RedshiftLoaderFileFormat m_fileFormat;
+
+    private final String m_authorization;
+
+    private final String m_compression;
+
+    private final int m_chunkSize;
+
+    private final long m_fileSize;
+
+    private final Optional<FileWriterSettings> m_fileWriterSettings;
 
     /**
-     * Constructs a {@link RedshiftDBLoaderNode} object.
+     * Constructs a {@link RedshiftLoaderSettings} object.
+     *
+     * @param fileFormat the selected intermediate file format
+     * @param authorization authorization string
+     * @param fileWriterSettings the optional file writer settings
+     * @param compression compression method
+     * @param chunkSize within file chunk size
+     * @param fileSize file size
      */
-    public RedshiftDBLoaderNode() {
-        super(MODES);
+    public RedshiftLoaderSettings(final RedshiftLoaderFileFormat fileFormat,
+        final String authorization, final FileWriterSettings fileWriterSettings, final String compression,
+        final int chunkSize, final long fileSize) {
+        m_fileFormat = requireNonNull(fileFormat, "fileFormat");
+        m_authorization = authorization;
+        m_fileWriterSettings = Optional.ofNullable(fileWriterSettings);
+        m_compression = compression;
+        m_chunkSize = chunkSize;
+        m_fileSize = fileSize;
     }
 
-    @Override
-    protected DBDataPortObjectSpec configureModel(final PortObjectSpec[] inSpecs,
-        final List<SettingsModel> settingsModels, final ConnectableCsvLoaderNodeSettings customSettings)
-        throws InvalidSettingsException {
-        final DBSessionPortObjectSpec sessionPortObjectSpec = (DBSessionPortObjectSpec)inSpecs[1];
-        final SettingsModelDBMetadata tableNameModel = customSettings.getTableNameModel();
-        validateColumns(false, createModelConfigurationExecutionMonitor(sessionPortObjectSpec.getDBSession()),
-            (DataTableSpec)inSpecs[0], sessionPortObjectSpec, tableNameModel.toDBTable());
-        return super.configureModel(inSpecs, settingsModels, customSettings);
+    /**
+     * Gets the selected intermediate file format.
+     *
+     * @return a {@link RedshiftLoaderFileFormat} constant.
+     */
+    public RedshiftLoaderFileFormat getFileFormat() {
+        return m_fileFormat;
     }
 
-    @Override
-    protected DBDataPortObject load(final ExecutionParameters<ConnectableCsvLoaderNodeSettings> parameters)
-        throws Exception {
-        validateColumns(false, parameters.getExecutionContext(), parameters.getRowInput().getDataTableSpec(),
-            parameters.getSessionPortObject(), parameters.getCustomSettings().getTableNameModel().toDBTable());
-        return super.load(parameters);
+    /**
+     * @return the authorization
+     */
+    public String getAuthorization() {
+        return m_authorization;
     }
+
+    /**
+     * Gets the optional file writer settings.
+     *
+     * @return {@linkplain Optional optionally} the {@link FileWriterSettings} object or {@linkplain Optional#empty()
+     *         empty}.
+     */
+    public Optional<FileWriterSettings> getFileWriterSettings() {
+        return m_fileWriterSettings;
+    }
+
+    /**
+     * @return the compression
+     */
+    public String getCompression() {
+        return m_compression;
+    }
+
+    /**
+     * @return the chunkSize
+     */
+    public int getChunkSize() {
+        return m_chunkSize;
+    }
+
+    /**
+     * @return the fileSize
+     */
+    public long getFileSize() {
+        return m_fileSize;
+    }
+
 }

@@ -48,10 +48,13 @@
  */
 package org.knime.cloud.aws.redshift.connector2.utility;
 
+import org.knime.cloud.aws.redshift.connector2.loader.RedshiftDBLoader;
+import org.knime.database.agent.DBAgentFactory;
 import org.knime.database.agent.loader.DBLoader;
 import org.knime.database.extension.postgres.PostgresAgentFactory;
 
 /**
+ * Redshift {@link DBAgentFactory}.
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */

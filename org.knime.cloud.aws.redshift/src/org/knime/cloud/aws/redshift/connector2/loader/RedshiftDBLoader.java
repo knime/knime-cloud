@@ -1,6 +1,5 @@
 /*
  * ------------------------------------------------------------------------
- *
  *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
@@ -41,36 +40,74 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * ---------------------------------------------------------------------
- *
- * History
- *   Jun 13, 2019 (Tobias): created
+ * ------------------------------------------------------------------------
  */
-package org.knime.cloud.aws.redshift.connector2.utility;
+package org.knime.cloud.aws.redshift.connector2.loader;
+
+import static java.util.Objects.requireNonNull;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.knime.core.node.ExecutionMonitor;
+import org.knime.database.agent.loader.DBLoadTableFromFileParameters;
 import org.knime.database.agent.loader.DBLoader;
+import org.knime.database.dialect.DBSQLDialect;
+import org.knime.database.model.DBTable;
+import org.knime.database.session.DBSession;
 import org.knime.database.session.DBSessionReference;
 
 /**
+ * Redshift data loader.
  *
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
 public class RedshiftDBLoader implements DBLoader {
 
-    /**
-     * @param sessionReference
-     */
-    public RedshiftDBLoader(final DBSessionReference sessionReference) {
-        // TODO AP-12028
-    }
+    private final DBSessionReference m_sessionReference;
 
     /**
-     * {@inheritDoc}
+     * Constructs a {@link RedshiftDBLoader} object.
+     *
+     * @param sessionReference the reference to the agent's session.
      */
+    public RedshiftDBLoader(final DBSessionReference sessionReference) {
+        m_sessionReference = requireNonNull(sessionReference, "sessionReference");
+    }
+
     @Override
-    public void load(final ExecutionMonitor executionMonitor, final Object parameters) throws Exception {
-        // TODO AP-12028
+    public void load(final ExecutionMonitor exec, final Object parameters) throws Exception {
+        @SuppressWarnings("unchecked")
+        final DBLoadTableFromFileParameters<RedshiftLoaderSettings> loadParameters =
+            (DBLoadTableFromFileParameters<RedshiftLoaderSettings>)parameters;
+        final String filePath = loadParameters.getFilePath();
+        final DBTable table = loadParameters.getTable();
+        final RedshiftLoaderSettings additionalSettings = loadParameters.getAdditionalSettings()
+            .orElseThrow(() -> new IllegalArgumentException("Missing additional settings."));
+        final DBSession session = m_sessionReference.get();
+        final DBSQLDialect dialect = session.getDialect();
+
+        final StringBuilder buf = new StringBuilder();
+        buf.append("copy ");
+        buf.append(dialect.createFullName(table));
+        buf.append(" from '");
+        buf.append(filePath);
+        buf.append("'\n");
+        buf.append(additionalSettings.getAuthorization());
+        buf.append("\n");
+        RedshiftLoaderFileFormat fileFormat = additionalSettings.getFileFormat();
+        buf.append(fileFormat.getFormatPart(additionalSettings));
+        final String copyStmt = buf.toString();
+        exec.checkCanceled();
+        try (Connection connection = session.getConnectionProvider().getConnection(exec);
+                Statement statement = connection.createStatement()) {
+            exec.setMessage("Loading staged data into table (this might take some time without progress changes)");
+                statement.execute(copyStmt);
+            exec.setProgress(1);
+        } catch (final Throwable throwable) {
+            throw new SQLException(throwable.getMessage(), throwable);
+        }
     }
 
 }
