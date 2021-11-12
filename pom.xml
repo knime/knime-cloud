@@ -38,6 +38,16 @@
 
 	<!-- List all repositories required for compilation here. The variables are defined in knime-maven-parent/pom.xml. -->
 	<repositories>
+        <repository>
+            <id>p2-knime-bigdata</id>
+            <layout>p2</layout>
+            <url>${knime.bigdata.p2}</url>
+        </repository>
+        <repository>
+            <id>p2-knime-bigdata-externals</id>
+            <layout>p2</layout>
+            <url>${knime.p2.repo}/knime-bigdata-externals/${git.branch}</url>
+        </repository>
 		<repository>
 			<id>p2-knime-core</id>
 			<layout>p2</layout>
