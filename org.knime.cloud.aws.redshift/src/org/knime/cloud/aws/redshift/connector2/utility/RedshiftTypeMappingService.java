@@ -82,8 +82,8 @@ public final class RedshiftTypeMappingService extends AbstractDBDataTypeMappingS
 
         // Default consumption paths
         final Map<DataType, Triple<DataType, Class<?>, SQLType>> defaultConsumptionMap =
-        		new LinkedHashMap<>(getDefaultConsumptionTriples());
-        addTriple(defaultConsumptionMap, BooleanCell.TYPE, Boolean.class, JDBCType.BOOLEAN);
+                new LinkedHashMap<>(getDefaultConsumptionTriples());
+        addTriple(defaultConsumptionMap, BooleanCell.TYPE, Boolean.class, JDBCType.BIT);
         addTriple(defaultConsumptionMap, LocalTimeCellFactory.TYPE, String.class, JDBCType.VARCHAR);
         addTriple(defaultConsumptionMap, ZonedDateTimeCellFactory.TYPE, String.class, JDBCType.VARCHAR);
         setDefaultConsumptionTriples(defaultConsumptionMap);
@@ -94,6 +94,7 @@ public final class RedshiftTypeMappingService extends AbstractDBDataTypeMappingS
         // SQL type to database column type mapping
         addColumnType(JDBCType.DOUBLE, "double precision");
         addColumnType(JDBCType.VARCHAR, "varchar");
+        addColumnType(JDBCType.BIT, "boolean");
 
     }
 
