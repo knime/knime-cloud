@@ -74,23 +74,23 @@ import org.knime.filehandling.core.connections.base.auth.EmptyAuthProviderPanel;
 import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
 
 /**
- * Custom S3 connector node dialog that combines Amazon Authentication and S3 Connector Dialog with a custom endpoint URL.
+ * Generic S3 connector node dialog that combines Amazon Authentication and S3 Connector Dialog with a custom endpoint URL.
  *
  * @author Sascha Wolke, KNIME GmbH
  */
-class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
+class S3GenericConnectorNodeDialog extends S3ConnectorNodeDialog {
     private StringHistoryPanel m_endpointUrlPanel;
 
     private AuthPanel m_authPanel;
 
     private StringHistoryPanel m_regionPanel;
 
-    S3CompatibleConnectorNodeDialog(final PortsConfiguration portsConfig) {
-        super(new S3CompatibleConnectorNodeSettings(portsConfig));
+    S3GenericConnectorNodeDialog(final PortsConfiguration portsConfig) {
+        super(new S3GenericConnectorNodeSettings(portsConfig));
     }
 
-    private S3CompatibleConnectorNodeSettings getCompSettings() {
-        return (S3CompatibleConnectorNodeSettings)m_settings;
+    private S3GenericConnectorNodeSettings getCompSettings() {
+        return (S3GenericConnectorNodeSettings)m_settings;
     }
 
     @Override
@@ -181,10 +181,10 @@ class S3CompatibleConnectorNodeDialog extends S3ConnectorNodeDialog {
                 new EmptyAuthProviderPanel( //
                     authSettings.getSettingsForAuthType(StandardAuthTypes.ANONYMOUS)), //
                 new AccessSecretKeyAuthProviderPanel( //
-                    authSettings.getSettingsForAuthType(S3CompatibleConnectorNodeSettings.ACCESS_KEY_AND_SECRET_AUTH), //
+                    authSettings.getSettingsForAuthType(S3GenericConnectorNodeSettings.ACCESS_KEY_AND_SECRET_AUTH), //
                     this), //
                 new EmptyAuthProviderPanel( //
-                    authSettings.getSettingsForAuthType(S3CompatibleConnectorNodeSettings.DEFAULT_PROVIDER_CHAIN_AUTH)) //
+                    authSettings.getSettingsForAuthType(S3GenericConnectorNodeSettings.DEFAULT_PROVIDER_CHAIN_AUTH)) //
             ));
         m_authPanel.setBorder(BorderFactory.createTitledBorder("Authentication"));
         return m_authPanel;

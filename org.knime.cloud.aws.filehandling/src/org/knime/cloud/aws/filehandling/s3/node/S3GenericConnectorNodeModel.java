@@ -50,9 +50,9 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Objects;
 
-import org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
+import org.knime.cloud.aws.filehandling.s3.fs.S3GenericFSDescriptorProvider;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig.SSEMode;
 import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.CustomerKeySource;
@@ -76,15 +76,15 @@ import org.knime.filehandling.core.port.FileSystemPortObjectSpec;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
- * Custom S3 compatible endpoint connector node.
+ * Generic S3 endpoint connector node.
  *
  * @author Sascha Wolke, KNIME GmbH
  */
 
-final class S3CompatibleConnectorNodeModel extends NodeModel {
-    private static final NodeLogger LOG = NodeLogger.getLogger(S3CompatibleConnectorNodeModel.class);
+final class S3GenericConnectorNodeModel extends NodeModel {
+    private static final NodeLogger LOG = NodeLogger.getLogger(S3GenericConnectorNodeModel.class);
 
-    private S3CompatibleConnectorNodeSettings m_settings;
+    private S3GenericConnectorNodeSettings m_settings;
 
     private S3FSConnection m_fsConn;
 
@@ -98,9 +98,9 @@ final class S3CompatibleConnectorNodeModel extends NodeModel {
      *
      * @param portsConfig Ports configuration
      */
-    S3CompatibleConnectorNodeModel(final PortsConfiguration portsConfig) {
+    S3GenericConnectorNodeModel(final PortsConfiguration portsConfig) {
         super(portsConfig.getInputPorts(), portsConfig.getOutputPorts());
-        m_settings = new S3CompatibleConnectorNodeSettings(portsConfig);
+        m_settings = new S3GenericConnectorNodeSettings(portsConfig);
     }
 
     @Override
@@ -122,9 +122,9 @@ final class S3CompatibleConnectorNodeModel extends NodeModel {
     }
 
     private FileSystemPortObjectSpec createSpec() {
-        return new FileSystemPortObjectSpec(S3CompatibleFSDescriptorProvider.FS_TYPE.getName(), //
+        return new FileSystemPortObjectSpec(S3GenericFSDescriptorProvider.FS_TYPE.getName(), //
             m_fsId, //
-            S3FSConnectionConfig.createCustomS3FSLocationSpec(m_settings.getEndpointURL()));
+            S3FSConnectionConfig.createGenericS3FSLocationSpec(m_settings.getEndpointURL()));
     }
 
     @Override

@@ -69,11 +69,11 @@ import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProvide
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
- * Settings model for custom S3 connector that combines the Amazon Authentication and S3 Connector settings with a custom endpoint URL.
+ * Settings model for generic S3 connector that combines the Amazon Authentication and S3 Connector settings with a custom endpoint URL.
  *
  * @author Sascha Wolke, KNIME GmbH
  */
-class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
+class S3GenericConnectorNodeSettings extends S3ConnectorNodeSettings {
 
     private static final String KEY_ENDPOINT_URL = "endpointURL";
 
@@ -110,7 +110,7 @@ class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
      *
      * @param portsConfig Ports configuration.
      */
-    S3CompatibleConnectorNodeSettings(final PortsConfiguration portsConfig) {
+    S3GenericConnectorNodeSettings(final PortsConfiguration portsConfig) {
         super(portsConfig);
         m_endpointURL = new SettingsModelString(KEY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
         m_authSettings = new AuthSettings.Builder() //
@@ -232,7 +232,7 @@ class S3CompatibleConnectorNodeSettings extends S3ConnectorNodeSettings {
         m_connectionTimeout.validateSettings(settings);
         super.validateSettings(settings);
 
-        final var tmpSettings = new S3CompatibleConnectorNodeSettings(m_portConfig);
+        final var tmpSettings = new S3GenericConnectorNodeSettings(m_portConfig);
         tmpSettings.loadSettingsForModel(settings);
         tmpSettings.validate();
     }

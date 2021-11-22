@@ -60,7 +60,7 @@ import org.knime.filehandling.core.port.FileSystemPortObject;
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3CompatibleConnectorNodeModel> {
+public class S3GenericConnectorNodeFactory extends ConfigurableNodeFactory<S3GenericConnectorNodeModel> {
 
     /**
      * File System Connection port name.
@@ -79,8 +79,8 @@ public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3
      * {@inheritDoc}
      */
     @Override
-    protected S3CompatibleConnectorNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
-        return new S3CompatibleConnectorNodeModel(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
+    protected S3GenericConnectorNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
+        return new S3GenericConnectorNodeModel(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
     /**
@@ -95,7 +95,7 @@ public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3
      * {@inheritDoc}
      */
     @Override
-    public NodeView<S3CompatibleConnectorNodeModel> createNodeView(final int viewIndex, final S3CompatibleConnectorNodeModel nodeModel) {
+    public NodeView<S3GenericConnectorNodeModel> createNodeView(final int viewIndex, final S3GenericConnectorNodeModel nodeModel) {
         return null;
     }
 
@@ -112,7 +112,7 @@ public class S3CompatibleConnectorNodeFactory extends ConfigurableNodeFactory<S3
      */
     @Override
     protected NodeDialogPane createNodeDialogPane(final NodeCreationConfiguration creationConfig) {
-        return new S3CompatibleConnectorNodeDialog(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
+        return new S3GenericConnectorNodeDialog(creationConfig.getPortConfig().orElseThrow(IllegalStateException::new));
     }
 
 }

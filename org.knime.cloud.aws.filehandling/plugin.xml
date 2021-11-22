@@ -11,7 +11,7 @@
 
       <node
             category-path="/io/connectors"
-            factory-class="org.knime.cloud.aws.filehandling.s3.node.S3CompatibleConnectorNodeFactory">
+            factory-class="org.knime.cloud.aws.filehandling.s3.node.S3GenericConnectorNodeFactory">
       </node>
 
    </extension>
@@ -21,7 +21,7 @@
             class="org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider">
       </FSDescriptorProvider>
       <FSDescriptorProvider
-            class="org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider">
+            class="org.knime.cloud.aws.filehandling.s3.fs.S3GenericFSDescriptorProvider">
       </FSDescriptorProvider>
    </extension>
 

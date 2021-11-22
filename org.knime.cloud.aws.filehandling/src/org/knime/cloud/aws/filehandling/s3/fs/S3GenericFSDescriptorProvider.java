@@ -42,61 +42,33 @@
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
+ *
+ * History
+ *   2021-06-02 (modithahewasinghage): created
  */
-package org.knime.cloud.aws.filehandling.s3.testing;
+package org.knime.cloud.aws.filehandling.s3.fs;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Map;
-
-import org.knime.cloud.aws.filehandling.s3.MultiRegionS3Client;
-import org.knime.cloud.aws.filehandling.s3.fs.S3CompatibleFSDescriptorProvider;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FSConnection;
-import org.knime.cloud.aws.filehandling.s3.fs.S3FileSystem;
-import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
-import org.knime.core.node.util.CheckUtils;
-import org.knime.filehandling.core.connections.FSLocationSpec;
+import org.knime.cloud.aws.filehandling.s3.testing.S3GenericFSTestInitializerProvider;
+import org.knime.filehandling.core.connections.meta.FSDescriptorProvider;
 import org.knime.filehandling.core.connections.meta.FSType;
+import org.knime.filehandling.core.connections.meta.FSTypeRegistry;
 
 /**
- * Initializer provider for Amazon S3 compatible tests. Reads all s3 relevant properties from the configuration
- * and establishes a connection to custom S3 compatible endpoint.
+ * {@link FSDescriptorProvider} implementation for the generic S3 file system.
  *
  * @author Sascha Wolke, KNIME GmbH
  */
-public class S3CompatibleFSTestInitializerProvider extends AbstractS3FSTestInitializerProvider {
+public class S3GenericFSDescriptorProvider extends AbstractS3FSDescriptorProvider {
 
-    @SuppressWarnings("resource")
-    @Override
-    public S3FSTestInitializer setup(final Map<String, String> config) throws IOException {
+    /**
+     * FSType for the generic S3 file system
+     */
+    public static final FSType FS_TYPE = FSTypeRegistry.getOrCreateFSType("generic-s3", "Generic S3");
 
-        validateConfiguration(config);
-        CheckUtils.checkArgumentNotNull(config.get("endpoint"), "endpoint must not be null");
-
-        final S3FSConnectionConfig s3config = createConnConfig(config);
-        s3config.setOverrideEndpoint(true);
-        s3config.setEndpointUrl(URI.create(config.get("endpoint")));
-        s3config.setPathStyle(true);
-
-        final var connection = new S3FSConnection(s3config);
-
-        // we tests again an empty MinIO docker container, ensure the bucket exists
-        final MultiRegionS3Client client = ((S3FileSystem)connection.getFileSystem()).getClient();
-        final String bucket = ((S3FileSystem)connection.getFileSystem()).getPath(config.get("workingDirPrefix")).getBucketName();
-        if (client.getBucket(bucket) == null) {
-            client.createBucket(bucket);
-        }
-
-        return new S3FSTestInitializer(connection);
-    }
-
-    @Override
-    public FSType getFSType() {
-        return S3CompatibleFSDescriptorProvider.FS_TYPE;
-    }
-
-    @Override
-    public FSLocationSpec createFSLocationSpec(final Map<String, String> config) {
-        return S3FSConnectionConfig.createCustomS3FSLocationSpec(URI.create(config.get("endpoint")));
+    /**
+     * Constructor.
+     */
+    public S3GenericFSDescriptorProvider() {
+        super(FS_TYPE, new S3GenericFSTestInitializerProvider());
     }
 }
