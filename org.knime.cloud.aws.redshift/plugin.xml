@@ -40,6 +40,7 @@
    <!-- Driver  -->
    <extension point="org.knime.database.Driver">
       <Driver locator="org.knime.cloud.aws.redshift.connector2.utility.RedshiftDriverLocator"/>
+      <Driver locator="org.knime.cloud.aws.redshift.connector2.utility.v213.RedshiftDriverLocator"/>
    </extension>
    
    <!--  Aggregation Functions -->

@@ -1,6 +1,5 @@
 /*
  * ------------------------------------------------------------------------
- *
  *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
@@ -41,43 +40,31 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * ---------------------------------------------------------------------
- *
- * History
- *   Jun 10, 2019 (Tobias): created
+ * ------------------------------------------------------------------------
  */
-package org.knime.cloud.aws.redshift.connector2.utility;
+package org.knime.cloud.aws.redshift.connector2.utility.v213;
 
-import static java.util.Collections.emptySet;
+import java.util.Collections;
+
+import org.knime.cloud.aws.redshift.connector2.utility.RedshiftAbstractDriverLocator;
 
 /**
- * Redshift driver locator implementation.
+ * This class contains a Amazon Redshift driver definition for version 2.1.0.3.
+ * The definition will be used by Eclipse extensions API to create a database driver instance.
  *
- * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
+ * @author Zkriya Rakhimberdiyev
  */
 public class RedshiftDriverLocator extends RedshiftAbstractDriverLocator {
-    /**Driver id.*/
-    public static final String DRIVER_ID = "Redshift";
 
     /**
      * Default Constructor.
      */
     public RedshiftDriverLocator() {
-        super("", emptySet());
-    }
-
-    @Override
-    public String getDriverId() {
-        return DRIVER_ID;
-    }
-
-    @Override
-    public String getDriverName() {
-        return "Amazon Redshift";
+        super("2.1.0.3", Collections.singleton("lib/redshift/2.1.0.3/jdbc/redshift-jdbc42-2.1.0.3.jar"));
     }
 
     @Override
     public String getDriverClassName() {
-        return "com.amazon.redshift.jdbc.Driver";
+        return "com.amazon.redshift.Driver";
     }
 }

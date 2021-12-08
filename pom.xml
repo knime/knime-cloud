@@ -28,6 +28,7 @@
 		<module>org.knime.cloud.aws.filehandling</module>
 		<module>org.knime.cloud.aws.filehandling.tests</module>
 		<module>org.knime.cloud.aws.mlservices</module>
+        <module>org.knime.cloud.aws.redshift/lib/redshift/fetch_jars</module>
 		<module>org.knime.cloud.aws.redshift</module>
 		<module>org.knime.cloud.core</module>
 		<module>org.knime.features.cloud.aws</module>
