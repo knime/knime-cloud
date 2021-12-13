@@ -21,8 +21,8 @@
 		    URLs can be signed for a maximum of <b>7 days</b>.
         	<p>
         		<i>This is a legacy file handling node and has been replaced by the</i> <a href="https://kni.me/n/YMvcvDu5EC56OIFg">
-        		<i>Path to URI</i></a> node.
-        		<i>For further information about the new file handling framework see the </i>
+        		<i>Path to URI</i></a><i> node and will be deprecated in the foreseeable future.
+        		For further information about the new file handling framework see the </i>
         		<a href="https://docs.knime.com/latest/analytics_platform_file_handling_guide/index.html"><i>File Handling Guide.
         		</i></a><br/>
 			</p>
