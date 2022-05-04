@@ -51,8 +51,9 @@ package org.knime.cloud.aws.filehandling.s3.fs.api;
 import java.net.URI;
 import java.time.Duration;
 
-import org.knime.cloud.aws.filehandling.s3.fs.S3GenericFSDescriptorProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.knime.cloud.aws.filehandling.s3.fs.S3FSDescriptorProvider;
+import org.knime.cloud.aws.filehandling.s3.fs.S3GenericFSDescriptorProvider;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.filehandling.core.connections.DefaultFSLocationSpec;
 import org.knime.filehandling.core.connections.FSCategory;
@@ -79,6 +80,16 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
      */
     public static final int DEFAULT_SOCKET_TIMEOUT_SECONDS = 30;
 
+    /**
+     * Default part size in bytes for the multi-part upload
+     */
+    public static final int DEFAULT_MULTIPART_UPLOAD_PART_SIZE = 100 * 1024 * 1024; // 100 MB
+
+    /**
+     * A system property (for debugging purposes) to control thepart size in bytes for the multi-part upload.
+     */
+    private static final String MULTIPART_UPLOAD_PART_SIZE_SYSTEM_PROPERTY = "knime.aws.s3.multipartUploadThreshold";
+
     private Duration m_socketTimeout;
 
     private boolean m_normalizePath;
@@ -101,6 +112,8 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
 
     private boolean m_pathStyle = false;
 
+    private final int m_multipartUploadPartSize;
+
     /**
      *
      * @param workingDirectory
@@ -109,6 +122,18 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
     public S3FSConnectionConfig(final String workingDirectory, final CloudConnectionInformation connectionInfo) {
         super(workingDirectory, true);
         m_connectionInfo = connectionInfo;
+        m_multipartUploadPartSize = determineMultipartUploadPartSize();
+    }
+
+    private static int determineMultipartUploadPartSize() {
+        final var systemPropertyValue =
+            StringUtils.trimToNull(System.getProperty(MULTIPART_UPLOAD_PART_SIZE_SYSTEM_PROPERTY));
+
+        if (systemPropertyValue != null) {
+            return Integer.parseInt(systemPropertyValue);
+        } else {
+            return DEFAULT_MULTIPART_UPLOAD_PART_SIZE;
+        }
     }
 
     /**
@@ -256,6 +281,13 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
      */
     public boolean usePathStyle() {
         return m_pathStyle;
+    }
+
+    /**
+     * @return the multipartUploadPartSize
+     */
+    public int getMultipartUploadPartSize() {
+        return m_multipartUploadPartSize;
     }
 
     /**

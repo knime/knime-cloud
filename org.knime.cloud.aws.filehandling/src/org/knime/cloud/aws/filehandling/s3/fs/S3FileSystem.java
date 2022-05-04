@@ -73,6 +73,8 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
 
     private final boolean m_normalizePaths;
 
+    private final int m_multipartUploadPartSize;
+
     /**
      * Constructs an S3FileSystem for the given URI
      *
@@ -87,6 +89,7 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
             config.createFSLocationSpec());
 
         m_normalizePaths = config.isNormalizePath();
+        m_multipartUploadPartSize = config.getMultipartUploadPartSize();
         m_client = new MultiRegionS3Client(config);
     }
 
@@ -124,4 +127,10 @@ public class S3FileSystem extends BaseFileSystem<S3Path> {
         return m_normalizePaths;
     }
 
+    /**
+     * @return the multipartUploadPartSize
+     */
+    public int getMultipartUploadPartSize() {
+        return m_multipartUploadPartSize;
+    }
 }

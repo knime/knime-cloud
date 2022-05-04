@@ -73,8 +73,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -86,6 +91,8 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
@@ -430,6 +437,108 @@ public class MultiRegionS3Client implements AutoCloseable {
         }
 
         getClientForBucket(bucket).putObject(builder.build(), body);
+    }
+
+    /**
+     * Initiates multipart upload.
+     *
+     * @param bucket The bucket name.
+     * @param key The object key.
+     * @param mimeType The mime-type of the object content.
+     * @return The {@link CreateMultipartUploadResponse} object.
+     */
+    @SuppressWarnings("resource")
+    public CreateMultipartUploadResponse createMultipartUpload(final String bucket, final String key,
+        final String mimeType) {
+        var builder = CreateMultipartUploadRequest.builder()//
+            .bucket(bucket)//
+            .key(key)//
+            .contentType(mimeType);
+
+        if (m_sseEnabled) {
+            if (m_sseMode == SSEMode.S3 || m_sseMode == SSEMode.KMS) {
+                builder.serverSideEncryption(m_sseMode.getEncryption());
+            }
+
+            if (m_sseMode == SSEMode.KMS && !m_kmsKeyId.isEmpty()) {
+                builder.ssekmsKeyId(m_kmsKeyId);
+            }
+
+            if (m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+                builder.sseCustomerAlgorithm(AES256);
+                builder.sseCustomerKey(m_customerKey);
+                builder.sseCustomerKeyMD5(m_customerKeyMD5);
+            }
+        }
+
+        return getClientForBucket(bucket).createMultipartUpload(builder.build());
+    }
+
+    /**
+     * Uploads a single part of the multipart upload.
+     *
+     * @param bucket The bucket name.
+     * @param key The object key.
+     * @param uploadId The multipart upload id.
+     * @param partNumber The part number.
+     * @param body The request body.
+     * @return The response object.
+     */
+    @SuppressWarnings("resource")
+    public UploadPartResponse uploadPart(final String bucket, final String key, final String uploadId,
+        final int partNumber, final RequestBody body) {
+        var builder = UploadPartRequest.builder()//
+            .bucket(bucket)//
+            .key(key)//
+            .uploadId(uploadId)//
+            .partNumber(partNumber);
+
+        if (m_sseEnabled && m_sseMode == SSEMode.CUSTOMER_PROVIDED) {
+            builder.sseCustomerAlgorithm(AES256);
+            builder.sseCustomerKey(m_customerKey);
+            builder.sseCustomerKeyMD5(m_customerKeyMD5);
+        }
+
+        return getClientForBucket(bucket).uploadPart(builder.build(), body);
+    }
+
+    /**
+     * Completes the multipart upload.
+     *
+     * @param bucket The bucket name.
+     * @param key The object key.
+     * @param uploadId The multipart upload id.
+     * @param parts Uploaded parts
+     */
+    @SuppressWarnings("resource")
+    public void completeMultipartUpload(final String bucket, final String key, final String uploadId,
+        final List<CompletedPart> parts) {
+        parts.sort((o1, o2) -> Integer.compare(o1.partNumber(), o2.partNumber()));
+
+        var builder = CompleteMultipartUploadRequest.builder()//
+            .bucket(bucket)//
+            .key(key)//
+            .uploadId(uploadId)//
+            .multipartUpload(b -> b.parts(parts));
+
+        getClientForBucket(bucket).completeMultipartUpload(builder.build());
+    }
+
+    /**
+     * Aborts the multipart upload.
+     *
+     * @param bucket The bucket name.
+     * @param key The object key.
+     * @param uploadId The upload id.
+     */
+    @SuppressWarnings("resource")
+    public void abortMultipartUpload(final String bucket, final String key, final String uploadId) {
+        var builder = AbortMultipartUploadRequest.builder()//
+            .bucket(bucket)//
+            .key(key)//
+            .uploadId(uploadId);
+
+        getClientForBucket(bucket).abortMultipartUpload(builder.build());
     }
 
     /**

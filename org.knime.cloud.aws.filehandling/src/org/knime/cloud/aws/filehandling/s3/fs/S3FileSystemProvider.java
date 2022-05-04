@@ -219,7 +219,12 @@ class S3FileSystemProvider extends BaseFileSystemProvider<S3Path, S3FileSystem> 
             }
         }
         opts.add(StandardOpenOption.WRITE);
-        return Channels.newOutputStream(newByteChannel(path, opts));
+
+        if (opts.contains(StandardOpenOption.APPEND)) {
+            return Channels.newOutputStream(newByteChannel(path, opts));
+        } else {
+            return new S3OutputStream(path);
+        }
     }
 
     @Override
