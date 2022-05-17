@@ -408,17 +408,31 @@ public class MultiRegionS3Client implements AutoCloseable {
     }
 
     /**
-     * Puts and object.
+     * Puts an object.
      *
      * @param bucket The bucket name.
      * @param key The object key.
      * @param body The request body.
      */
-    @SuppressWarnings("resource")
     public void putObject(final String bucket, final String key, final RequestBody body) {
+        putObject(bucket, key, body, null);
+    }
+
+    /**
+     * Puts an object with mime type.
+     *
+     * @param bucket The bucket name.
+     * @param key The object key.
+     * @param body The request body.
+     * @param mimeType The object mime type.
+     */
+    @SuppressWarnings("resource")
+    public void putObject(final String bucket, final String key, final RequestBody body,
+        final String mimeType) {
         final var builder = PutObjectRequest.builder()//
             .bucket(bucket)//
-            .key(key);
+            .key(key)
+            .contentType(mimeType);
 
         if (m_sseEnabled) {
             if (m_sseMode == SSEMode.S3 || m_sseMode == SSEMode.KMS) {

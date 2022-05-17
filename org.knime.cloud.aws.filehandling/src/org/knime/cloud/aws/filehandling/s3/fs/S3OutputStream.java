@@ -313,7 +313,7 @@ public class S3OutputStream extends OutputStream {
 
     private void uploadAsSingleRequest() throws IOException {
         try {
-            m_client.putObject(m_path.getBucketName(), m_path.getBlobName(), createRequestBody());
+            m_client.putObject(m_path.getBucketName(), m_path.getBlobName(), createRequestBody(), m_mimeType);
         } catch (SdkException e) {
             throw AwsUtils.toIOE(e, m_path);
         }
