@@ -48,7 +48,6 @@
  */
 package org.knime.cloud.core.util.port;
 
-import org.apache.commons.lang3.StringUtils;
 import org.knime.base.filehandling.remote.connectioninformation.port.ConnectionInformation;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.ModelContentRO;
@@ -78,11 +77,19 @@ public class CloudConnectionInformation extends ConnectionInformation {
 
     private String m_switchRoleName;
 
+    private boolean m_useSessionToken;
+
+    private String m_sessionToken;
+
     private static final String SWITCH_ROLE_KEY = "switchRole";
 
     private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
 
     private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+
+    private static final String USE_SESSION_TOKEN_KEY = "useSessionToken";
+
+    private static final String SESSION_TOKEN_KEY = "sessionToken";
 
     private boolean m_useAnonymous = false;
 
@@ -124,6 +131,14 @@ public class CloudConnectionInformation extends ConnectionInformation {
             this.setSwitchRoleName("");
         }
 
+        if (model.containsKey(USE_SESSION_TOKEN_KEY)) {
+            this.setUseSessionToken(model.getBoolean(USE_SESSION_TOKEN_KEY));
+            this.setSessionToken(model.getString(SESSION_TOKEN_KEY));
+        } else {
+            this.setUseSessionToken(false);
+            this.setSessionToken("");
+        }
+
         m_useAnonymous = model.getBoolean(USE_ANONYMOUS_KEY, false);
 
         // added in 4.1, use protocol as fallback
@@ -158,6 +173,24 @@ public class CloudConnectionInformation extends ConnectionInformation {
     }
 
     /**
+     * Set whether Session Token should be used.
+     *
+     * @param useSessionToken whether Session Token should be used
+     */
+    public void setUseSessionToken(final boolean useSessionToken) {
+        m_useSessionToken = useSessionToken;
+    }
+
+    /**
+     * Set the Session Token that should be used.
+     *
+     * @param sessionToken The Session Token that should be used
+     */
+    public void setSessionToken(final String sessionToken) {
+        m_sessionToken = sessionToken;
+    }
+
+    /**
      * Set whether some key chain should be used when connecting
      *
      * @param use <code>true</code> if key chain should be used, <code>false</code> if not
@@ -168,7 +201,7 @@ public class CloudConnectionInformation extends ConnectionInformation {
 
     /**
      * Returns whether the key chain should be used or not
-     *isUseAnonymous
+     * 
      * @return whether key chain should be used, <code>true</code> if it should be used, <code>false</code> if not
      */
     public boolean useKeyChain() {
@@ -205,6 +238,10 @@ public class CloudConnectionInformation extends ConnectionInformation {
         model.addString(SWITCH_ROLE_ACCOUNT_KEY, m_switchRoleAccount);
         model.addString(SWITCH_ROLE_NAME_KEY, m_switchRoleName);
 
+        // New Session Token AP-7465
+        model.addBoolean(USE_SESSION_TOKEN_KEY, m_useSessionToken);
+        model.addString(SESSION_TOKEN_KEY, m_sessionToken);
+
         model.addBoolean(USE_ANONYMOUS_KEY, m_useAnonymous);
 
         model.addString(CFG_SERVICE_NAME, m_serviceName);
@@ -239,6 +276,24 @@ public class CloudConnectionInformation extends ConnectionInformation {
      */
     public String getSwitchRoleName() {
         return m_switchRoleName;
+    }
+
+    /**
+     * Returns whether a Session Token should be used.
+     *
+     * @return whether a Session Token should be used
+     */
+    public boolean isUseSessionToken() {
+        return m_useSessionToken;
+    }
+
+    /**
+     * Returns the Session Token that should be used.
+     *
+     * @return The Session Token that should be used
+     */
+    public String getSessionToken() {
+        return m_sessionToken;
     }
 
     /**

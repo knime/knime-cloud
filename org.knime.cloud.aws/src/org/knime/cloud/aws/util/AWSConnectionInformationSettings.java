@@ -86,6 +86,10 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 
     private final SettingsModelString m_switchRoleName = createSwitchRoleNameModel();
 
+    private final SettingsModelBoolean m_useSessionToken = createUseSessionTokenModel();
+
+    private final SettingsModelString m_sessionToken = createSessionTokenModel();
+
     private static final String SSE_KEY = "ssencryption";
 
     private static final String SWITCH_ROLE_KEY = "switchRole";
@@ -93,6 +97,10 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
     private static final String SWITCH_ROLE_ACCOUNT_KEY = "switchRoleAccount";
 
     private static final String SWITCH_ROLE_NAME_KEY = "switchRoleName";
+
+    private static final String USE_SESSION_TOKEN_KEY = "useSessionToken";
+
+    private static final String SESSION_TOKEN_KEY = "sessionToken";
 
     private static SettingsModelString createRegionModel() {
         return new SettingsModelString("region", "us-east-1");
@@ -112,6 +120,14 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
 
     private static SettingsModelString createSwitchRoleNameModel() {
         return new SettingsModelString(SWITCH_ROLE_NAME_KEY, "");
+    }
+
+    private static SettingsModelBoolean createUseSessionTokenModel() {
+        return new SettingsModelBoolean(USE_SESSION_TOKEN_KEY, false);
+    }
+
+    private static SettingsModelString createSessionTokenModel() {
+        return new SettingsModelString(SESSION_TOKEN_KEY, "");
     }
 
     /**
@@ -200,6 +216,9 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
         connectionInformation.setSwitchRoleAccount(getSwitchRoleAccountModel().getStringValue());
         connectionInformation.setSwitchRoleName(getSwitchRoleNameModel().getStringValue());
 
+        connectionInformation.setUseSessionToken(getUseSessionTokenModel().getBooleanValue());
+        connectionInformation.setSessionToken(getSessionTokenModel().getStringValue());
+
         connectionInformation.setServiceName(SERVICE_NAME);
 
         return connectionInformation;
@@ -214,6 +233,8 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
         m_switchRole.saveSettingsTo(settings);
         m_switchRoleAccount.saveSettingsTo(settings);
         m_switchRoleName.saveSettingsTo(settings);
+        m_useSessionToken.saveSettingsTo(settings);
+        m_sessionToken.saveSettingsTo(settings);
     }
 
     @Override
@@ -229,6 +250,10 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
             m_switchRoleAccount.loadSettingsFrom(settings);
             m_switchRoleName.loadSettingsFrom(settings);
         }
+        if (settings.containsKey(USE_SESSION_TOKEN_KEY)) {
+            m_useSessionToken.loadSettingsFrom(settings);
+            m_sessionToken.loadSettingsFrom(settings);
+        }
     }
 
     @Override
@@ -243,6 +268,10 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
             m_switchRole.validateSettings(settings);
             m_switchRoleAccount.validateSettings(settings);
             m_switchRoleName.validateSettings(settings);
+        }
+        if (settings.containsKey(USE_SESSION_TOKEN_KEY)) {
+            m_useSessionToken.validateSettings(settings);
+            m_sessionToken.validateSettings(settings);
         }
     }
 
@@ -291,4 +320,21 @@ public class AWSConnectionInformationSettings extends ConnectionInformationCloud
         return m_switchRoleName;
     }
 
+    /**
+     * Get the {@link SettingsModelBoolean} for the Use Session Token option.
+     *
+     * @return The {@link SettingsModelBoolean} for the Use Session Token option
+     */
+    public SettingsModelBoolean getUseSessionTokenModel() {
+        return m_useSessionToken;
+    }
+
+    /**
+     * Get the {@link SettingsModelString} for the Session Token.
+     *
+     * @return The {@link SettingsModelString} for the Session Token
+     */
+    public SettingsModelString getSessionTokenModel() {
+        return m_sessionToken;
+    }
 }

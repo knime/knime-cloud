@@ -65,6 +65,7 @@ import org.knime.core.util.KnimeEncryption;
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -116,8 +117,15 @@ public final class AwsUtils {
             } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | IOException e) {
                 throw new IllegalStateException(e);
             }
-            conCredentialProvider =
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
+
+            if (con.isUseSessionToken()) {
+                conCredentialProvider =
+                        StaticCredentialsProvider.create(
+                            AwsSessionCredentials.create(accessKeyId, secretAccessKey, con.getSessionToken()));
+            } else {
+                conCredentialProvider =
+                        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
+            }
         }
 
         if (con.switchRole()) {

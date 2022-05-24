@@ -96,6 +96,10 @@ public final class AWSConnectionInformationComponents
 
     private final boolean m_useEncryptionDialog;
 
+    private final DialogComponentBoolean m_useSessionToken;
+
+    private final DialogComponentString m_sessionToken;
+
     /**
      * Creates the DialogComponents including the s3 specific region chooser
      *
@@ -124,6 +128,8 @@ public final class AWSConnectionInformationComponents
         m_switchRoleAccount = new DialogComponentString(settings.getSwitchRoleAccountModel(), "Account: ", false, 20);
         m_switchRoleName = new DialogComponentString(settings.getSwitchRoleNameModel(), "Role:       ", false, 20);
         m_useEncryptionDialog = encryptionDialog;
+        m_useSessionToken = new DialogComponentBoolean(settings.getUseSessionTokenModel(), "Use Session Token");
+        m_sessionToken = new DialogComponentString(settings.getSessionTokenModel(), "Session Token: ", false, 20);
     }
 
     private ArrayList<String> loadRegions() {
@@ -189,7 +195,12 @@ public final class AWSConnectionInformationComponents
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
         auth.add(getAuthenticationComponent().getComponentPanel());
-        m_settings.getAuthenticationModel().addChangeListener(e -> updateEnabledStatus());
+        m_settings.getAuthenticationModel().addChangeListener(e -> {
+            updateRoleEnabledStatus();
+            updateTokenEnabledStatus();
+        });
+        gbc.gridy++;
+        auth.add(getSessionTokenPanel(), gbc);
         gbc.gridy++;
         auth.add(getSwitchRolePanel(), gbc);
         gbc.fill = GridBagConstraints.NONE;
@@ -207,7 +218,7 @@ public final class AWSConnectionInformationComponents
         gbc.gridx = 0;
         gbc.gridy = 0;
         rolePanel.add(m_switchRole.getComponentPanel(), gbc);
-        m_switchRole.getModel().addChangeListener(e -> updateEnabledStatus());
+        m_switchRole.getModel().addChangeListener(e -> updateRoleEnabledStatus());
         gbc.gridy++;
         gbc.insets = new Insets(0, 30, 0, 0);
         rolePanel.add(m_switchRoleAccount.getComponentPanel(), gbc);
@@ -216,11 +227,33 @@ public final class AWSConnectionInformationComponents
         return rolePanel;
     }
 
-    private void updateEnabledStatus() {
+    private void updateRoleEnabledStatus() {
         m_switchRole.getModel()
             .setEnabled(m_settings.getAuthenticationModel().getAuthenticationType() != AuthenticationType.NONE);
         m_switchRoleAccount.getModel().setEnabled(m_switchRole.isSelected() && m_switchRole.getModel().isEnabled());
         m_switchRoleName.getModel().setEnabled(m_switchRole.isSelected() && m_switchRole.getModel().isEnabled());
+    }
+
+    private JPanel getSessionTokenPanel() {
+        final JPanel sessionTokenPanel = new JPanel(new GridBagLayout());
+        sessionTokenPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), " Session Token "));
+        final GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.weightx = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        sessionTokenPanel.add(m_useSessionToken.getComponentPanel(), gbc);
+        m_useSessionToken.getModel().addChangeListener(e -> updateTokenEnabledStatus());
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 30, 0, 0);
+        sessionTokenPanel.add(m_sessionToken.getComponentPanel(), gbc);
+        return sessionTokenPanel;
+    }
+
+    private void updateTokenEnabledStatus() {
+        m_useSessionToken.getModel()
+            .setEnabled(m_settings.getAuthenticationModel().getAuthenticationType() == AuthenticationType.USER_PWD);
+        m_sessionToken.getModel().setEnabled(m_useSessionToken.isSelected() && m_useSessionToken.getModel().isEnabled());
     }
 
     /**
@@ -247,8 +280,11 @@ public final class AWSConnectionInformationComponents
         m_switchRole.loadSettingsFrom(settings, specs);
         m_switchRoleAccount.loadSettingsFrom(settings, specs);
         m_switchRoleName.loadSettingsFrom(settings, specs);
+        updateRoleEnabledStatus();
 
-        updateEnabledStatus();
+        m_useSessionToken.loadSettingsFrom(settings, specs);
+        m_sessionToken.loadSettingsFrom(settings, specs);
+        updateTokenEnabledStatus();
     }
 
     @Override
@@ -261,5 +297,7 @@ public final class AWSConnectionInformationComponents
         m_switchRole.saveSettingsTo(settings);
         m_switchRoleAccount.saveSettingsTo(settings);
         m_switchRoleName.saveSettingsTo(settings);
+        m_useSessionToken.saveSettingsTo(settings);
+        m_sessionToken.saveSettingsTo(settings);
     }
 }
