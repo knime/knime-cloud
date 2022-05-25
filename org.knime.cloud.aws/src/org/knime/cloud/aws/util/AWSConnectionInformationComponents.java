@@ -52,6 +52,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.stream.Stream;
 
@@ -83,6 +84,9 @@ import com.amazonaws.regions.Regions;
  */
 public final class AWSConnectionInformationComponents
     extends ConnectionInformationCloudComponents<AWSConnectionInformationSettings> {
+
+    private static final EnumSet<AuthenticationType> SESSION_TOKEN_AUTH_TYPES = EnumSet.of(AuthenticationType.CREDENTIALS,
+        AuthenticationType.USER_PWD);
 
     private final DialogComponentStringSelection m_region;
 
@@ -194,7 +198,7 @@ public final class AWSConnectionInformationComponents
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
-        auth.add(getAuthenticationComponent().getComponentPanel());
+        auth.add(getAuthenticationComponent().getComponentPanel(), gbc);
         m_settings.getAuthenticationModel().addChangeListener(e -> {
             updateRoleEnabledStatus();
             updateTokenEnabledStatus();
@@ -252,7 +256,7 @@ public final class AWSConnectionInformationComponents
 
     private void updateTokenEnabledStatus() {
         m_useSessionToken.getModel()
-            .setEnabled(m_settings.getAuthenticationModel().getAuthenticationType() == AuthenticationType.USER_PWD);
+            .setEnabled(SESSION_TOKEN_AUTH_TYPES.contains(m_settings.getAuthenticationModel().getAuthenticationType()));
         m_sessionToken.getModel().setEnabled(m_useSessionToken.isSelected() && m_useSessionToken.getModel().isEnabled());
     }
 
