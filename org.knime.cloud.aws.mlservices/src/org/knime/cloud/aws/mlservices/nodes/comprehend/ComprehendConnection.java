@@ -49,28 +49,22 @@
 package org.knime.cloud.aws.mlservices.nodes.comprehend;
 
 import org.knime.base.filehandling.remote.files.Connection;
+import org.knime.cloud.aws.util.AWSCredentialHelper;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
-import org.knime.core.util.KnimeEncryption;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 
 /**
- * Clas used to establish the connection to AmazonComprehend.
+ * Class used to establish the connection to AmazonComprehend.
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */
 class ComprehendConnection extends Connection {
+
+    private static final String ROLE_SESSION_NAME = "KNIME_Comprehend_Connection";
 
     /** Logger instance. */
     private static final NodeLogger LOGGER = NodeLogger.getLogger(ComprehendConnection.class);
@@ -96,97 +90,28 @@ class ComprehendConnection extends Connection {
             LOGGER.info("Create a new AmazonComprehendClient in Region \"" + m_connectionInformation.getHost()
                 + "\" with connection timeout " + m_connectionInformation.getTimeout() + " milliseconds");
             try {
-                if (m_connectionInformation.switchRole()) {
-                    m_client = getRoleAssumedComprehendClient(m_connectionInformation);
-                } else {
-                    m_client = getComprehendClient(m_connectionInformation);
-                }
+                m_client = getComprehendClient(m_connectionInformation);
             } catch (final Exception ex) {
                 close();
                 throw ex;
             }
         }
-
     }
 
     /**
      * Creates and returns a new instance of the {@link AmazonComprehend} client.
      *
-     * @param connectionInformation The connection information
+     * @param connInfo The connection information
      * @return AmazonComprehend client
-     * @throws Exception thrown if client could not be instantiated
      */
-    private static AmazonComprehend getComprehendClient(final CloudConnectionInformation connectionInformation)
-        throws Exception {
-        final ClientConfiguration clientConfig =
-            new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
+    private static AmazonComprehend getComprehendClient(final CloudConnectionInformation connInfo) {
+        final var clientConfig = new ClientConfiguration().withConnectionTimeout(connInfo.getTimeout());
 
-        final AmazonComprehendClientBuilder builder = AmazonComprehendClientBuilder.standard()
-            .withClientConfiguration(clientConfig).withRegion(connectionInformation.getHost());
-
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Creates and returns a new instance of the {@link AmazonComprehend} client using rule assumption.
-     *
-     * @param connectionInformation The connection information
-     * @return AmazonComprehend client
-     * @throws Exception thrown if client could not be instantiated
-     */
-    private static AmazonComprehend
-        getRoleAssumedComprehendClient(final CloudConnectionInformation connectionInformation) throws Exception {
-        final AWSSecurityTokenServiceClientBuilder builder =
-            AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
-        }
-
-        final AWSSecurityTokenService stsClient = builder.build();
-
-        final AssumeRoleRequest assumeRoleRequest = new AssumeRoleRequest().withRoleArn(buildARN(connectionInformation))
-            .withDurationSeconds(3600).withRoleSessionName("KNIME_Comprehend_Connection");
-
-        final AssumeRoleResult assumeResult = stsClient.assumeRole(assumeRoleRequest);
-
-        final BasicSessionCredentials tempCredentials =
-            new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
-                assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
-
-        return AmazonComprehendClientBuilder.standard()
-            .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
-            .withRegion(connectionInformation.getHost()).build();
-    }
-
-    /**
-     * Builds an Amazon Resource Name (ARN).
-     *
-     * @param connectionInformation The connection information
-     * @return An ARN
-     */
-    private static String buildARN(final CloudConnectionInformation connectionInformation) {
-        return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/"
-            + connectionInformation.getSwitchRoleName();
-    }
-
-    /**
-     * Return a AWSCredentials object,
-     *
-     * @param connectionInformation The connection information
-     * @return The AWSCredentions
-     * @throws Exception Thrown if credentials could not be decrypted
-     */
-    private static AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
-        throws Exception {
-        final String accessKeyId = connectionInformation.getUser();
-        final String secretAccessKey = KnimeEncryption.decrypt(connectionInformation.getPassword());
-        return new BasicAWSCredentials(accessKeyId, secretAccessKey);
+        return AmazonComprehendClientBuilder.standard() //
+            .withClientConfiguration(clientConfig) //
+            .withRegion(connInfo.getHost()) //
+            .withCredentials(AWSCredentialHelper.getCredentialProvider(connInfo, ROLE_SESSION_NAME)) //
+            .build();
     }
 
     @Override
