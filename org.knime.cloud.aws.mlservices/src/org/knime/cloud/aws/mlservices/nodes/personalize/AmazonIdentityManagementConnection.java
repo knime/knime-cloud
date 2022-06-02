@@ -49,21 +49,13 @@
 package org.knime.cloud.aws.mlservices.nodes.personalize;
 
 import org.knime.base.filehandling.remote.files.Connection;
+import org.knime.cloud.aws.util.AWSCredentialHelper;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
 import org.knime.core.node.NodeLogger;
-import org.knime.core.util.KnimeEncryption;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
-import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 
 /**
  * Class used to establish a connection to the Amazon Identity Management.
@@ -71,6 +63,8 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
  * @author Simon Schmid, KNIME GmbH, Konstanz, Germany
  */
 public final class AmazonIdentityManagementConnection extends Connection implements AutoCloseable {
+
+    private static final String ROLE_SESSION_NAME = "KNIME_AmazonIdentityManagement_Connection";
 
     /** Logger instance. */
     private static final NodeLogger LOGGER = NodeLogger.getLogger(AmazonIdentityManagementConnection.class);
@@ -96,100 +90,30 @@ public final class AmazonIdentityManagementConnection extends Connection impleme
             LOGGER.info("Create a new AmazonIdentityManagement in Region \"" + m_connectionInformation.getHost()
                 + "\" with connection timeout " + m_connectionInformation.getTimeout() + " milliseconds");
             try {
-                if (m_connectionInformation.switchRole()) {
-                    m_client = getRoleAssumedIdentityManagementClient(m_connectionInformation);
-                } else {
-                    m_client = getIdentityManagementClient(m_connectionInformation);
-                }
+                m_client = getIdentityManagementClient(m_connectionInformation);
             } catch (final Exception ex) {
                 close();
                 throw ex;
             }
         }
-
     }
 
     /**
      * Creates and returns a new instance of the {@link AmazonIdentityManagement} client.
      *
-     * @param connectionInformation The connection information
+     * @param connInfo The connection information
      * @return AmazonIdentityManagement client
-     * @throws Exception thrown if client could not be instantiated
      */
     private static final AmazonIdentityManagement
-        getIdentityManagementClient(final CloudConnectionInformation connectionInformation) throws Exception {
-        final ClientConfiguration clientConfig =
-            new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
+        getIdentityManagementClient(final CloudConnectionInformation connInfo) {
 
-        final AmazonIdentityManagementClientBuilder builder = AmazonIdentityManagementClientBuilder.standard()
-            .withClientConfiguration(clientConfig).withRegion(connectionInformation.getHost());
+        final var clientConfig = new ClientConfiguration().withConnectionTimeout(connInfo.getTimeout());
 
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Creates and returns a new instance of the {@link AmazonIdentityManagement} client using rule assumption.
-     *
-     * @param connectionInformation The connection information
-     * @return AmazonIdentityManagement client
-     * @throws Exception thrown if client could not be instantiated
-     */
-    private static final AmazonIdentityManagement
-        getRoleAssumedIdentityManagementClient(final CloudConnectionInformation connectionInformation) throws Exception {
-
-        final AWSSecurityTokenServiceClientBuilder builder =
-            AWSSecurityTokenServiceClientBuilder.standard().withRegion(connectionInformation.getHost());
-        if (!connectionInformation.useKeyChain()) {
-            final AWSCredentials credentials = getCredentials(connectionInformation);
-            builder.withCredentials(new AWSStaticCredentialsProvider(credentials));
-        }
-
-        final AWSSecurityTokenService stsClient = builder.build();
-
-        final AssumeRoleRequest assumeRoleRequest = new AssumeRoleRequest().withRoleArn(buildARN(connectionInformation))
-            .withDurationSeconds(3600).withRoleSessionName("KNIME_AmazonIdentityManagement_Connection");
-
-        final AssumeRoleResult assumeResult = stsClient.assumeRole(assumeRoleRequest);
-
-        final BasicSessionCredentials tempCredentials =
-            new BasicSessionCredentials(assumeResult.getCredentials().getAccessKeyId(),
-                assumeResult.getCredentials().getSecretAccessKey(), assumeResult.getCredentials().getSessionToken());
-
-        final ClientConfiguration clientConfig =
-            new ClientConfiguration().withConnectionTimeout(connectionInformation.getTimeout());
-        return AmazonIdentityManagementClientBuilder.standard().withClientConfiguration(clientConfig)
-            .withCredentials(new AWSStaticCredentialsProvider(tempCredentials))
-            .withRegion(connectionInformation.getHost()).build();
-    }
-
-    /**
-     * Builds an Amazon Resource Name (ARN).
-     *
-     * @param connectionInformation The connection information
-     * @return An ARN
-     */
-    private static final String buildARN(final CloudConnectionInformation connectionInformation) {
-        return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/"
-            + connectionInformation.getSwitchRoleName();
-    }
-
-    /**
-     * Return a AWSCredentials object,
-     *
-     * @param connectionInformation The connection information
-     * @return The AWSCredentions
-     * @throws Exception Thrown if credentials could not be decrypted
-     */
-    private static final AWSCredentials getCredentials(final CloudConnectionInformation connectionInformation)
-        throws Exception {
-        final String accessKeyId = connectionInformation.getUser();
-        final String secretAccessKey = KnimeEncryption.decrypt(connectionInformation.getPassword());
-        return new BasicAWSCredentials(accessKeyId, secretAccessKey);
+        return AmazonIdentityManagementClientBuilder.standard() //
+            .withClientConfiguration(clientConfig) //
+            .withRegion(connInfo.getHost()) //
+            .withCredentials(AWSCredentialHelper.getCredentialProvider(connInfo, ROLE_SESSION_NAME)) //
+            .build();
     }
 
     @Override
