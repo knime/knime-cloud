@@ -23,9 +23,9 @@ try {
         workflowTests.runTests(
             dependencies: [
                 repositories: [
-                    'knime-bigdata', 'knime-bigdata-externals','knime-cloud', 'knime-js-base', 'knime-filehandling', 
-                    'knime-textprocessing', 'knime-database', 'knime-kerberos', 'knime-streaming', 'knime-office365',
-                    'knime-rest', 'knime-xml'
+                    'knime-bigdata', 'knime-bigdata-externals','knime-cloud', 'knime-datageneration','knime-js-base', 
+                    'knime-filehandling', 'knime-textprocessing', 'knime-database', 'knime-kerberos', 'knime-streaming', 
+                    'knime-office365', 'knime-rest', 'knime-xml'
                 ]
             ],
             sidecarContainers: [
