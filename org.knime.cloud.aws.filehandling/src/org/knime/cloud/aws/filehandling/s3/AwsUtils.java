@@ -53,27 +53,14 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.InvalidKeyException;
 import java.util.Base64;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-
+import org.knime.cloud.aws.sdkv2.util.AWSCredentialHelper;
 import org.knime.cloud.core.util.port.CloudConnectionInformation;
-import org.knime.core.util.KnimeEncryption;
 
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.exception.SdkServiceException;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sts.StsClient;
-import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 /**
  * Utility class to help with AWS SDK
@@ -94,72 +81,16 @@ public final class AwsUtils {
 
     private static final int CUSTOMER_KEY_BYTE_SIZE = 32;
 
+    private static final String ROLE_SESSION_NAME = "KNIME_S3_Connection";
+
     /**
-     * Builds appropriate {@link AwsCredentialsProvider} object from the provided {@link CloudConnectionInformation}.
+     * Returns appropriate {@link AwsCredentialsProvider} object from the provided {@link CloudConnectionInformation}.
      *
      * @param con The connection information object.
      * @return the {@link AwsCredentialsProvider} object.
      */
-    @SuppressWarnings("resource")
     public static AwsCredentialsProvider getCredentialProvider(final CloudConnectionInformation con) {
-        final AwsCredentialsProvider credentialProvider;
-        final AwsCredentialsProvider conCredentialProvider;
-
-        if (con.useKeyChain()) {
-            conCredentialProvider = DefaultCredentialsProvider.builder().build(); // always use a new instance
-        } else if (con.isUseAnonymous()) {
-            conCredentialProvider = AnonymousCredentialsProvider.create();
-        } else {
-            final String accessKeyId = con.getUser();
-            String secretAccessKey;
-            try {
-                secretAccessKey = KnimeEncryption.decrypt(con.getPassword());
-            } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | IOException e) {
-                throw new IllegalStateException(e);
-            }
-
-            if (con.isUseSessionToken()) {
-                conCredentialProvider =
-                        StaticCredentialsProvider.create(
-                            AwsSessionCredentials.create(accessKeyId, secretAccessKey, con.getSessionToken()));
-            } else {
-                conCredentialProvider =
-                        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey));
-            }
-        }
-
-        if (con.switchRole()) {
-            credentialProvider = getRoleSwitchCredentialProvider(con, conCredentialProvider);
-        } else {
-            credentialProvider = conCredentialProvider;
-        }
-        return credentialProvider;
-    }
-
-    @SuppressWarnings("resource")
-    private static AwsCredentialsProvider getRoleSwitchCredentialProvider(final CloudConnectionInformation con,
-        final AwsCredentialsProvider credentialProvider) {
-        final AssumeRoleRequest asumeRole = AssumeRoleRequest.builder()//
-            .roleArn(buildARN(con))//
-            .durationSeconds(3600)//
-            .roleSessionName("KNIME_S3_Connection")//
-            .build();
-
-        final StsClient stsClient = StsClient.builder()//
-            .region(Region.of(con.getHost()))//
-            .credentialsProvider(credentialProvider)//
-            .build();
-
-        return StsAssumeRoleCredentialsProvider.builder()//
-            .stsClient(stsClient)//
-            .refreshRequest(asumeRole)//
-            .asyncCredentialUpdateEnabled(true)//
-            .build();
-    }
-
-    private static String buildARN(final CloudConnectionInformation connectionInformation) {
-        return "arn:aws:iam::" + connectionInformation.getSwitchRoleAccount() + ":role/"
-            + connectionInformation.getSwitchRoleName();
+        return AWSCredentialHelper.getCredentialProvider(con, ROLE_SESSION_NAME);
     }
 
     /**
