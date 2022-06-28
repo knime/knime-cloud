@@ -1,0 +1,23 @@
+library;library-url;licence;Licence-url;copyright
+annotations-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.0;Amazon Web Services, Inc.
+apache-client-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.1;Amazon Web Services, Inc.
+arns-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.2;Amazon Web Services, Inc.
+auth-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.3;Amazon Web Services, Inc.
+aws-core-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.4;Amazon Web Services, Inc.
+aws-json-protocol-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.5;Amazon Web Services, Inc.
+aws-query-protocol-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.6;Amazon Web Services, Inc.
+aws-xml-protocol-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.7;Amazon Web Services, Inc.
+dynamodb-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.8;Amazon Web Services, Inc.
+eventstream-1.0.1.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.9;Amazon Web Services, Inc.
+http-client-spi-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.10;Amazon Web Services, Inc.
+json-utils-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.11;Amazon Web Services, Inc.
+kms-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.12;Amazon Web Services, Inc.
+metrics-spi-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.13;Amazon Web Services, Inc.
+profiles-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.14;Amazon Web Services, Inc.
+protocol-core-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.15;Amazon Web Services, Inc.
+regions-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.16;Amazon Web Services, Inc.
+s3-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.17;Amazon Web Services, Inc.
+sdk-core-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.18;Amazon Web Services, Inc.
+sts-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.19;Amazon Web Services, Inc.
+third-party-jackson-core-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.20;Amazon Web Services, Inc.
+utils-2.17.217.jar;https://aws.amazon.com/sdk-for-java/;Apache 2.0 License;http://www.apache.org/licenses/LICENSE-2.21;Amazon Web Services, Inc.
