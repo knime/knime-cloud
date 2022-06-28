@@ -1,0 +1,126 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.knime.cloud.aws.sdkv2</groupId>
+    <artifactId>sdkv2-fetch-jars</artifactId>
+    <version>2.15.14</version>
+    <packaging>pom</packaging>
+
+    <name>Jar fetcher for AWS SDK V2</name>
+    <description>
+	   Running the maven goal &quot;package&quot; on this maven project will fetch all jars required 
+	   for AWS Java SDK and put them into the libs/2.15.14 directory.
+	</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.17.217</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- NOTE ABOUT DEALING WITH DEPENDENCIES:
+	
+	For *large* dependencies that are *already* part of KNIME we should avoid duplicating
+	them (for small dependencies it is usually not worth the hassle).
+	
+	*Large* in this context means: They contain a lot of classes (e.g. scala-library) or
+	they have a lot of transitive dependencies (e.g. hadoop), or both.
+	
+	How to avoid duplication?
+	
+	Option (1)
+	  Exclude them via build>plugins>plugin(maven-dependency-plugin)>executions>configuration (see at the bottom
+	  of this file).
+	  Pro: This leaves the maven dependency tree intact (for browsing), but prevents them from being copied to the libs/ directory.
+	  Contra: A lot of work when dependencies have themselves have a lot of transitive dependencies, because you need to
+			  exclude them manually too, then.
+	  
+	Option (2):
+	  Exclude them via dependencies>dependency>exclusions.
+	  Pro: Works well for dependencies that themselves have a lot of transitive dependencies.
+	  Contra: Alters the maven dependency tree, which may be confusing.
+	 -->
+
+    <dependencies>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.reactivestreams</groupId>
+                    <artifactId>reactive-streams</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <configuration>
+                            <includeScope>compile</includeScope>
+                            <outputDirectory>../</outputDirectory>
+                            <excludeGroupIds>org.slf4j,org.reactivestreams</excludeGroupIds>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>copy-src-jars</id>
+                        <configuration>
+                            <includeScope>compile</includeScope>
+                            <outputDirectory>../</outputDirectory>
+                            <classifier>sources</classifier>
+                            <excludeGroupIds>org.slf4j,org.reactivestreams</excludeGroupIds>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

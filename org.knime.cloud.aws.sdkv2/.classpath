@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="libs/annotations-2.17.217.jar" sourcepath="libs/annotations-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/apache-client-2.17.217.jar" sourcepath="libs/apache-client-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/arns-2.17.217.jar" sourcepath="libs/arns-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/auth-2.17.217.jar" sourcepath="libs/auth-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/aws-core-2.17.217.jar" sourcepath="libs/aws-core-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/aws-json-protocol-2.17.217.jar" sourcepath="libs/aws-json-protocol-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/aws-query-protocol-2.17.217.jar" sourcepath="libs/aws-query-protocol-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/aws-xml-protocol-2.17.217.jar" sourcepath="libs/aws-xml-protocol-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/dynamodb-2.17.217.jar" sourcepath="libs/dynamodb-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/eventstream-1.0.1.jar" sourcepath="libs/eventstream-1.0.1-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/http-client-spi-2.17.217.jar" sourcepath="libs/http-client-spi-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/json-utils-2.17.217.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/kms-2.17.217.jar" sourcepath="libs/kms-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/metrics-spi-2.17.217.jar" sourcepath="libs/metrics-spi-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/profiles-2.17.217.jar" sourcepath="libs/profiles-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/protocol-core-2.17.217.jar" sourcepath="libs/protocol-core-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/regions-2.17.217.jar" sourcepath="libs/regions-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/s3-2.17.217.jar" sourcepath="libs/s3-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/sdk-core-2.17.217.jar" sourcepath="libs/sdk-core-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/sts-2.17.217.jar" sourcepath="libs/sts-2.17.217-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/third-party-jackson-core-2.17.217.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/utils-2.17.217.jar" sourcepath="libs/utils-2.17.217-sources.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
