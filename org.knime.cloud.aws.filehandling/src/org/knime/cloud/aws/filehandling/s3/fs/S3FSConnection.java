@@ -52,17 +52,16 @@ import java.io.IOException;
 
 import org.knime.cloud.aws.filehandling.s3.fs.api.S3FSConnectionConfig;
 import org.knime.core.node.util.CheckUtils;
-import org.knime.core.node.util.FileSystemBrowser;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.FSFileSystem;
-import org.knime.filehandling.core.filechooser.NioFileSystemBrowser;
+import org.knime.filehandling.core.connections.base.BaseFSConnection;
 
 /**
  * The Amazon S3 implementation of the {@link FSConnection} interface.
  *
  * @author Mareike Hoeger, KNIME GmbH, Konstanz, Germany
  */
-public class S3FSConnection implements FSConnection {
+public class S3FSConnection extends BaseFSConnection {
 
     private static final long CACHE_TTL_MILLIS = 6000;
 
@@ -85,10 +84,4 @@ public class S3FSConnection implements FSConnection {
     public FSFileSystem<?> getFileSystem() {
         return m_fileSystem;
     }
-
-    @Override
-    public FileSystemBrowser getFileSystemBrowser() {
-        return new NioFileSystemBrowser(this);
-    }
-
 }
