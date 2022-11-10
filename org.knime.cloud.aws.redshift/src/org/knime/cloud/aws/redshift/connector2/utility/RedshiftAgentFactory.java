@@ -51,6 +51,10 @@ package org.knime.cloud.aws.redshift.connector2.utility;
 import org.knime.cloud.aws.redshift.connector2.loader.RedshiftDBLoader;
 import org.knime.database.agent.DBAgentFactory;
 import org.knime.database.agent.loader.DBLoader;
+import org.knime.database.agent.metadata.DBMetadataReader;
+import org.knime.database.agent.metadata.impl.DefaultDBMetadataReader;
+import org.knime.database.attribute.AttributeCollection;
+import org.knime.database.attribute.AttributeCollection.Accessibility;
 import org.knime.database.extension.postgres.PostgresAgentFactory;
 
 /**
@@ -59,6 +63,14 @@ import org.knime.database.extension.postgres.PostgresAgentFactory;
  * @author Tobias Koetter, KNIME GmbH, Konstanz, Germany
  */
 public class RedshiftAgentFactory extends PostgresAgentFactory {
+    private static final AttributeCollection REDSHIFT_METADATA_ATTRIBUTES;
+    static {
+        final AttributeCollection.Builder builder = AttributeCollection.builder(PostgresAgentFactory.METADATA_ATTRIBUTES);
+        //overwrite the table types section to also show external tables
+        builder.add(Accessibility.EDITABLE, DefaultDBMetadataReader.ATTRIBUTE_TABLE_TYPES,
+            "TABLE, VIEW, EXTERNAL TABLE");
+        REDSHIFT_METADATA_ATTRIBUTES = builder.build();
+    }
 
     /**
      * Constructor.
@@ -66,6 +78,8 @@ public class RedshiftAgentFactory extends PostgresAgentFactory {
     public RedshiftAgentFactory() {
         super();
         putCreator(DBLoader.class, parameters -> new RedshiftDBLoader(parameters.getSessionReference()));
+        //add the Redshift specific metadata attributes
+        putAttributes(DBMetadataReader.class, REDSHIFT_METADATA_ATTRIBUTES);
     }
 
 }
