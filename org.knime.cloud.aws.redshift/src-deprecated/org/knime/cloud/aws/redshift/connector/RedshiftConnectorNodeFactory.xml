@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <knimeNode xmlns="http://knime.org/node/v2.10" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10" type="Source"
-    icon="db_redshift_connector.png">
+    icon="db_redshift_connector.png" deprecated="true">
     <name>Amazon Redshift Connector (legacy)</name>
     <shortDescription>Create a database connection to Amazon Redshift.</shortDescription>
     <fullDescription>
         <intro>
             <p>
-            This node is part of the legacy database framework and will be
-            <a href="https://www.knime.com/blog/reproducibility-and-knime">deprecated</a> at the end of 2022.
+            This node is part of the deprecated database framework.
             For more information on how to migrate to the new database framework see the
             <a href="https://docs.knime.com/latest/db_extension_guide/index.html#migration">migration section</a> of the 
             <a href="https://docs.knime.com/latest/db_extension_guide/index.html">database documentation</a>.

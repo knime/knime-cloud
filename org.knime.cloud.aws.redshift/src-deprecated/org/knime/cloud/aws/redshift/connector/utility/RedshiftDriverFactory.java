@@ -1,5 +1,6 @@
 /*
  * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
@@ -40,59 +41,39 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * ------------------------------------------------------------------------
+ * ---------------------------------------------------------------------
+ *
+ * History
+ *   May 11, 2017 (oole): created
  */
-package org.knime.cloud.aws.redshift.connector;
+package org.knime.cloud.aws.redshift.connector.utility;
 
-import org.knime.core.node.NodeDialogPane;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeView;
+import java.io.IOException;
+
+import org.knime.core.node.port.database.connection.DefaultDBDriverFactory;
+import org.osgi.framework.Bundle;
 
 /**
- * Factory for the Amazon Redshift connector node.
+ * The DriverFactory for the proprietary Amazon Redshift driver.
  *
  * @author Ole Ostergaard, KNIME.com
  */
-public class RedshiftConnectorNodeFactory extends NodeFactory<RedshiftConnectorNodeModel> {
+@Deprecated
+public class RedshiftDriverFactory extends DefaultDBDriverFactory {
+
+
+    /** The driver name for the proprietary redshift driver **/
+    public static final String RS_DRIVER_NAME = "com.amazon.redshift.jdbc.Driver";
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     *
+     * @param driverName The driver's class name
+     * @param bundle The bundle containing the driver
+     * @throws IOException If the driver cannot be registered
      */
-    @Override
-    public RedshiftConnectorNodeModel createNodeModel() {
-        return new RedshiftConnectorNodeModel();
+    public RedshiftDriverFactory(final String driverName, final Bundle bundle) throws IOException {
+        super(RS_DRIVER_NAME, bundle);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected int getNrNodeViews() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public NodeView<RedshiftConnectorNodeModel> createNodeView(final int viewIndex,
-        final RedshiftConnectorNodeModel nodeModel) {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected boolean hasDialog() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected NodeDialogPane createNodeDialogPane() {
-        return new RedshiftConnectorNodeDialog();
-    }
 }

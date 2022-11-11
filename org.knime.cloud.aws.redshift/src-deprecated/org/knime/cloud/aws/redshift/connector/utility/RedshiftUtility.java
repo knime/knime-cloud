@@ -77,6 +77,7 @@ import org.osgi.framework.FrameworkUtil;
  *
  * @author Ole Ostergaard, KNIME.com
  */
+@Deprecated
 public class RedshiftUtility extends DatabaseUtility {
 
     private static class RedshiftStatementManipulator extends StatementManipulator {

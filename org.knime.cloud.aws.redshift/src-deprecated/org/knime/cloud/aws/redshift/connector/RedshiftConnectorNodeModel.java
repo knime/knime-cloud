@@ -75,6 +75,7 @@ import org.knime.core.node.port.database.DatabaseConnectionSettings;
  *
  * @author Ole Ostergaard, KNIME.com
  */
+@Deprecated
 class RedshiftConnectorNodeModel extends NodeModel {
 
     private final RedshiftConnectorSettings m_settings = new RedshiftConnectorSettings();

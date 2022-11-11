@@ -139,11 +139,7 @@
              deprecated="false"
              factory-class="org.knime.cloud.aws.redshift.connector2.RedshiftDBConnectorNodeFactory">
        </node>
-       <node
-             category-path="/db/database_legacy/database-connector"
-             deprecated="false"
-             factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory">
-       </node>
+       <node deprecated="true" factory-class="org.knime.cloud.aws.redshift.connector.RedshiftConnectorNodeFactory"/>
     </extension>
     
 <!-- Node migration rules -->

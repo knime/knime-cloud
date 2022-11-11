@@ -72,6 +72,7 @@ import org.knime.database.connectors.commons.DatabaseIcons;
  *
  * @author Ole Ostergaard, KNIME.com
  */
+@Deprecated
 class RedshiftConnectorNodeDialog extends NodeDialogPane {
 
     private class RedshiftConnectionPanel extends DBConnectionPanel<RedshiftConnectorSettings> {

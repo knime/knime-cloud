@@ -57,6 +57,7 @@ import org.knime.database.connectors.postgresql.utility.PostgreSQLUtility;
  *
  * @author Ole Ostergaard, KNIME.com
  */
+@Deprecated
 public class RedshiftDriverDetector {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(RedshiftDriverDetector.class);
 

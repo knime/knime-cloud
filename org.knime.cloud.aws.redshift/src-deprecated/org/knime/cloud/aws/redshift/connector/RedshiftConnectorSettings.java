@@ -60,6 +60,7 @@ import org.knime.core.node.workflow.CredentialsProvider;
  *
  * @author Ole Ostergaard, KNIME.com
  */
+@Deprecated
 class RedshiftConnectorSettings extends DefaultDatabaseConnectionSettings {
 
     private static final String CFG_KEY = "redshift-connection";
