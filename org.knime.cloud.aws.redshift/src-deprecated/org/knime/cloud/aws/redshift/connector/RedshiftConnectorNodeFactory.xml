@@ -2,7 +2,7 @@
 <knimeNode xmlns="http://knime.org/node/v2.10" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://knime.org/node/v2.10 http://knime.org/node/v2.10" type="Source"
     icon="db_redshift_connector.png" deprecated="true">
-    <name>Amazon Redshift Connector (legacy)</name>
+    <name>Amazon Redshift Connector</name>
     <shortDescription>Create a database connection to Amazon Redshift.</shortDescription>
     <fullDescription>
         <intro>
