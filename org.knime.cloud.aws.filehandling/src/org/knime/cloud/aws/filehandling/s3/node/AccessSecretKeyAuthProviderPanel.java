@@ -46,8 +46,8 @@
 package org.knime.cloud.aws.filehandling.s3.node;
 
 import org.knime.core.node.NodeDialogPane;
-import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProviderPanel;
-import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProviderSettings;
+import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderPanel;
+import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderSettings;
 
 /**
  * Access key ID and secret key authentication panel.
@@ -55,7 +55,7 @@ import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProvide
  * @author Sascha Wolke, KNIME GmbH
  */
 @SuppressWarnings("serial")
-public class AccessSecretKeyAuthProviderPanel extends UserPasswordAuthProviderPanel {
+public class AccessSecretKeyAuthProviderPanel extends IDWithSecretAuthProviderPanel {
 
     /**
      * Default constructor.
@@ -64,7 +64,7 @@ public class AccessSecretKeyAuthProviderPanel extends UserPasswordAuthProviderPa
      * @param parentDialog The parent dialog pane (required by flow variable dialog component to list all flow
      *            variables).
      */
-    public AccessSecretKeyAuthProviderPanel(final UserPasswordAuthProviderSettings settings,
+    public AccessSecretKeyAuthProviderPanel(final IDWithSecretAuthProviderSettings settings,
         final NodeDialogPane parentDialog) {
         super(settings, parentDialog, "Access Key ID", "Secret Key");
     }

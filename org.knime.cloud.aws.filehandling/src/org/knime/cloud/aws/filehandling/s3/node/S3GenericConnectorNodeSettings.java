@@ -64,8 +64,8 @@ import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.filehandling.core.connections.base.auth.AuthSettings;
 import org.knime.filehandling.core.connections.base.auth.AuthType;
 import org.knime.filehandling.core.connections.base.auth.EmptyAuthProviderSettings;
+import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderSettings;
 import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
-import org.knime.filehandling.core.connections.base.auth.UserPasswordAuthProviderSettings;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
@@ -74,6 +74,10 @@ import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
  * @author Sascha Wolke, KNIME GmbH
  */
 class S3GenericConnectorNodeSettings extends S3ConnectorNodeSettings {
+
+    private static final String KEY_ACCESS_KEY_ID = "user";
+
+    private static final String KEY_ACCESS_KEY_SECRET = "password";
 
     private static final String KEY_ENDPOINT_URL = "endpointURL";
 
@@ -115,7 +119,8 @@ class S3GenericConnectorNodeSettings extends S3ConnectorNodeSettings {
         m_endpointURL = new SettingsModelString(KEY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
         m_authSettings = new AuthSettings.Builder() //
             .add(new EmptyAuthProviderSettings(StandardAuthTypes.ANONYMOUS)) //
-            .add(new UserPasswordAuthProviderSettings(ACCESS_KEY_AND_SECRET_AUTH, true)) //
+            .add(new IDWithSecretAuthProviderSettings(ACCESS_KEY_AND_SECRET_AUTH, true, KEY_ACCESS_KEY_ID,
+                KEY_ACCESS_KEY_SECRET)) // using settings keys "user"/"password" for backwards compatibility
             .add(new EmptyAuthProviderSettings(DEFAULT_PROVIDER_CHAIN_AUTH)) //
             .defaultType(ACCESS_KEY_AND_SECRET_AUTH) //
             .build();
@@ -316,11 +321,11 @@ class S3GenericConnectorNodeSettings extends S3ConnectorNodeSettings {
 
         if(m_authSettings.getAuthType() == StandardAuthTypes.ANONYMOUS) {
             connInfo.setUseAnonymous(true);
-        } else if(m_authSettings.getAuthType() == ACCESS_KEY_AND_SECRET_AUTH) {
-            final UserPasswordAuthProviderSettings userPassSettings = m_authSettings
-                    .getSettingsForAuthType(ACCESS_KEY_AND_SECRET_AUTH);
-            connInfo.setUser(userPassSettings.getUser(credentials::get));
-            connInfo.setPassword(userPassSettings.getPassword(credentials::get));
+        } else if (m_authSettings.getAuthType() == ACCESS_KEY_AND_SECRET_AUTH) {
+            final IDWithSecretAuthProviderSettings userPassSettings =
+                m_authSettings.getSettingsForAuthType(ACCESS_KEY_AND_SECRET_AUTH);
+            connInfo.setUser(userPassSettings.getID(credentials::get));
+            connInfo.setPassword(userPassSettings.getSecret(credentials::get));
         } else if(m_authSettings.getAuthType() == DEFAULT_PROVIDER_CHAIN_AUTH) {
             connInfo.setUseKerberos(true);
         } else {
