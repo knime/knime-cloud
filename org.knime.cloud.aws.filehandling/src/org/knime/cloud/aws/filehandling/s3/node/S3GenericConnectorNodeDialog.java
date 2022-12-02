@@ -72,6 +72,7 @@ import org.knime.filehandling.core.connections.base.auth.AuthPanel;
 import org.knime.filehandling.core.connections.base.auth.AuthSettings;
 import org.knime.filehandling.core.connections.base.auth.EmptyAuthProviderPanel;
 import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
+import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryRelativizationPanel;
 
 /**
  * Generic S3 connector node dialog that combines Amazon Authentication and S3 Connector Dialog with a custom endpoint URL.
@@ -138,6 +139,10 @@ class S3GenericConnectorNodeDialog extends S3ConnectorNodeDialog {
 
         gbc.gridy++;
         panel.add(createTimeoutsPanel(connectionTimeout.getComponentPanel()), gbc);
+
+        gbc.gridy++;
+        panel.add(new WorkingDirectoryRelativizationPanel(m_settings.getBrowserPathRelativeModel(),
+            new Insets(0, 5, 5, 0)), gbc);
 
         gbc.gridy++;
         panel.add(createEncryptionPanel(), gbc);
@@ -236,7 +241,7 @@ class S3GenericConnectorNodeDialog extends S3ConnectorNodeDialog {
         try {
             getCompSettings().getEndpointURLModel().setStringValue(m_endpointUrlPanel.getSelectedString());
             getCompSettings().getRegionModel().setStringValue(m_regionPanel.getSelectedString());
-            return new S3FSConnection(getCompSettings().toFSConnectionConfig(getCredentialsProvider()));
+            return new S3FSConnection(getCompSettings().toFSConnectionConfigForWorkdirChooser(getCredentialsProvider()));
         } catch (InvalidSettingsException ex) {
             throw new IOException("Unable to create connection configuration: " + ex.getMessage(), ex);
         }

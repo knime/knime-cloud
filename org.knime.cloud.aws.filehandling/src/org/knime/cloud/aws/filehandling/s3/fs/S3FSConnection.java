@@ -74,6 +74,7 @@ public class S3FSConnection extends BaseFSConnection {
      * @throws IOException
      */
     public S3FSConnection(final S3FSConnectionConfig config) throws IOException {
+        super(config);
         CheckUtils.checkArgumentNotNull(config, "S3FSConnectionConfig must not be null");
         CheckUtils.checkArgumentNotNull(config.getConnectionInfo(), "CloudConnectionInformation must not be null");
 

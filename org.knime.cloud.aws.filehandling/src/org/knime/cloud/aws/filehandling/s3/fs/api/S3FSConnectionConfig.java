@@ -118,9 +118,11 @@ public class S3FSConnectionConfig extends BaseFSConnectionConfig {
      *
      * @param workingDirectory
      * @param connectionInfo
+     * @param relativizationBehavior The browser relativization behavior.
      */
-    public S3FSConnectionConfig(final String workingDirectory, final CloudConnectionInformation connectionInfo) {
-        super(workingDirectory, true);
+    public S3FSConnectionConfig(final String workingDirectory,
+        final BrowserRelativizationBehavior relativizationBehavior, final CloudConnectionInformation connectionInfo) {
+        super(workingDirectory, true, relativizationBehavior);
         m_connectionInfo = connectionInfo;
         m_multipartUploadPartSize = determineMultipartUploadPartSize();
     }

@@ -66,6 +66,7 @@ import org.knime.filehandling.core.connections.base.auth.AuthType;
 import org.knime.filehandling.core.connections.base.auth.EmptyAuthProviderSettings;
 import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderSettings;
 import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
+import org.knime.filehandling.core.connections.meta.base.BaseFSConnectionConfig.BrowserRelativizationBehavior;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
@@ -345,9 +346,19 @@ class S3GenericConnectorNodeSettings extends S3ConnectorNodeSettings {
      */
     public S3FSConnectionConfig toFSConnectionConfig(final CredentialsProvider credentials)
         throws IOException, InvalidSettingsException {
+        return toFSConnectionConfig(credentials, getBrowserRelativizationBehavior());
+    }
+
+    public S3FSConnectionConfig toFSConnectionConfigForWorkdirChooser(final CredentialsProvider credentials)
+        throws IOException, InvalidSettingsException {
+        return toFSConnectionConfig(credentials, BrowserRelativizationBehavior.ABSOLUTE);
+    }
+
+    protected S3FSConnectionConfig toFSConnectionConfig(final CredentialsProvider credentials,
+        final BrowserRelativizationBehavior relativizationBehavior) throws IOException, InvalidSettingsException {
 
         final CloudConnectionInformation connInfo = toCloudConnInfo(credentials);
-        final S3FSConnectionConfig config = super.toFSConnectionConfig(connInfo, credentials);
+        final S3FSConnectionConfig config = super.toFSConnectionConfig(connInfo, credentials, relativizationBehavior);
         config.setOverrideEndpoint(true);
         config.setEndpointUrl(getEndpointURL());
         config.setPathStyle(usePathStyle());

@@ -79,6 +79,7 @@ import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.connections.FSConnection;
 import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryChooser;
+import org.knime.filehandling.core.connections.base.ui.WorkingDirectoryRelativizationPanel;
 
 /**
  * S3 connector node dialog.
@@ -173,6 +174,10 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1;
         panel.add(createTimeoutsPanel(), gbc);
+
+        gbc.gridy++;
+        panel.add(new WorkingDirectoryRelativizationPanel(m_settings.getBrowserPathRelativeModel(),
+            new Insets(0, 5, 5, 0)), gbc);
 
         gbc.gridy++;
         panel.add(createEncryptionPanel(), gbc);
@@ -313,7 +318,7 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
 
     protected FSConnection createFSConnection() throws IOException {
         try {
-            return new S3FSConnection(m_settings.toFSConnectionConfig(m_connInfo, getCredentialsProvider()));
+            return new S3FSConnection(m_settings.toFSConnectionConfigForWorkdirChooser(m_connInfo, getCredentialsProvider()));
         } catch (InvalidSettingsException ex) {
             throw new IOException("Unable to create connection configuration: " + ex.getMessage(), ex);
         }

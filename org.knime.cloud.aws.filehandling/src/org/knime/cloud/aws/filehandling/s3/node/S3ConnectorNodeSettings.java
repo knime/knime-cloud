@@ -76,6 +76,7 @@ import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.core.node.workflow.ICredentials;
 import org.knime.filehandling.core.connections.FSPath;
+import org.knime.filehandling.core.connections.meta.base.BaseFSConnectionConfig.BrowserRelativizationBehavior;
 import org.knime.filehandling.core.defaultnodesettings.EnumConfig;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.ReadPathAccessor;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.SettingsModelReaderFileChooser;
@@ -131,6 +132,8 @@ class S3ConnectorNodeSettings {
 
     private static final String KEY_SSE_CUSTOMER_KEY_FILE = "sseCustomerKeyFile";
 
+    private static final String KEY_BROWSER_PATH_RELATIVE = "browserPathRelativize";
+
     private final SettingsModelIntegerBounded m_socketTimeout;
 
     private final SettingsModelBoolean m_normalizePath;
@@ -152,6 +155,8 @@ class S3ConnectorNodeSettings {
     private final SettingsModelString m_customerKeyVar;
 
     private final SettingsModelReaderFileChooser m_customerKeyFile;
+
+    private final SettingsModelBoolean m_browserPathRelative;
 
     final PortsConfiguration m_portConfig;
 
@@ -183,6 +188,8 @@ class S3ConnectorNodeSettings {
         } else {
             m_customerKeyFile = null;
         }
+
+        m_browserPathRelative = new SettingsModelBoolean(KEY_BROWSER_PATH_RELATIVE, false);
 
         m_sseEnabled.addChangeListener(e -> updateEnabledness());
         m_sseKmsUseAwsManaged.addChangeListener(e -> updateEnabledness());
@@ -413,6 +420,24 @@ class S3ConnectorNodeSettings {
     }
 
     /**
+     * @return the browserPathRelative model
+     */
+    public SettingsModelBoolean getBrowserPathRelativeModel() {
+        return m_browserPathRelative;
+    }
+
+    /**
+     * @return the browser relativization behavior
+     */
+    public BrowserRelativizationBehavior getBrowserRelativizationBehavior() {
+        if (m_browserPathRelative.getBooleanValue()) {
+            return BrowserRelativizationBehavior.RELATIVE;
+        } else {
+            return BrowserRelativizationBehavior.ABSOLUTE;
+        }
+    }
+
+    /**
      * Saves the settings in this instance to the given {@link NodeSettingsWO}
      *
      * @param settings Node settings.
@@ -431,6 +456,7 @@ class S3ConnectorNodeSettings {
         if (m_customerKeyFile != null) {
             m_customerKeyFile.saveSettingsTo(settings);
         }
+        m_browserPathRelative.saveSettingsTo(settings);
     }
 
     /**
@@ -494,6 +520,10 @@ class S3ConnectorNodeSettings {
             if (keySource == null) {
                 throw new InvalidSettingsException("Invalid customer key source: " + key);
             }
+        }
+
+        if (settings.containsKey(KEY_BROWSER_PATH_RELATIVE)) {
+            m_browserPathRelative.validateSettings(settings);
         }
 
         final S3ConnectorNodeSettings tmpSettings = new S3ConnectorNodeSettings(m_portConfig);
@@ -568,6 +598,11 @@ class S3ConnectorNodeSettings {
             m_customerKey.setStringValue(DEFAULT_CUSTOMER_KEY);
             m_customerKeyVar.setStringValue(DEFAULT_CUSTOMER_KEY_VAR);
             m_customerKeySource = DEFAULT_CUSTOMER_KEY_SOURCE;
+        }
+        if (settings.containsKey(KEY_BROWSER_PATH_RELATIVE)) {
+            m_browserPathRelative.loadSettingsFrom(settings);
+        } else {
+            m_browserPathRelative.setBooleanValue(false);
         }
         updateEnabledness();
     }
@@ -680,7 +715,18 @@ class S3ConnectorNodeSettings {
      */
     public S3FSConnectionConfig toFSConnectionConfig(final CloudConnectionInformation connInfo,
         final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
-        S3FSConnectionConfig config = new S3FSConnectionConfig(getWorkingDirectory(), connInfo);
+        return toFSConnectionConfig(connInfo, credentials, getBrowserRelativizationBehavior());
+    }
+
+    public S3FSConnectionConfig toFSConnectionConfigForWorkdirChooser(final CloudConnectionInformation connInfo,
+        final CredentialsProvider credentials) throws IOException, InvalidSettingsException {
+        return toFSConnectionConfig(connInfo, credentials, BrowserRelativizationBehavior.ABSOLUTE);
+    }
+
+    protected S3FSConnectionConfig toFSConnectionConfig(final CloudConnectionInformation connInfo,
+        final CredentialsProvider credentials, final BrowserRelativizationBehavior relativizationBehavior)
+        throws IOException, InvalidSettingsException {
+        var config = new S3FSConnectionConfig(getWorkingDirectory(), relativizationBehavior, connInfo);
         config.setNormalizePath(getNormalizePathModel().getBooleanValue());
         config.setSseEnabled(getSseEnabledModel().getBooleanValue());
         config.setSseMode(getSseMode());
