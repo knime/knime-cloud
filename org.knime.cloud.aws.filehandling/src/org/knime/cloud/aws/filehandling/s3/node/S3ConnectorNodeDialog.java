@@ -221,7 +221,7 @@ class S3ConnectorNodeDialog extends NodeDialogPane {
 
     JComponent createEncryptionPanel() {
         m_kmsKeyInput = new KmsKeyInputPanel(m_settings.getKmsKeyIdModel());
-        m_customerKeyInput = new CustomerKeyInputPanel(m_settings, this);
+        m_customerKeyInput = new CustomerKeyInputPanel(m_settings, this, this::getCredentialsProvider);
 
         final var cards = new JPanel(new CardLayout());
         cards.add(new JPanel(), SSEMode.S3.getKey());

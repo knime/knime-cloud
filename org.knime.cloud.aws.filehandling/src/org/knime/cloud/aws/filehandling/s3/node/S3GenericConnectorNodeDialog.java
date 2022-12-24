@@ -182,7 +182,7 @@ class S3GenericConnectorNodeDialog extends S3ConnectorNodeDialog {
                     authSettings.getSettingsForAuthType(StandardAuthTypes.ANONYMOUS)), //
                 new AccessSecretKeyAuthProviderPanel( //
                     authSettings.getSettingsForAuthType(S3GenericConnectorNodeSettings.ACCESS_KEY_AND_SECRET_AUTH), //
-                    this), //
+                    this::getCredentialsProvider), //
                 new EmptyAuthProviderPanel( //
                     authSettings.getSettingsForAuthType(S3GenericConnectorNodeSettings.DEFAULT_PROVIDER_CHAIN_AUTH)) //
             ));

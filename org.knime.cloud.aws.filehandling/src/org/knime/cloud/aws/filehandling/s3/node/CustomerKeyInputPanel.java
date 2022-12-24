@@ -53,6 +53,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
@@ -63,10 +64,10 @@ import org.knime.cloud.aws.filehandling.s3.node.S3ConnectorNodeSettings.Customer
 import org.knime.core.node.FlowVariableModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NotConfigurableException;
-import org.knime.core.node.defaultnodesettings.DialogComponentFlowVariableNameSelection2;
 import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.workflow.VariableType.CredentialsType;
+import org.knime.core.node.workflow.CredentialsProvider;
+import org.knime.filehandling.core.connections.base.auth.DialogComponentCredentialSelection;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.DialogComponentReaderFileChooser;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.SettingsModelReaderFileChooser;
@@ -85,22 +86,25 @@ public class CustomerKeyInputPanel extends JPanel {
 
     private Map<CustomerKeySource, JRadioButton> m_radioButtons;
 
-    private DialogComponentFlowVariableNameSelection2 m_flowVarSelector;
+    private DialogComponentCredentialSelection m_credentialSelector;
 
     private DialogComponentReaderFileChooser m_fileChooser;
 
     /**
      * @param settings The S3 Connector settings.
      * @param parent The parent dialog.
+     * @param credentialsSupplier The supplier of {@link CredentialsProvider} (required by flow variable
+     * dialog component to list all credentials flow variables).
      */
-    public CustomerKeyInputPanel(final S3ConnectorNodeSettings settings, final S3ConnectorNodeDialog parent) {
+    public CustomerKeyInputPanel(final S3ConnectorNodeSettings settings, final S3ConnectorNodeDialog parent,
+        final Supplier<CredentialsProvider> credentialsSupplier) {
         m_settings = settings;
         m_parent = parent;
 
-        initUI();
+        initUI(credentialsSupplier);
     }
 
-    private void initUI() {
+    private void initUI(final Supplier<CredentialsProvider> credentialsSupplier) {
         m_radioButtons = new EnumMap<>(CustomerKeySource.class);
         ButtonGroup rbGroup = new ButtonGroup();
         JRadioButton rbEnterKey = createSourceRadioButton(CustomerKeySource.SETTINGS, rbGroup);
@@ -108,8 +112,8 @@ public class CustomerKeyInputPanel extends JPanel {
         JRadioButton rbFile = createSourceRadioButton(CustomerKeySource.FILE, rbGroup);
 
         DialogComponentString keyInput = new DialogComponentString(m_settings.getCustomerKeyModel(), "", false, 40);
-        m_flowVarSelector = new DialogComponentFlowVariableNameSelection2(m_settings.getCustomerKeyVarModel(), "",
-            () -> m_parent.getAvailableFlowVariables(CredentialsType.INSTANCE));
+        m_credentialSelector = new DialogComponentCredentialSelection(m_settings.getCustomerKeyVarModel(), "",
+            credentialsSupplier);
 
         final SettingsModelReaderFileChooser fileModel = m_settings.getCustomerKeyFileModel();
         final FlowVariableModel fvm =
@@ -137,7 +141,7 @@ public class CustomerKeyInputPanel extends JPanel {
         add(rbSelectCreds, c);
 
         c.gridx = 1;
-        add(m_flowVarSelector.getComponentPanel().getComponent(1), c);
+        add(m_credentialSelector.getComponentPanel().getComponent(1), c);
 
         c.gridx = 0;
         c.gridy += 1;
@@ -188,7 +192,7 @@ public class CustomerKeyInputPanel extends JPanel {
      */
     public void onSettingsLoaded(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
-        m_flowVarSelector.loadSettingsFrom(settings, specs);
+        m_credentialSelector.loadSettingsFrom(settings, specs);
         m_fileChooser.loadSettingsFrom(settings, specs);
         m_radioButtons.get(m_settings.getCustomerKeySource()).setSelected(true);
         updateEnabledComponentss();

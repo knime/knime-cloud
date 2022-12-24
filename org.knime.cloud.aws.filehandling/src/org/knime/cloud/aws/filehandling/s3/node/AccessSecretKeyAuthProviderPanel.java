@@ -45,7 +45,9 @@
  */
 package org.knime.cloud.aws.filehandling.s3.node;
 
-import org.knime.core.node.NodeDialogPane;
+import java.util.function.Supplier;
+
+import org.knime.core.node.workflow.CredentialsProvider;
 import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderPanel;
 import org.knime.filehandling.core.connections.base.auth.IDWithSecretAuthProviderSettings;
 
@@ -61,12 +63,12 @@ public class AccessSecretKeyAuthProviderPanel extends IDWithSecretAuthProviderPa
      * Default constructor.
      *
      * @param settings Authentication settings.
-     * @param parentDialog The parent dialog pane (required by flow variable dialog component to list all flow
-     *            variables).
+     * @param credentialsSupplier The supplier of {@link CredentialsProvider} (required by flow variable
+     * dialog component to list all credentials flow variables).
      */
     public AccessSecretKeyAuthProviderPanel(final IDWithSecretAuthProviderSettings settings,
-        final NodeDialogPane parentDialog) {
-        super(settings, parentDialog, "Access Key ID", "Secret Key");
+        final Supplier<CredentialsProvider> credentialsSupplier) {
+        super(settings, credentialsSupplier, "Access Key ID", "Secret Key");
     }
 
 }
