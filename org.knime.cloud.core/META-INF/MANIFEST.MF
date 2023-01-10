@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Cloud Storage Core Package
 Bundle-SymbolicName: org.knime.cloud.core;singleton:=true
-Bundle-Version: 4.7.0.qualifier
+Bundle-Version: 5.0.0.qualifier
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
 Export-Package: org.knime.cloud.core.file,
  org.knime.cloud.core.filehandling.signedurl,
