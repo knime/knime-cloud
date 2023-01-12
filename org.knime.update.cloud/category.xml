@@ -12,12 +12,12 @@
    <feature id="org.knime.features.cloud.aws.mlservices.source" version="0.0.0">
        <category name="knime-cloud" />
    </feature>
-   <feature id="org.knime.features.cloud.aws.redshift" version="0.0.0">
-       <category name="knime-cloud" />
-   </feature>
-   <feature id="org.knime.features.cloud.aws.redshift.source" version="0.0.0">
-       <category name="knime-cloud" />
-   </feature>
+   <!-- <feature id="org.knime.features.cloud.aws.redshift" version="0.0.0"> -->
+   <!--     <category name="knime-cloud" /> -->
+   <!-- </feature> -->
+   <!-- <feature id="org.knime.features.cloud.aws.redshift.source" version="0.0.0"> -->
+   <!--     <category name="knime-cloud" /> -->
+   <!-- </feature> -->
    <category-def name="knime-cloud" label="Build artifacts from knime-cloud">
        <description>Build artifacts from knime-cloud</description>
    </category-def>
