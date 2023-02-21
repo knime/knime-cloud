@@ -75,7 +75,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelAuthentication.Authe
 import org.knime.core.node.port.PortObjectSpec;
 
 /**
- * Node dialog for the Amazon Authentication node.
+ * Node dialog for the Amazon Authenticator node.
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */

@@ -71,7 +71,7 @@ import org.knime.core.node.port.PortType;
 import org.knime.core.util.Pair;
 
 /**
- * Node model for the Amazon Authentication node.
+ * Node model for the Amazon Authenticator node.
  *
  * @author Julian Bunzel, KNIME GmbH, Berlin, Germany
  */

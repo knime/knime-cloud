@@ -74,7 +74,7 @@ import org.knime.filehandling.core.connections.base.auth.EmptyAuthProviderPanel;
 import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
 
 /**
- * Generic S3 connector node dialog that combines Amazon Authentication and S3 Connector Dialog with a custom endpoint URL.
+ * Generic S3 connector node dialog that combines Amazon Authenticator and S3 Connector Dialog with a custom endpoint URL.
  *
  * @author Sascha Wolke, KNIME GmbH
  */

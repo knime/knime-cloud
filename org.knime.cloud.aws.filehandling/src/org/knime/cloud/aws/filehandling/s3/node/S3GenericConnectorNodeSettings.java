@@ -69,7 +69,7 @@ import org.knime.filehandling.core.connections.base.auth.StandardAuthTypes;
 import org.knime.filehandling.core.defaultnodesettings.status.StatusMessage;
 
 /**
- * Settings model for generic S3 connector that combines the Amazon Authentication and S3 Connector settings with a custom endpoint URL.
+ * Settings model for generic S3 connector that combines the Amazon Authenticator and S3 Connector settings with a custom endpoint URL.
  *
  * @author Sascha Wolke, KNIME GmbH
  */
