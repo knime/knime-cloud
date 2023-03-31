@@ -22,16 +22,8 @@
 	</properties>
 
 	<modules>
-        <!-- this needs to go first because it ensures that jar files required by AWS SDK are present -->
-		<module>org.knime.cloud.aws.sdkv2/libs/fetch_jars</module>
-		<module>org.knime.cloud.aws.sdkv2</module>
-		<module>org.knime.cloud.aws</module>
-		<module>org.knime.cloud.aws.filehandling</module>
-		<module>org.knime.cloud.aws.filehandling.tests</module>
-		<module>org.knime.cloud.aws.mlservices</module>
 		<module>org.knime.cloud.core</module>
-		<module>org.knime.features.cloud.aws</module>
-		<module>org.knime.features.cloud.aws.mlservices</module>
+		<module>org.knime.features.cloud.core.deprecated</module>
 		<module>org.knime.update.cloud</module>
 	</modules>
 
@@ -71,21 +63,6 @@
 			<id>p2-knime-workbench</id>
 			<layout>p2</layout>
 			<url>${knime.workbench.p2}</url>
-		</repository>
-		<repository>
-			<id>p2-knime-expressions</id>
-			<layout>p2</layout>
-			<url>${knime.expressions.p2}</url>
-		</repository>
-		<repository>
-			<id>p2-knime-textprocessing</id>
-			<layout>p2</layout>
-			<url>${knime.textprocessing.p2}</url>
-		</repository>
-		<repository>
-			<id>p2-knime-svg</id>
-			<layout>p2</layout>
-			<url>${knime.svg.p2}</url>
-		</repository>
+    </repository>
 	</repositories>
 </project>

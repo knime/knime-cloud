@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature id="org.knime.features.cloud.aws" version="0.0.0">
+   <feature id="org.knime.features.cloud.core.deprecated" version="0.0.0">
        <category name="knime-cloud" />
    </feature>
-   <feature id="org.knime.features.cloud.aws.source" version="0.0.0">
+   <feature id="org.knime.features.cloud.core.deprecated.source" version="0.0.0">
        <category name="knime-cloud" />
-   </feature>
-   <feature id="org.knime.features.cloud.aws.mlservices" version="0.0.0">
-       <category name="knime-cloud" />
-   </feature>
-   <feature id="org.knime.features.cloud.aws.mlservices.source" version="0.0.0">
-       <category name="knime-cloud" />
-   </feature>
+   </feature>   
    <category-def name="knime-cloud" label="Build artifacts from knime-cloud">
        <description>Build artifacts from knime-cloud</description>
    </category-def>
